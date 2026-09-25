@@ -441,7 +441,7 @@ function selectAnswer(idx){
   fb.classList.add('show');
   if(correct){
     streak++;
-    const gain = 10 + Math.min(streak*2, 20);
+    const gain = 3 + Math.min(streak, 4);
     score += gain;
     catStats[item.cat].right++;
     fb.classList.add('ok'); fb.classList.remove('no');

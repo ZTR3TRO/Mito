@@ -45,6 +45,7 @@ export const WARDROBE = [
       { id:'p-chick', name:'Pollito', icon:'🐣', cost:70 },
       { id:'p-turtle', name:'Tortuguita', icon:'🐢', cost:90 },
       { id:'p-fox', name:'Zorrito', icon:'🦊', cost:110 },
+      { id:'p-nutria', name:'Nutria', icon:'🦦', cost:300 },
     ],
   },
 ];
