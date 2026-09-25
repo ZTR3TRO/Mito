@@ -1,11 +1,43 @@
-import { NOTES, CHEATS, KEYPOINTS, QUESTIONS } from './data.js';
+import { COURSES } from './courses.js';
 import { WARDROBE, findItem, findItemById, categoryOf } from './wardrobe.js';
 import {
   addChispas, buyAndEquip, equipCategory, getChispas, getEquipped, owns, PASSING_BONUS,
   recordQuizResult, recordAnswer, getMistakes, getHistory, getStreak, clearMistakes,
-  getTheme, setTheme, exportSave, importSave, resetAll,
+  getTheme, setTheme, getCourse, setCourse, exportSave, importSave, resetAll,
 } from './store.js';
 import { applyAvatar, previewAvatar } from './avatar.js';
+
+/* =================== MATERIA ACTIVA =================== */
+let activeCourse = COURSES.find(c=>c.id === getCourse()) || COURSES[0];
+
+function switchCourse(id){
+  if(id === activeCourse.id) return;
+  activeCourse = COURSES.find(c=>c.id === id) || COURSES[0];
+  setCourse(activeCourse.id);
+  renderCourseTabs();
+  renderApuntes();
+  renderClaves();
+  renderQuizCounts();
+  renderReviewCard();
+  renderStreak();
+  document.getElementById('quizPlay').style.display = 'none';
+  resetQuiz();
+  document.getElementById('sideBubble').textContent = `Cambiamos a ${activeCourse.label} 📚`;
+  if(viewVisible('progreso')) renderProgress();
+}
+
+function renderCourseTabs(){
+  const host = document.getElementById('courseTabs');
+  if(!host) return;
+  host.innerHTML = '';
+  COURSES.forEach(c=>{
+    const pill = document.createElement('button');
+    pill.className = 'course-pill' + (c.id === activeCourse.id ? ' active' : '');
+    pill.textContent = c.label;
+    pill.onclick = ()=> switchCourse(c.id);
+    host.appendChild(pill);
+  });
+}
 
 /* =================== NAVEGACIÓN =================== */
 function goTo(view){
@@ -108,63 +140,110 @@ function sparkAt(el, emoji){
 }
 
 /* =================== RENDER: APUNTES =================== */
-const topicTabsHost = document.getElementById('topicTabs');
-const notesHost = document.getElementById('notesHost');
+function renderApuntes(){
+  const tabHost = document.getElementById('topicTabs');
+  const host = document.getElementById('notesHost');
+  const cheatWrap = document.getElementById('cheatSheet');
+  const cheatGrid = document.getElementById('cheatGrid');
+  tabHost.innerHTML = '';
+  host.innerHTML = '';
+  if(cheatWrap) cheatWrap.style.display = (activeCourse.cheats || []).length ? '' : 'none';
 
-NOTES.forEach((topic, i)=>{
-  const pill = document.createElement('button');
-  pill.className = 'topic-pill' + (i===0 ? ' active' : '');
-  pill.innerHTML = topic.label;
-  pill.onclick = ()=>{
-    document.querySelectorAll('.topic-pill').forEach(p=>p.classList.remove('active'));
-    pill.classList.add('active');
-    document.querySelectorAll('.note-block').forEach(b=>b.classList.remove('active'));
-    document.getElementById('block-'+topic.id).classList.add('active');
-  };
-  topicTabsHost.appendChild(pill);
+  const notes = activeCourse.notes || [];
+  if(notes.length === 0){
+    host.innerHTML = `<div class="empty-state">Aún no hay apuntes para esta materia. Agrégalos en src/courses.js 📚</div>`;
+    return;
+  }
+  notes.forEach((topic, i)=>{
+    const pill = document.createElement('button');
+    pill.className = 'topic-pill' + (i===0 ? ' active' : '');
+    pill.innerHTML = topic.label;
+    pill.onclick = ()=>{
+      document.querySelectorAll('.topic-pill').forEach(p=>p.classList.remove('active'));
+      pill.classList.add('active');
+      document.querySelectorAll('.note-block').forEach(b=>b.classList.remove('active'));
+      document.getElementById('block-'+topic.id).classList.add('active');
+    };
+    tabHost.appendChild(pill);
 
-  const block = document.createElement('div');
-  block.className = 'note-block' + (i===0 ? ' active' : '');
-  block.id = 'block-'+topic.id;
-  const acc = document.createElement('div');
-  acc.className = 'accordion';
-  topic.items.forEach((item, j)=>{
-    const el = document.createElement('div');
-    el.className = 'acc-item' + (j===0 ? ' open' : '');
-    el.innerHTML = `
-      <button class="acc-head">
-        <h4>${item.q}</h4>
-        <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
-      </button>
-      <div class="acc-body"><div class="acc-body-inner">${item.a}</div></div>
-    `;
-    el.querySelector('.acc-head').onclick = ()=> el.classList.toggle('open');
-    acc.appendChild(el);
+    const block = document.createElement('div');
+    block.className = 'note-block' + (i===0 ? ' active' : '');
+    block.id = 'block-'+topic.id;
+    const acc = document.createElement('div');
+    acc.className = 'accordion';
+    topic.items.forEach((item, j)=>{
+      const el = document.createElement('div');
+      el.className = 'acc-item' + (j===0 ? ' open' : '');
+      el.innerHTML = `
+        <button class="acc-head">
+          <h4>${item.q}</h4>
+          <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="acc-body"><div class="acc-body-inner">${item.a}</div></div>
+      `;
+      el.querySelector('.acc-head').onclick = ()=> el.classList.toggle('open');
+      acc.appendChild(el);
+    });
+    block.appendChild(acc);
+    host.appendChild(block);
   });
-  block.appendChild(acc);
-  notesHost.appendChild(block);
-});
 
-const cheatGrid = document.getElementById('cheatGrid');
-CHEATS.forEach(c=>{
-  const d = document.createElement('div');
-  d.className = 'cheat-item';
-  d.innerHTML = `<b>${c.n}</b>${c.l}`;
-  cheatGrid.appendChild(d);
-});
+  cheatGrid.innerHTML = '';
+  (activeCourse.cheats || []).forEach(c=>{
+    const d = document.createElement('div');
+    d.className = 'cheat-item';
+    d.innerHTML = `<b>${c.n}</b>${c.l}`;
+    cheatGrid.appendChild(d);
+  });
+}
 
 /* =================== RENDER: PUNTOS CLAVE =================== */
-const keyGrid = document.getElementById('keyGrid');
-KEYPOINTS.forEach((k, i)=>{
-  const c = document.createElement('div');
-  c.className = 'key-card';
-  c.innerHTML = `<span class="key-num">${i+1}</span>${k}`;
-  keyGrid.appendChild(c);
-});
+function renderClaves(){
+  const host = document.getElementById('keyGrid');
+  host.innerHTML = '';
+  const kps = activeCourse.keypoints || [];
+  if(kps.length === 0){
+    host.innerHTML = `<div class="empty-state">Aún no hay puntos clave para esta materia. Agrégalos en src/courses.js ✨</div>`;
+    return;
+  }
+  kps.forEach((k, i)=>{
+    const c = document.createElement('div');
+    c.className = 'key-card';
+    c.innerHTML = `<span class="key-num">${i+1}</span>${k}`;
+    host.appendChild(c);
+  });
+}
 
 /* =================== RENDER: contadores =================== */
-document.getElementById('statBankSize').textContent = QUESTIONS.length;
-document.getElementById('modeAllN').textContent = QUESTIONS.length;
+function renderQuizCounts(){
+  const n = activeCourse.questions.length;
+  const all = document.getElementById('modeAllN');
+  const stat = document.getElementById('statBankSize');
+  const startBtn = document.querySelector('[data-action="startQuiz"]');
+  const quick = document.getElementById('modeQuickN');
+  const rec = document.getElementById('modeRecN');
+  const modeCards = document.querySelectorAll('.mode-card');
+  const quickN = n === 0 ? 0 : Math.min(n, Math.max(1, Math.round(n * 0.3)));
+  const recN = n === 0 ? 0 : Math.min(n, Math.max(1, Math.round(n * 0.6)));
+  if(all) all.textContent = n;
+  if(stat) stat.textContent = n;
+  if(quick){
+    quick.textContent = quickN;
+    const card = quick.closest('.mode-card');
+    if(card) card.dataset.n = quickN;
+  }
+  if(rec){
+    rec.textContent = recN;
+    const card = rec.closest('.mode-card');
+    if(card) card.dataset.n = recN;
+  }
+  if(startBtn){
+    startBtn.disabled = n === 0;
+    startBtn.textContent = n === 0 ? 'Sin preguntas aún' : 'Comenzar';
+  }
+  const title = document.getElementById('quizTitle');
+  if(title) title.textContent = 'Quiz de ' + activeCourse.label;
+}
 
 /* =================== QUIZ LOGIC =================== */
 let quizQuestions = [];
@@ -186,9 +265,38 @@ function shuffle(arr){
 }
 
 /* =================== REPASO INTELIGENTE =================== */
+function qPrefix(id){
+  return id + '::';
+}
+
+function activeMistakeEntries(){
+  const prefix = qPrefix(activeCourse.id);
+  return Object.entries(getMistakes()).filter(([k])=>
+    k.startsWith(prefix) || (!k.includes('::') && activeCourse.id === COURSES[0].id)
+  );
+}
+
+function findQuestionByKey(key){
+  if(key.includes('::')){
+    const i = key.indexOf('::');
+    const cid = key.slice(0, i);
+    const txt = key.slice(i + 2);
+    const c = COURSES.find(x=>x.id === cid);
+    if(c) return c.questions.find(x=>x.q === txt);
+    return null;
+  }
+  for(const c of COURSES){
+    const f = c.questions.find(x=>x.q === key);
+    if(f) return f;
+  }
+  return null;
+}
+
 function weakTopics(minAnswers = 3){
   const agg = {};
   getHistory().forEach(h=>{
+    if(h.courseId && h.courseId !== activeCourse.id) return;
+    if(!h.courseId && activeCourse.id !== COURSES[0].id) return;
     Object.entries(h.cats || {}).forEach(([cat, s])=>{
       agg[cat] = agg[cat] || { r:0, t:0 };
       agg[cat].r += s.r || 0;
@@ -202,28 +310,30 @@ function weakTopics(minAnswers = 3){
 }
 
 function buildReviewPool(){
-  const byQ = new Map(QUESTIONS.map(q=>[q.q, q]));   // si hay repetidas, prevalece la primera
-  const byCat = {};
-  QUESTIONS.forEach(q=>{ (byCat[q.cat] = byCat[q.cat] || []).push(q.q); });
+  const qs = activeCourse.questions;
+  const byQ = new Map(qs.map(q=>[q.q, q]));
 
   const pool = [];
   const pushQ = qq=>{ if(qq && !pool.includes(qq)) pool.push(qq); };
 
-  Object.keys(getMistakes()).forEach(q=>pushQ(byQ.get(q)));
+  activeMistakeEntries().forEach(([k])=>{
+    const q = findQuestionByKey(k);
+    if(q) pushQ(byQ.get(q.q) || q);
+  });
   weakTopics(2).forEach(t=>{
-    (byCat[t.cat] || []).forEach(q=>pushQ(byQ.get(q)));
+    qs.filter(q=>q.cat === t.cat).forEach(q=>pushQ(q));
   });
 
-  const rest = shuffle(QUESTIONS.filter(q=>!pool.includes(q)));
+  const rest = shuffle(qs.filter(q=>!pool.includes(q)));
   const final = shuffle(pool).concat(rest);
-  const n = Math.min(Math.max(pool.length * 2, 4), QUESTIONS.length);
+  const n = Math.min(Math.max(pool.length * 2, 4), qs.length);
   return final.slice(0, n);
 }
 
 function renderReviewCard(){
   const card = document.getElementById('modeRev');
   if(!card) return;
-  const n = Object.keys(getMistakes()).length;
+  const n = activeMistakeEntries().length;
   const num = document.getElementById('modeRevN');
   const lab = document.getElementById('modeRevL');
   if(n === 0){
@@ -250,6 +360,8 @@ document.querySelectorAll('.mode-card').forEach(m=>{
 });
 
 function startQuiz(){
+  const qs = activeCourse.questions;
+  if(qs.length === 0) return;
   const cards = document.querySelectorAll('.mode-card');
   let mode = 'normal';
   let setup = '';
@@ -260,8 +372,8 @@ function startQuiz(){
     quizQuestions = buildReviewPool();
   } else {
     const nRaw = parseInt(document.querySelector('.mode-card.selected').dataset.n, 10);
-    const n = nRaw >= QUESTIONS.length ? QUESTIONS.length : nRaw;
-    quizQuestions = shuffle(QUESTIONS).slice(0, n);
+    const n = nRaw >= qs.length ? qs.length : nRaw;
+    quizQuestions = shuffle(qs).slice(0, n);
   }
   qIndex = 0; score = 0; streak = 0; lives = 3; catStats = {};
   document.getElementById('quizIntro').style.display = 'none';
@@ -317,7 +429,7 @@ function selectAnswer(idx){
 
   if(!catStats[item.cat]) catStats[item.cat] = {right:0, total:0};
   catStats[item.cat].total++;
-  recordAnswer(item.q, correct);
+  recordAnswer(activeCourse.id, item.q, correct);
 
   opts.forEach((o, i)=>{
     o.classList.add('disabled');
@@ -428,7 +540,7 @@ function finishQuiz(){
 
   updateSideProgress(pct);
 
-  recordQuizResult({ score, right: totalRight, total: totalAnswered, pct, cats: catStats });
+  recordQuizResult({ score, right: totalRight, total: totalAnswered, pct, cats: catStats, courseId: activeCourse.id });
   renderStreak();
   renderReviewCard();
   renderSidebarStats();
@@ -711,16 +823,14 @@ function renderHistory(){
 function renderMistakes(){
   const host = document.getElementById('mistakesList');
   if(!host) return;
-  const mistakes = getMistakes();
-  const keys = Object.keys(mistakes);
-  const pending = keys.filter(k=>questionByText(k));
+  const pending = activeMistakeEntries();
   if(pending.length === 0){
-    host.innerHTML = `<div class="empty-state">Sin fallos registrados. Sigue así 💪</div>`;
+    host.innerHTML = `<div class="empty-state">Sin fallos registrados en esta materia. Sigue así 💪</div>`;
     return;
   }
-  host.innerHTML = pending.map(k=>{
-    const item = questionByText(k);
-    const m = mistakes[k];
+  host.innerHTML = pending.map(([k, m])=>{
+    const item = findQuestionByKey(k);
+    if(!item) return '';
     const correct = item.opts[item.correct];
     return `
       <div class="mistake-card">
@@ -738,10 +848,6 @@ function renderMistakes(){
         <button class="btn btn-ghost" data-progress="limpiar-errores" style="background:var(--pink-pale); color:var(--pink-deep); border-color:var(--pink);">Limpiar lista</button>
       </div>
     </div>`;
-}
-
-function questionByText(q){
-  return QUESTIONS.find(x=>x.q === q);
 }
 
 function escapeHtml(s){
@@ -767,6 +873,10 @@ function renderProgress(){
 }
 
 /* =================== INIT =================== */
+renderCourseTabs();
+renderApuntes();
+renderClaves();
+renderQuizCounts();
 applyAvatar();
 renderShop();
 updateBalance();

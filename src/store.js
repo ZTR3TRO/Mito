@@ -13,6 +13,7 @@ function defaultState(){
     streak: 0,
     lastDay: null,
     theme: 'light',
+    course: 'atp',
   };
 }
 
@@ -106,9 +107,9 @@ function dayBefore(iso){
   return dayStr(d);
 }
 
-export function recordQuizResult({score, right, total, pct, cats}){
+export function recordQuizResult({score, right, total, pct, cats, courseId}){
   const today = dayStr();
-  state.history.push({ t:Date.now(), score, right, total, pct, cats });
+  state.history.push({ t:Date.now(), score, right, total, pct, cats, courseId });
   if(state.history.length > HISTORY_LIMIT) state.history = state.history.slice(-HISTORY_LIMIT);
 
   if(state.lastDay === today){
@@ -124,15 +125,16 @@ export function recordQuizResult({score, right, total, pct, cats}){
   return state.streak;
 }
 
-export function recordAnswer(q, correct){
-  const m = state.mistakes[q] || { wrong:0, right:0 };
+export function recordAnswer(courseId, q, correct){
+  const key = `${courseId}::${q}`;
+  const m = state.mistakes[key] || { wrong:0, right:0 };
   if(correct) m.right++; else m.wrong++;
   // solo cuenta como "fallo pendiente" si hay errores y aún no los dominas
   // (se libera cuando aciertas al menos el doble de veces que fallas)
   if(m.wrong > 0 && m.right < m.wrong*2){
-    state.mistakes[q] = { wrong:m.wrong, right:m.right };
+    state.mistakes[key] = { wrong:m.wrong, right:m.right };
   } else {
-    delete state.mistakes[q];
+    delete state.mistakes[key];
   }
   const keys = Object.keys(state.mistakes);
   if(keys.length > MISTAKES_LIMIT){
@@ -172,6 +174,19 @@ export function setTheme(t){
   save();
   emit();
   return t;
+}
+
+/* =================== MATERIA ACTIVA =================== */
+export function getCourse(){
+  return state.course;
+}
+
+export function setCourse(id){
+  if(typeof id !== 'string') return state.course;
+  state.course = id;
+  save();
+  emit();
+  return state.course;
 }
 
 /* =================== RESPALDO / IMPORT-EXPORT =================== */

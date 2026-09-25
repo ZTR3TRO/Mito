@@ -1,4 +1,4 @@
-export const NOTES = [
+const NOTES = [
   { id:'intro', label:'Introducción', items:[
     { q:'Nutrición celular vs. nutrición del organismo', a:`La célula y el ser vivo son sistemas que, gracias a un aporte constante de materia y energía, realizan trabajo químico y mecánico para mantener su equilibrio interno (homeostasis).<br><br>La nutrición ocurre en dos niveles: el del <strong>organismo completo</strong> y el <strong>celular</strong>. Se relacionan por sistemas de transporte (aparato circulatorio, haces vasculares), pero pueden ser independientes: el tipo de nutrición de una célula puede diferir del de todo el organismo.` },
     { q:'¿Qué es el metabolismo?', a:`Conjunto de reacciones químicas, catalizadas por enzimas, que ocurren dentro de las células y transforman unas biomoléculas en otras, para obtener materia y energía destinadas a tres funciones vitales: <strong>nutrición, relación y reproducción</strong>.<br><br>Esa materia no solo sirve para crecer: también renueva estructuras propias (el cuerpo humano renueva casi todas sus células cada siete años).` },
@@ -92,7 +92,7 @@ export const NOTES = [
   ]},
 ];
 
-export const CHEATS = [
+const CHEATS = [
   {n:'7.3', l:'kcal/mol · ATP'},
   {n:'9', l:'kcal/g · triglicéridos'},
   {n:'4', l:'kcal/g · almidón / glucógeno'},
@@ -104,7 +104,7 @@ export const CHEATS = [
   {n:'~70%', l:'enzimas primitivas con ATP'},
 ];
 
-export const KEYPOINTS = [
+const KEYPOINTS = [
   'El metabolismo = <strong>anabolismo</strong> (construye, gasta energía) + <strong>catabolismo</strong> (degrada, libera energía).',
   'El ATP es la "moneda energética" de la célula: <strong>7.3 kcal/mol</strong>, uso inmediato.',
   'Almidón y glucógeno rinden <strong>4 kcal/g</strong>; los triglicéridos rinden <strong>9 kcal/g</strong> (reserva de largo plazo).',
@@ -122,7 +122,7 @@ export const KEYPOINTS = [
   'El receptor <strong>P2X7</strong> vincula al ATP extracelular con la muerte neuronal en isquemia cerebral.',
 ];
 
-export const QUESTIONS = [
+const QUESTIONS = [
   {cat:'Introducción', q:'¿Qué proceso se define como el conjunto de reacciones químicas catalizadas por enzimas que transforman biomoléculas dentro de la célula?', opts:['La nutrición','El metabolismo','La homeostasis','La fotosíntesis'], correct:1, exp:'El metabolismo transforma biomoléculas para obtener materia y energía destinadas a nutrición, relación y reproducción.'},
   {cat:'Introducción', q:'En una ruta metabólica cíclica...', opts:['Un precursor genera múltiples productos','Varios sustratos convergen en un producto','El punto de partida se regenera al final','La reacción nunca se repite'], correct:2, exp:'Las rutas cíclicas regeneran su punto de partida al finalizar (como el ciclo de Krebs).'},
   {cat:'Introducción', q:'¿En cuántos niveles ocurre la nutrición según los apuntes?', opts:['Uno','Dos: organismo y célula','Tres: célula, tejido y órgano','Cuatro'], correct:1, exp:'Ocurre a nivel del organismo completo y a nivel celular; están relacionados pero pueden ser parcialmente independientes.'},
@@ -167,3 +167,12 @@ export const QUESTIONS = [
   {cat:'Enfermedades', q:'Las enfermedades mitocondriales afectan principalmente a...', opts:['Piel y uñas','Tejidos de alta demanda energética, como músculo y sistema nervioso','Solo al sistema digestivo','Ningún tejido en particular'], correct:1, exp:'Se deben a fallas en la síntesis de ATP, por lo que afectan sobre todo a los tejidos que más energía necesitan.'},
   {cat:'Enfermedades', q:'¿Con qué otras enfermedades neurodegenerativas se ha asociado la disfunción mitocondrial?', opts:['Alzheimer, Huntington y Parkinson','Gripe y resfriado común','Apendicitis','Anemia'], correct:0, exp:'La disfunción mitocondrial también se ha asociado a entidades neurodegenerativas de alta incidencia como Alzheimer, Huntington y Parkinson.'},
 ];
+
+export const COURSE_ATP = {
+  id:'atp',
+  label:'Bioquímica del ATP',
+  notes: NOTES,
+  cheats: CHEATS,
+  keypoints: KEYPOINTS,
+  questions: QUESTIONS,
+};

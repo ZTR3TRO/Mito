@@ -74,6 +74,12 @@
   <!-- ============ MAIN ============ -->
   <main>
 
+    <!-- Selector de materia -->
+    <div class="course-bar">
+      <span class="course-bar-label">📚 Materia</span>
+      <div class="course-tabs" id="courseTabs"></div>
+    </div>
+
     <!-- SVG DEFS: mascota reutilizable -->
     <svg width="0" height="0" style="position:absolute">
       <defs>
@@ -218,7 +224,7 @@
       <div class="topic-tabs" id="topicTabs"></div>
       <div id="notesHost"></div>
 
-      <div class="cheat-sheet">
+      <div class="cheat-sheet" id="cheatSheet">
         <h4>⚡ Chuleta de datos rápidos</h4>
         <div class="cheat-grid" id="cheatGrid"></div>
       </div>
@@ -239,7 +245,7 @@
     <section class="view" id="view-quiz">
       <div class="page-head">
         <div>
-          <h2 class="page-title">Quiz de ATP</h2>
+          <h2 class="page-title" id="quizTitle">Quiz de Bioquímica del ATP</h2>
           <p class="page-sub">Un fallo le cuesta una vida a Mito. Acierta seguido para subir tu racha y ganar más puntos.</p>
         </div>
       </div>
@@ -253,8 +259,8 @@
           <h2>¿Lista para jugar, Zare?</h2>
           <p>Cada partida mezcla preguntas de los tres materiales: introducción, bioenergética/ATP, tejidos y el artículo científico. Cada acierto te da chispas para personalizarme.</p>
           <div class="mode-row" id="modeRow">
-            <button class="mode-card" data-n="10"><div class="mc-n">10</div><div class="mc-l">ronda rápida</div></button>
-            <button class="mode-card selected" data-n="18"><div class="mc-n">18</div><div class="mc-l">recomendado</div></button>
+            <button class="mode-card" data-n="10"><div class="mc-n" id="modeQuickN">10</div><div class="mc-l">ronda rápida</div></button>
+            <button class="mode-card selected" data-n="18"><div class="mc-n" id="modeRecN">18</div><div class="mc-l">recomendado</div></button>
             <button class="mode-card" data-n="99"><div class="mc-n" id="modeAllN">43</div><div class="mc-l">examen completo</div></button>
             <button class="mode-card rev" id="modeRev" data-setup="repaso"><div class="mc-n" id="modeRevN">0</div><div class="mc-l" id="modeRevL">sin fallos aún</div></button>
           </div>

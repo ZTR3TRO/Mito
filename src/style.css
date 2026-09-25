@@ -158,6 +158,24 @@ main{ padding:38px 46px 90px; max-width:1000px; }
 .view.active{ display:block; animation: pop .35s cubic-bezier(.3,1.4,.4,1); }
 @keyframes pop{ from{ opacity:0; transform:translateY(10px) scale(.99);} to{opacity:1; transform:translateY(0) scale(1);} }
 
+/* ---------- SELECTOR DE MATERIAS ---------- */
+.course-bar{
+  display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+  background:var(--card); border:2px solid var(--line); border-radius:18px;
+  padding:10px 16px; margin-bottom:34px; box-shadow:var(--shadow-soft);
+}
+.course-bar-label{ font-size:12px; color:var(--ink-faint); font-weight:800; text-transform:uppercase; letter-spacing:.04em; }
+.course-tabs{ display:flex; gap:8px; flex-wrap:wrap; }
+.course-pill{
+  all:unset; cursor:pointer; padding:9px 16px; border-radius:999px; font-size:13px; font-weight:800;
+  background:var(--pink-pale); color:var(--ink-dim); border:2px solid transparent;
+  transition:all .15s ease;
+}
+.course-pill:hover{ border-color:var(--pink); color:var(--pink-deep); }
+.course-pill.active{ background:linear-gradient(135deg,var(--mint),var(--pink)); color:#fff; box-shadow:var(--shadow-pink); }
+
+.btn[disabled]{ opacity:.5; cursor:not-allowed; transform:none; box-shadow:none; filter:none; }
+
 .page-head{ margin-bottom:28px; display:flex; align-items:flex-start; justify-content:space-between; gap:20px; }
 .page-title{ font-size:32px; font-weight:800; margin:0 0 6px; color:var(--ink); }
 .page-sub{ color:var(--ink-dim); font-size:15px; max-width:56ch; line-height:1.6; margin:0; font-weight:600; }
