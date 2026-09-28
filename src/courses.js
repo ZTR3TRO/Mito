@@ -147,6 +147,11 @@ export const COURSES = [
           <li><strong>Medidas generales:</strong> comer despacio, evitar alimentos muy fríos o calientes y tratar el reflujo asociado.</li>
           <li><strong>Medicamentos:</strong> bloqueadores de los canales de calcio (diltiazem, nifedipino) y nitratos para relajar el músculo liso; inhibidores de bomba de protones y, en ocasiones, antidepresivos a dosis bajas para el dolor.</li>
         </ul>` },
+        { q:'¿Cómo se comporta el EEI en la acalasia, el espasmo esofágico difuso y el EEI hipertenso?', a:`<ul>
+          <li><strong>Acalasia:</strong> el EEI <strong>NO se relaja</strong> al tragar por pérdida de neuronas del plexo mientérico.</li>
+          <li><strong>Espasmo Esofágico Difuso:</strong> el EEI <strong>SÍ logra relajarse normalmente</strong>; la alteración son contracciones simultáneas del cuerpo esofágico por déficit de óxido nítrico.</li>
+          <li><strong>EEI Hipertenso:</strong> mantiene una presión de reposo elevada, pero <strong>SÍ conserva la relajación completa</strong> al deglutir.</li>
+        </ul>` },
       ]},
       { id:'motilidad', label:'Motilidad Esofágica Hiper e Hipocontráctil', items:[
         { q:'¿Cuáles son las características del esófago en cascanueces?', a:`Neuropatía entérica leve con déficit de NO que produce contracciones <strong>muy fuertes, de gran amplitud y prolongadas</strong>, con aumento de la presión intraesofágica. Causa <strong>dolor torácico intenso no cardíaco</strong> que puede confundirse con un problema del corazón.` },
@@ -154,6 +159,10 @@ export const COURSES = [
         { q:'¿Qué provoca el esófago hipocontráctil?', a:`Contracciones peristálticas <strong>demasiado débiles, fragmentadas o ausentes</strong> que no propulsan el bolo hacia el estómago. Se asocia a ERGE y a enfermedades neuromusculares. Aquí el <strong>EEI sí mantiene su relajación normal</strong>: el problema es la fuerza del esófago, no el esfínter.` },
         { q:'¿Cuándo se diagnostica motilidad esofágica ineficaz (Clasificación de Chicago v4.0)?', a:`Se requiere que más del <strong>70% de las degluciones sean ineficaces</strong> o al menos el <strong>50% sean degluciones fallidas</strong>.` },
         { q:'¿Qué atención nutricional se recomienda en los trastornos hipocontráctiles?', a:`Comer <strong>lentamente, masticando muy bien</strong>, en comidas pequeñas, hidratándose y adaptando la textura de los alimentos para facilitar el paso del bolo ante la debilidad peristáltica.` },
+        { q:'¿En qué se diferencia la fuerza de contracción entre el esófago en cascanueces y el esófago hipocontráctil?', a:`<ul>
+          <li><strong>Esófago en Cascanueces:</strong> contracciones de <strong>gran intensidad y amplitud</strong> (hipertensivas) pero coordinadas, que generan dolor torácico intenso simulando origen cardíaco.</li>
+          <li><strong>Esófago Hipocontráctil (Motilidad Ineficaz):</strong> contracciones <strong>demasiado débiles, fragmentadas o ausentes</strong>, que provocan un tránsito del alimento lento o incompleto.</li>
+        </ul>` },
       ]},
       { id:'erge', label:'Enfermedad por Reflujo Gastroesofágico (ERGE)', items:[
         { q:'¿Cuál es la etiología de la ERGE?', a:`Se origina por la <strong>pérdida de los mecanismos de barrera antirreflujo</strong>, lo que permite el contacto prolongado del ácido con la mucosa:
@@ -180,6 +189,12 @@ export const COURSES = [
           <li><strong>Tratamiento:</strong> antibióticos y dieta libre de irritantes, condimentos, picantes y grasas.</li>
         </ul>` },
         { q:'¿Cuál es el tratamiento de la gastritis aguda?', a:`Es el ejemplo clásico de tratamiento causal: <strong>retirar el agente</strong> (medicamentos como AINEs o alcohol) y dar una dieta libre de irritantes.` },
+        { q:'¿Cuáles son las diferencias en etiología y tratamiento entre la gastritis aguda, por H. pylori y autoinmune?', a:`<ul>
+          <li><strong>Aguda:</strong> causada por <strong>AINEs, alcohol y dieta irritante</strong> → retirar el factor causal y dieta blanda.</li>
+          <li><strong>Por H. pylori:</strong> infección bacteriana por alimentos contaminados → esquema obligatorio con <strong>antibióticos</strong>.</li>
+          <li><strong>Autoinmune:</strong> fallo del sistema inmune que ataca las células parietales → sustitución con <strong>Vitamina B12</strong>.</li>
+        </ul>
+        La autoinmune se manifiesta principalmente como <strong>anemia perniciosa</strong> (fatiga, debilidad, mareo, palidez), a diferencia de la aguda o bacteriana que provocan dolor epigástrico y náuseas.` },
       ]},
       { id:'eii', label:'Enfermedad Inflamatoria Intestinal (EII)', items:[
         { q:'¿Cuáles son las diferencias anatómicas clave entre Enfermedad de Crohn y Colitis Ulcerosa?', a:`<ul>
@@ -195,6 +210,10 @@ export const COURSES = [
           <li>Fase reparativa (pólipos de regeneración).</li>
         </ol>` },
         { q:'¿Cuáles son las manifestaciones clínicas y extraintestinales de la Colitis Ulcerosa?', a:`Diarrea frecuente con sangre, moco o pus; dolor en fosa iliaca izquierda, <strong>tenesmo</strong> y síntomas extraintestinales: artritis o artralgias, lesiones cutáneas (eritema nodoso, pioderma gangrenoso), oculares (epiescleritis, uveítis) y alteraciones hepatobiliares. Una mucosa <strong>friable</strong> (que sangra al mínimo roce) es un hallazgo endoscópico típico.` },
+        { q:'¿Cuáles son las diferencias en el cuadro clínico predominante entre la Enfermedad de Crohn y la Colitis Ulcerosa?', a:`<ul>
+          <li><strong>Enfermedad de Crohn:</strong> predomina el <strong>dolor abdominal, pérdida de peso y fiebre</strong>, con complicaciones fistulizantes.</li>
+          <li><strong>Colitis Ulcerosa:</strong> predomina la <strong>diarrea con sangre, tenesmo</strong> (urgencia de evacuar) y dolor en <strong>fosa ilíaca izquierda</strong>.</li>
+        </ul>` },
         { q:'¿Cuáles son los factores de riesgo de la Enfermedad de Crohn?', a:`Edad (<strong>25 a 30 años</strong>), origen étnico (mayor en blancos), herencia familiar, uso de AINEs, residencia urbana/industrializada y el <strong>tabaquismo</strong>, que es el factor más controlable.` },
         { q:'¿Cuándo se indica la cirugía en el Crohn y cuándo aumenta el riesgo de cáncer en la CU?', a:`<ul>
           <li><strong>Cirugía en Crohn:</strong> cuando falla el tratamiento médico (inmunosupresores y biológicos) o hay complicaciones como perforación, obstrucciones o abscesos.</li>
@@ -224,6 +243,9 @@ export const COURSES = [
       {n:'>50%', l:'degluciones fallidas · motilidad ineficaz'},
       {n:'114 g/sem', l:'carne roja · límite en EII'},
       {n:'25–30 años', l:'riesgo · Enfermedad de Crohn'},
+      {n:'Transmural', l:'afectación exclusiva de la Enfermedad de Crohn · todas las capas de la pared'},
+      {n:'EEI no se relaja', l:'criterio definitorio de la Acalasia'},
+      {n:'Anemia perniciosa', l:'complicación directa de la gastritis autoinmune · destrucción de células parietales'},
     ],
     keypoints:[
       'En la <strong>acalasia</strong> el EEI <strong>no se relaja</strong> al tragar; en el espasmo esofágico difuso y en la motilidad ineficaz (hipocontráctil), el EEI <strong>sí se relaja normalmente</strong>.',
@@ -231,6 +253,8 @@ export const COURSES = [
       'Ya <strong>no se recomienda restringir la fibra</strong> en la EII: una dieta con fibra variada, almidón resistente y polifenoles protege el microbioma.',
       'El <strong>tabaquismo</strong> es el factor de riesgo más controlable para la Enfermedad de Crohn.',
       'El Crohn es <strong>transmural</strong> (empedrado, fístulas, estenosis); la colitis ulcerosa afecta <strong>mucosa y submucosa</strong> con patrón continuo desde el recto.',
+      'Cascanueces = contracciones <strong>excesivamente fuertes y de gran amplitud</strong> (dolor torácico); hipocontráctil = contracciones <strong>demasiado débiles o ausentes</strong> (propulsión ineficaz).',
+      'Gastritis aguda = AINEs/alcohol (retirar la causa); H. pylori = bacteria (antibióticos); autoinmune = destrucción de células parietales y factor intrínseco (Vitamina B12).',
     ],
     questions:[
       {cat:'Conceptos Básicos de Patología', q:'Característica, condición o hábito que aumenta la probabilidad de desarrollar una enfermedad, aunque no necesariamente sea su causa directa:', opts:['Agente patógeno','Cuadro clínico','Factor de riesgo','Manifestación clínica'], correct:2, exp:'El factor de riesgo es el elemento ambiental, conductual o biológico que favorece la progresión de una enfermedad sin ser la causa obligada.'},
