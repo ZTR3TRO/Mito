@@ -115,4 +115,149 @@ export const COURSES = [
       {cat:'Fórmulas de peso ideal y GEB', q:'Un paciente requiere cálculo de peso corregido tras perder su "Mano y antebrazo". Según la tabla de porcentajes de peso teórico ideal, ¿qué valor porcentual debes utilizar en la fórmula para este miembro amputado?', opts:['0.7%','1.5%','2.3%','5.0%'], correct:2, exp:'La "Mano y antebrazo" equivale a un 2.3% del peso teórico ideal (0.7% es solo la mano y 5.0% el brazo completo).'},
     ],
   },
+  {
+    id:'fisiopatologia-gi',
+    label:'Fisiopatología Gastrointestinal y Nutrición',
+    notes:[
+      { id:'conceptos', label:'Conceptos Básicos de Patología', items:[
+        { q:'¿Cuál es la diferencia entre Fisiología, Patología y Fisiopatología?', a:`La <strong>fisiología</strong> estudia el funcionamiento <strong>normal</strong> de los seres vivos, sus órganos y células para mantener el equilibrio interno. La <strong>patología</strong> estudia las <strong>enfermedades</strong> y sus alteraciones estructurales. La <strong>fisiopatología</strong> estudia las <strong>alteraciones de las funciones normales</strong> causadas por una enfermedad y explica los mecanismos por los que progresa.` },
+        { q:'¿Qué se entiende por patogénesis?', a:`Es el proceso mediante el cual se origina y desarrolla una enfermedad, abarcando la secuencia de acontecimientos desde la acción del <strong>agente causal</strong> hasta la aparición de <strong>signos y síntomas</strong>.` },
+        { q:'¿Qué son el agente patógeno y el factor de riesgo?', a:`<ul>
+          <li><strong>Agente patógeno:</strong> cualquier organismo (bacterias, virus, hongos, parásitos) o sustancia capaz de causar una enfermedad al invadir un ser vivo y alterar su funcionamiento normal.</li>
+          <li><strong>Factor de riesgo:</strong> característica, condición o hábito que aumenta la probabilidad de desarrollar una enfermedad sin ser necesariamente su causa directa.</li>
+        </ul>` },
+        { q:'¿Cómo se relacionan el cuadro clínico, el diagnóstico y el tratamiento?', a:`<ul>
+          <li><strong>Cuadro clínico:</strong> conjunto de <strong>signos</strong> (alteraciones observables por el médico) y <strong>síntomas</strong> (manifestaciones percibidas solo por el paciente).</li>
+          <li><strong>Diagnóstico:</strong> proceso de identificar la enfermedad evaluando signos, síntomas, antecedentes e interpretando datos clínicos, de laboratorio y gabinete.</li>
+          <li><strong>Tratamiento:</strong> conjunto de medidas (médicas, nutricionales, quirúrgicas) destinadas a curar, aliviar síntomas, prevenir complicaciones y restaurar el funcionamiento normal.</li>
+        </ul>` },
+      ]},
+      { id:'acalasia', label:'Acalasia y Espasmos Esofágicos', items:[
+        { q:'¿Qué es la acalasia y qué la produce?', a:`Es un trastorno de la motilidad esofágica donde el <strong>EEI no se relaja</strong> adecuadamente al tragar. Se produce por daño o pérdida de neuronas del <strong>plexo mientérico</strong>, lo que provoca pérdida del peristaltismo, acumulación de alimento y dilatación esofágica. Sus síntomas principales: disfagia, regurgitación, dolor torácico, pirosis, tos nocturna y pérdida de peso.` },
+        { q:'¿Cómo se diagnostica y trata la acalasia?', a:`La <strong>manometría esofágica de alta resolución</strong> es el estándar de oro (evalúa presiones y peristaltismo del EEI). Los tratamientos no farmacológicos buscan disminuir la presión del EEI:
+        <ul>
+          <li>Dilatación neumática con balón.</li>
+          <li>Miotomía de Heller (cirugía).</li>
+          <li>Miotomía endoscópica peroral (POEM).</li>
+          <li>Aplicación de toxina botulínica.</li>
+        </ul>
+        La <strong>enfermedad de Chagas</strong> puede producir un cuadro similar por daño directo a los nervios del esófago.` },
+        { q:'¿En qué consiste el espasmo esofágico difuso?', a:`Es una falla nerviosa por <strong>déficit de óxido nítrico (NO)</strong>: al perderse la inhibición del NO, la estimulación colinérgica (acetilcolina) actúa sin oposición y causa contracciones <strong>rápidas, simultáneas y descoordinadas</strong>. A diferencia de la acalasia, el <strong>EEI sí logra relajarse</strong> normalmente. En el trago de bario se ven contracciones terciarias y escasa progresión del bolo.` },
+        { q:'¿Cómo se tratan los espasmos esofágicos?', a:`<ul>
+          <li><strong>Medidas generales:</strong> comer despacio, evitar alimentos muy fríos o calientes y tratar el reflujo asociado.</li>
+          <li><strong>Medicamentos:</strong> bloqueadores de los canales de calcio (diltiazem, nifedipino) y nitratos para relajar el músculo liso; inhibidores de bomba de protones y, en ocasiones, antidepresivos a dosis bajas para el dolor.</li>
+        </ul>` },
+      ]},
+      { id:'motilidad', label:'Motilidad Esofágica Hiper e Hipocontráctil', items:[
+        { q:'¿Cuáles son las características del esófago en cascanueces?', a:`Neuropatía entérica leve con déficit de NO que produce contracciones <strong>muy fuertes, de gran amplitud y prolongadas</strong>, con aumento de la presión intraesofágica. Causa <strong>dolor torácico intenso no cardíaco</strong> que puede confundirse con un problema del corazón.` },
+        { q:'¿Qué es el EEI hipertenso?', a:`Alteración donde el EEI mantiene una <strong>presión de reposo más alta</strong> de lo normal, por un desequilibrio autonómico local con predominio de la actividad excitatoria. Dificulta el paso del bolo, pero <strong>conserva la relajación al tragar</strong>, y también provoca dolor torácico intenso no cardíaco.` },
+        { q:'¿Qué provoca el esófago hipocontráctil?', a:`Contracciones peristálticas <strong>demasiado débiles, fragmentadas o ausentes</strong> que no propulsan el bolo hacia el estómago. Se asocia a ERGE y a enfermedades neuromusculares. Aquí el <strong>EEI sí mantiene su relajación normal</strong>: el problema es la fuerza del esófago, no el esfínter.` },
+        { q:'¿Cuándo se diagnostica motilidad esofágica ineficaz (Clasificación de Chicago v4.0)?', a:`Se requiere que más del <strong>70% de las degluciones sean ineficaces</strong> o al menos el <strong>50% sean degluciones fallidas</strong>.` },
+        { q:'¿Qué atención nutricional se recomienda en los trastornos hipocontráctiles?', a:`Comer <strong>lentamente, masticando muy bien</strong>, en comidas pequeñas, hidratándose y adaptando la textura de los alimentos para facilitar el paso del bolo ante la debilidad peristáltica.` },
+      ]},
+      { id:'erge', label:'Enfermedad por Reflujo Gastroesofágico (ERGE)', items:[
+        { q:'¿Cuál es la etiología de la ERGE?', a:`Se origina por la <strong>pérdida de los mecanismos de barrera antirreflujo</strong>, lo que permite el contacto prolongado del ácido con la mucosa:
+        <ul>
+          <li>Hipotensión del esfínter esofágico inferior (EEI).</li>
+          <li>Relajaciones transitorias inapropiadas del EEI.</li>
+          <li>Hernia hiatal.</li>
+          <li>Aumento de la presión intraabdominal.</li>
+        </ul>` },
+        { q:'¿Cómo se diagnostica la ERGE?', a:`Además de la <strong>endoscopia</strong> (donde se observan esofagitis erosiva, úlceras o estenosis péptica), se usan la <strong>pH-metría de 24 horas</strong> y la <strong>manometría esofágica</strong>.` },
+        { q:'¿Cuáles son los síntomas extraesofágicos de la ERGE?', a:`Además de pirosis y regurgitación, puede provocar síntomas respiratorios como <strong>tos crónica o laringitis</strong> por el contacto del ácido con la vía aérea.` },
+      ]},
+      { id:'gastritis', label:'Gastritis', items:[
+        { q:'¿Qué es la gastritis y cómo se clasifica según su causa?', a:`Es la <strong>inflamación del revestimiento de la capa mucosa</strong> del estómago:
+        <ul>
+          <li><strong>Aguda:</strong> por AINEs, alcohol, café y dieta rica en irritantes.</li>
+          <li><strong>Crónica:</strong> frecuentemente por <em>Helicobacter pylori</em> (a través de alimentos contaminados o saliva).</li>
+          <li><strong>Autoinmune:</strong> descontrol del sistema inmune (idiopática).</li>
+        </ul>
+        La aguda y la crónica comparten síntomas: dolor en epigastrio, pirosis, inapetencia, náuseas y vómito.` },
+        { q:'¿Cuál es la patogénesis de la gastritis autoinmune y su relación con la anemia?', a:`El sistema inmune ataca las <strong>células parietales</strong> y al <strong>factor intrínseco</strong> del estómago. Sin factor intrínseco no se absorbe la <strong>vitamina B12</strong> en el intestino delgado, lo que provoca <strong>anemia perniciosa</strong> (mareo, palidez, fatiga) más que los dolores de estómago clásicos.` },
+        { q:'¿Cómo se diagnostica y trata la gastritis crónica por H. pylori?', a:`<ul>
+          <li><strong>Diagnóstico:</strong> endoscopia con biopsia gástrica y prueba de aliento.</li>
+          <li><strong>Tratamiento:</strong> antibióticos y dieta libre de irritantes, condimentos, picantes y grasas.</li>
+        </ul>` },
+        { q:'¿Cuál es el tratamiento de la gastritis aguda?', a:`Es el ejemplo clásico de tratamiento causal: <strong>retirar el agente</strong> (medicamentos como AINEs o alcohol) y dar una dieta libre de irritantes.` },
+      ]},
+      { id:'eii', label:'Enfermedad Inflamatoria Intestinal (EII)', items:[
+        { q:'¿Cuáles son las diferencias anatómicas clave entre Enfermedad de Crohn y Colitis Ulcerosa?', a:`<ul>
+          <li><strong>Ubicación:</strong> Crohn afecta cualquier parte (de la boca al ano); la CU solo el colon, comenzando en el recto.</li>
+          <li><strong>Profundidad:</strong> Crohn es <strong>transmural</strong> (todas las capas); la CU se limita a mucosa y submucosa.</li>
+          <li><strong>Patrón:</strong> Crohn es segmentario (en parches con áreas sanas); la CU es continuo.</li>
+        </ul>` },
+        { q:'¿Qué hallazgos endoscópicos son típicos de la Enfermedad de Crohn?', a:`Fístulas, engrosamiento mural, úlceras transmurales, estenosis, granulomas y patrón en <strong>"empedrado"</strong>. Por eso la complicación que la distingue de la CU es la inflamación transmural con fístulas y empedrado, no las lesiones superficiales.` },
+        { q:'¿Cuáles son las cuatro fases evolutivas de la pared intestinal en el Crohn?', a:`<ol>
+          <li>Fase inflamatoria (engrosamiento y úlceras).</li>
+          <li>Fase penetrante (fístulas y abscesos).</li>
+          <li>Fase fibroestenosante (estenosis de la luz).</li>
+          <li>Fase reparativa (pólipos de regeneración).</li>
+        </ol>` },
+        { q:'¿Cuáles son las manifestaciones clínicas y extraintestinales de la Colitis Ulcerosa?', a:`Diarrea frecuente con sangre, moco o pus; dolor en fosa iliaca izquierda, <strong>tenesmo</strong> y síntomas extraintestinales: artritis o artralgias, lesiones cutáneas (eritema nodoso, pioderma gangrenoso), oculares (epiescleritis, uveítis) y alteraciones hepatobiliares. Una mucosa <strong>friable</strong> (que sangra al mínimo roce) es un hallazgo endoscópico típico.` },
+        { q:'¿Cuáles son los factores de riesgo de la Enfermedad de Crohn?', a:`Edad (<strong>25 a 30 años</strong>), origen étnico (mayor en blancos), herencia familiar, uso de AINEs, residencia urbana/industrializada y el <strong>tabaquismo</strong>, que es el factor más controlable.` },
+        { q:'¿Cuándo se indica la cirugía en el Crohn y cuándo aumenta el riesgo de cáncer en la CU?', a:`<ul>
+          <li><strong>Cirugía en Crohn:</strong> cuando falla el tratamiento médico (inmunosupresores y biológicos) o hay complicaciones como perforación, obstrucciones o abscesos.</li>
+          <li><strong>Cáncer colorrectal en CU:</strong> el riesgo aumenta en <strong>pancolitis</strong> y colitis izquierda de larga evolución.</li>
+        </ul>` },
+      ]},
+      { id:'nutricion-eii', label:'Nutrición en la EII', items:[
+        { q:'¿Qué alimentos se deben promover en la EII para reducir la inflamación?', a:`<ul>
+          <li><strong>Almidón resistente:</strong> plátanos verdes, lentejas cocidas y enfriadas.</li>
+          <li><strong>Polifenoles:</strong> bayas, té verde, nueces, manzanas y verduras oscuras.</li>
+          <li><strong>Fibra:</strong> ya no se recomienda restringirla; una fibra variada favorece el microbioma.</li>
+          <li><strong>Omega-3:</strong> pescados grasos y chía.</li>
+          <li><strong>Prebióticos y probióticos.</strong></li>
+        </ul>` },
+        { q:'¿Qué alimentos y nutrientes se deben evitar en la EII?', a:`<ul>
+          <li>Exceso de <strong>Omega-6</strong> (aceite de maíz, soya) — proinflamatorio.</li>
+          <li><strong>Alcohol.</strong></li>
+          <li>Altos consumos de <strong>carne roja</strong> (límite ~114 g/semana por riesgo de recaídas).</li>
+          <li><strong>Aditivos</strong> de ultraprocesados: emulsionantes (polisorbato 80, carboximetilcelulosa), carbohidratos refinados y grasas trans.</li>
+        </ul>` },
+        { q:'¿Por qué combinar proteínas magras con vitamina C en la EII?', a:`Por la <strong>carencia de hierro</strong> común en la EII: las proteínas magras (pavo, pollo, pescado) aportan hierro y la vitamina C (cítricos, tomates) mejora su absorción. Para la colitis ulcerosa, la <strong>colonoscopia con biopsia</strong> es el estándar de oro diagnóstico.` },
+      ]},
+    ],
+    cheats:[
+      {n:'<4.5 s', l:'latencia distal · espasmo esofágico difuso'},
+      {n:'>70%', l:'degluciones ineficaces · motilidad esofágica ineficaz'},
+      {n:'>50%', l:'degluciones fallidas · motilidad ineficaz'},
+      {n:'114 g/sem', l:'carne roja · límite en EII'},
+      {n:'25–30 años', l:'riesgo · Enfermedad de Crohn'},
+    ],
+    keypoints:[
+      'En la <strong>acalasia</strong> el EEI <strong>no se relaja</strong> al tragar; en el espasmo esofágico difuso y en la motilidad ineficaz (hipocontráctil), el EEI <strong>sí se relaja normalmente</strong>.',
+      'La <strong>gastritis autoinmune</strong> destruye el factor intrínseco, impide la absorción de vitamina B12 y causa <strong>anemia perniciosa</strong> (mareo, palidez, fatiga).',
+      'Ya <strong>no se recomienda restringir la fibra</strong> en la EII: una dieta con fibra variada, almidón resistente y polifenoles protege el microbioma.',
+      'El <strong>tabaquismo</strong> es el factor de riesgo más controlable para la Enfermedad de Crohn.',
+      'El Crohn es <strong>transmural</strong> (empedrado, fístulas, estenosis); la colitis ulcerosa afecta <strong>mucosa y submucosa</strong> con patrón continuo desde el recto.',
+    ],
+    questions:[
+      {cat:'Conceptos Básicos de Patología', q:'Característica, condición o hábito que aumenta la probabilidad de desarrollar una enfermedad, aunque no necesariamente sea su causa directa:', opts:['Agente patógeno','Cuadro clínico','Factor de riesgo','Manifestación clínica'], correct:2, exp:'El factor de riesgo es el elemento ambiental, conductual o biológico que favorece la progresión de una enfermedad sin ser la causa obligada.'},
+      {cat:'Conceptos Básicos de Patología', q:'¿Qué concepto define a cualquier microorganismo (bacteria, virus, hongo) capaz de provocar alteraciones en la salud al invadir un ser vivo?', opts:['Factor de riesgo','Agente patógeno','Cuadro clínico','Patogénesis'], correct:1, exp:'El agente patógeno es el organismo o factor biológico responsable de iniciar una enfermedad al afectar el funcionamiento normal.'},
+      {cat:'Conceptos Básicos de Patología', q:'De acuerdo a la definición de patogénesis, ¿qué abarca este estudio?', opts:['Únicamente los síntomas finales','Las características conductuales del paciente','La secuencia de acontecimientos desde el agente causal hasta la aparición de signos y síntomas','Los tratamientos quirúrgicos'], correct:2, exp:'La patogénesis es el conjunto de mecanismos y la secuencia de eventos biológicos que explican cómo una causa original produce el desarrollo de la enfermedad.'},
+      {cat:'Conceptos Básicos de Patología', q:'¿Qué comprende la "Fisiopatología" a diferencia de la "Patología" general?', opts:['Estudia solo las bacterias','Estudia las alteraciones de las funciones normales causadas por una enfermedad','Es el proceso de recetar fármacos','Identifica enfermedades por laboratorio'], correct:1, exp:'La patología estudia las alteraciones estructurales; la fisiopatología se enfoca en las alteraciones funcionales y los mecanismos biológicos por los que progresa la enfermedad.'},
+      {cat:'Acalasia y Espasmos Esofágicos', q:'¿Cuál es la prueba diagnóstica principal (el estándar) para confirmar la acalasia y evaluar el funcionamiento del EEI?', opts:['Endoscopia digestiva alta','Manometría esofágica de alta resolución','Tránsito con bario','pH-metría de 24 horas'], correct:1, exp:'La manometría de alta resolución es la prueba principal que confirma la acalasia al evaluar directamente las presiones y el peristaltismo del esfínter.'},
+      {cat:'Acalasia y Espasmos Esofágicos', q:'En el espasmo esofágico difuso, a diferencia de la acalasia, ¿qué estructura sí logra relajarse normalmente?', opts:['Esfínter esofágico superior','Cuerpo del esófago','Esfínter esofágico inferior (EEI)','Plexo mientérico'], correct:2, exp:'A diferencia de la acalasia donde el EEI no se relaja, en el espasmo esofágico difuso el esfínter funcional (EEI) sí logra relajarse de manera normal.'},
+      {cat:'Acalasia y Espasmos Esofágicos', q:'La acalasia puede tener etiología desconocida, pero, ¿qué enfermedad infecciosa puede producir un cuadro similar por daño a los nervios del esófago?', opts:['Infección por H. pylori','Candidiasis esofágica','Enfermedad de Chagas','Tuberculosis'], correct:2, exp:'La enfermedad de Chagas puede producir un cuadro similar a la acalasia por el daño directo a los nervios que controlan el esófago.'},
+      {cat:'Acalasia y Espasmos Esofágicos', q:'En el tratamiento médico de los espasmos esofágicos, ¿qué tipo de fármacos se utilizan para ayudar a relajar el músculo liso del esófago?', opts:['Antibióticos','Bloqueadores de los canales de calcio y nitratos','Inmunosupresores','Vitamina B12'], correct:1, exp:'Los bloqueadores de canales de calcio (diltiazem, nifedipino) y los nitratos relajan el músculo liso y disminuyen las contracciones anormales.'},
+      {cat:'Motilidad Esofágica Hiper e Hipocontráctil', q:'¿Cuál es el síntoma principal tanto del esófago en cascanueces como del EEI hipertenso, que puede confundirse con un problema cardíaco?', opts:['Pirosis intensa','Tos nocturna','Dolor torácico intenso no cardíaco','Sangrado'], correct:2, exp:'En ambas alteraciones hipertensivas el aumento de presión provoca dolor torácico intenso y opresivo que suele confundirse con origen cardíaco.'},
+      {cat:'Motilidad Esofágica Hiper e Hipocontráctil', q:'¿Qué medida de atención nutricional es clave para un paciente con trastornos hipocontráctiles del esófago?', opts:['Comer rápido para forzar el paso del bolo','Tomar suplementos de potasio','Comer lentamente, masticar muy bien y adaptar la textura de los alimentos','Consumir dieta rica en grasas'], correct:2, exp:'Ante la debilidad peristáltica se facilita el paso del bolo comiendo lento, con comidas pequeñas, hidratación y texturas adaptadas.'},
+      {cat:'Motilidad Esofágica Hiper e Hipocontráctil', q:'¿Cuál es la etiología del Esófago en Cascanueces?', opts:['Hernia hiatal','Neuropatía entérica leve con déficit en la liberación de óxido nítrico','Daño transmural por isquemia','Infección viral'], correct:1, exp:'El esófago en cascanueces se debe a una neuropatía entérica leve con déficit de NO, que genera una respuesta de gran amplitud en el músculo liso.'},
+      {cat:'Enfermedad por Reflujo Gastroesofágico (ERGE)', q:'En la ERGE, ¿cuáles son los síntomas extraesofágicos clásicos que puede presentar el paciente?', opts:['Pirosis y regurgitación','Disfagia a líquidos','Tos crónica o laringitis','Diarrea y dolor cólico'], correct:2, exp:'Además de los síntomas esofágicos, la ERGE puede provocar síntomas de vías respiratorias como tos crónica y laringitis.'},
+      {cat:'Enfermedad por Reflujo Gastroesofágico (ERGE)', q:'En un paciente con sospecha de ERGE, se observan lesiones en el esófago. ¿Cuáles son los signos típicos encontrados por endoscopia?', opts:['Úlceras transmurales y granulomas','Esofagitis erosiva, úlceras o estenosis péptica','Empedrado mucoso','Várices esofágicas'], correct:1, exp:'Los signos endoscópicos de la ERGE incluyen esofagitis erosiva, úlceras y estenosis péptica por el contacto prolongado con el ácido.'},
+      {cat:'Gastritis', q:'En un paciente con gastritis crónica por Helicobacter pylori, ¿cuál de los siguientes elementos de diagnóstico y tratamiento es el correcto?', opts:['Vitamina B12 y endoscopia sin biopsia','Retirar ingesta de AINEs y dar antiácidos','Endoscopia con biopsia, prueba de aliento y antibióticos','Cirugía gástrica y dieta líquida'], correct:2, exp:'El diagnóstico se apoya en endoscopia con biopsia y prueba de aliento, y el tratamiento principal son los antibióticos.'},
+      {cat:'Gastritis', q:'¿Qué tipo de gastritis tiene como factor de riesgo característico estar asociado frecuentemente al género femenino y requerir tratamiento con vitamina B12?', opts:['Gastritis Aguda','Gastritis Crónica por H. pylori','Gastritis Autoinmune','Enfermedad de Crohn'], correct:2, exp:'La gastritis autoinmune tiene mayor riesgo en mujeres y exige suplementación de vitamina B12 al perderse el factor intrínseco.'},
+      {cat:'Gastritis', q:'¿Cuál es un factor de riesgo específico para desarrollar Gastritis Crónica por Helicobacter pylori?', opts:['Consumo excesivo de AINEs','Ser de género femenino','Ingesta de alimentos contaminados','Exposición al sol'], correct:2, exp:'La bacteria se adquiere principalmente por la ingesta de alimentos contaminados; también está presente en la saliva.'},
+      {cat:'Gastritis', q:'¿En cuál de las siguientes patologías estomacales el tratamiento principal es retirar el agente causal (como medicamentos o alcohol) y dar una dieta libre de irritantes?', opts:['Gastritis Aguda','Cáncer gástrico','Gastritis Crónica','Hernia Hiatal'], correct:0, exp:'Para la gastritis aguda ocasionada por AINEs o alcohol, el tratamiento primario es retirar la causa y ajustar la dieta.'},
+      {cat:'Enfermedad Inflamatoria Intestinal (EII)', q:'Manifestación clínica o lesión característica de la Colitis Ulcerosa, que la distingue estructuralmente de la Enfermedad de Crohn:', opts:['Fístulas y abscesos profundos','Úlceras superficiales, pérdida de patrón vascular y pseudopolipos','Afectación segmentaria en "parches"','Granulomas y patrón de "empedrado"'], correct:1, exp:'La CU se limita a lesiones superficiales de la mucosa (úlceras superficiales, friabilidad difusa y pseudopolipos), mientras que fístulas y empedrado son del Crohn.'},
+      {cat:'Enfermedad Inflamatoria Intestinal (EII)', q:'¿Qué complicación endoscópica y anatómica es característica de la Enfermedad de Crohn y no de la Colitis Ulcerosa?', opts:['Úlceras superficiales y pseudopolipos','Sangrado difuso de la mucosa','Úlceras transmurales, patrón de empedrado y fístulas','Pérdida del patrón vascular'], correct:2, exp:'Al ser transmural, el Crohn produce úlceras profundas, estenosis, "empedrado" y fístulas, a diferencia de la afección mucosa de la CU.'},
+      {cat:'Enfermedad Inflamatoria Intestinal (EII)', q:'¿Cuál es el "estándar de oro" para diagnosticar la Colitis Ulcerosa?', opts:['Examen de sangre y heces','Radiografía con bario','Colonoscopia con biopsia','Prueba de aliento'], correct:2, exp:'La colonoscopia con biopsia es la prueba definitiva para observar la afectación continua desde el recto y confirmar los hallazgos histológicos.'},
+      {cat:'Enfermedad Inflamatoria Intestinal (EII)', q:'El riesgo de padecer cáncer colorrectal aumenta en la EII. ¿En qué situación es más riesgoso para un paciente con Colitis Ulcerosa?', opts:['En pacientes con proctitis leve','En casos de pancolitis y colitis izquierda de larga evolución','Solo si hay úlceras aftoides','Si presentan patrón de empedrado'], correct:1, exp:'El riesgo aumenta especialmente en la afectación extensa (pancolitis) o colitis izquierda de larga evolución.'},
+      {cat:'Enfermedad Inflamatoria Intestinal (EII)', q:'En la Enfermedad de Crohn, si el tratamiento médico con inmunosupresores y biológicos falla, ¿en qué casos se indica la cirugía?', opts:['Para prevenir dolor de cabeza','En todos los pacientes como primer paso','En caso de complicaciones como perforación, obstrucciones o abscesos','Para revertir la fase reparativa'], correct:2, exp:'La cirugía en Crohn se reserva para cuando falla el tratamiento médico o hay complicaciones graves como perforaciones, obstrucciones o abscesos.'},
+      {cat:'Nutrición en la EII', q:'¿Cuál es el límite máximo recomendado de ingesta de carne roja a la semana para pacientes con EII, debido al riesgo de recaídas?', opts:['500 gramos/semana','114 gramos/semana','300 gramos/semana','No hay límite si es carne magra'], correct:1, exp:'El alto consumo de carne roja se asocia a recaídas en EII, por lo que su ingesta debe limitarse a 114 gramos/semana.'},
+      {cat:'Nutrición en la EII', q:'De los siguientes tipos de grasas, ¿cuál está asociada a un aumento de la inflamación intestinal en la EII y por tanto conviene limitar?', opts:['Ácidos grasos monoinsaturados (aceite de oliva)','Poliinsaturados Omega-3 (salmón)','Poliinsaturados Omega-6 (aceite de maíz, soya)','Grasas de los frutos secos'], correct:2, exp:'El exceso de Omega-6 (aceite de maíz, soya) aumenta la inflamación; el Omega-3 y las monoinsaturadas son antiinflamatorias.'},
+      {cat:'Nutrición en la EII', q:'En relación a la fibra alimentaria en pacientes con EII, ¿cuál es la recomendación nutricional actual?', opts:['Restringir toda la fibra permanentemente','Ya no se recomienda restringir la fibra; se debe consumir fibra variada','Consumir únicamente fibra insoluble','Suplementar solo en caso de cirugía'], correct:1, exp:'Actualmente ya no se recomienda restringir la fibra; una dieta rica en fuentes variadas es crucial para el microbioma y la mucosa.'},
+    ],
+  },
 ];
