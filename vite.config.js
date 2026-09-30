@@ -1,6 +1,8 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
+  // Rutas relativas: el build funciona en GitHub Pages / subcarpetas
+  base: './',
   server: {
     // Escucha en todas las interfaces, no solo en localhost.
     // Esto suele arreglar el error de WebSocket cuando el proyecto

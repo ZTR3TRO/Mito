@@ -1,80 +1,85 @@
 import { findItem } from './wardrobe.js';
 import { getEquipped } from './store.js';
+import { DEFS, PRE, GBODY, SEGS, PET_BASE, PETS } from './mitoArt.js';
+import { setAura } from './mitoAura.js';
 
-const AURA_CLASSES = ['aura-mint', 'aura-gold', 'aura-rainbow'];
+const NS = 'http://www.w3.org/2000/svg';
+const AURA_HTML = '<div class="a-glow"></div><div class="a-neb"></div><div class="a-gal"></div><div class="a-rays"></div><div class="a-ring"></div><div class="a-parts"></div>';
+let uid = 0;
+
+// defs compartidos (gradientes, patrones, clipPaths) una sola vez
+if(!document.getElementById('mitoDefs')){
+  document.body.insertAdjacentHTML('afterbegin',
+    `<svg id="mitoDefs" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>${DEFS}</defs></svg>`);
+}
+
+export function mascotMarkup(keys, id){
+  const inner = SEGS.filter(([k])=>!k || keys.includes(k)).map(s=>s[1]).join('');
+  const g = GBODY.replace('id="gBody"', `id="gBody-${id}"`);
+  return (`<defs>${g}</defs>${PRE}<g class="rig">${inner}</g>`).split('url(#gBody)').join(`url(#gBody-${id})`);
+}
+const petMarkup = k => PET_BASE + (PETS[k] || '');
+
+// miniatura para la tienda: Mito con esa sola pieza, o la mascota sola
+export function itemThumb(catId, item){
+  const eq = getEquipped(), c = findItem('color', eq.color);
+  const st = c && c.defaults ? `--body:${c.defaults.body};--stroke:${c.defaults.stroke};--hi:${c.defaults.highlight}` : '';
+  if(!item.k) return '<svg class="th" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="opacity:.5"><circle cx="12" cy="12" r="8"/><path d="M6.5 17.5l11-11"/></svg>';
+  if(catId === 'pet') return `<svg class="th" viewBox="0 0 80 80">${petMarkup(item.k)}</svg>`;
+  return `<svg class="th" viewBox="0 0 150 150" style="${st}">${mascotMarkup([item.k], 'th' + (++uid))}</svg>`;
+}
 
 function applyTo(el, eq){
+  const id = el.dataset.uid || (el.dataset.uid = ++uid);
   const color = findItem('color', eq.color);
-  if(color && color.defaults){
-    el.style.setProperty('--mascot-body', color.defaults.body);
-    el.style.setProperty('--mascot-stroke', color.defaults.stroke);
-    el.style.setProperty('--mascot-hi', color.defaults.highlight);
+  const items = ['ropa', 'accesorio', 'sombrero'].map(c => findItem(c, eq[c]));
+  const keys = items.map(i => i && i.k).filter(Boolean);
+
+  const svg = el.querySelector(':scope > svg.mito');
+  if(svg){
+    if(color && color.defaults){
+      svg.style.setProperty('--body', color.defaults.body);
+      svg.style.setProperty('--stroke', color.defaults.stroke);
+      svg.style.setProperty('--hi', color.defaults.highlight);
+    }
+    const sig = keys.join();
+    if(svg.dataset.sig !== sig){
+      svg.dataset.sig = sig;
+      svg.innerHTML = mascotMarkup(keys, id);
+      svg.classList.toggle('has-crown', keys.some(k => k === 'crown' || k === 'grad'));
+      svg.classList.toggle('has-tall', keys.some(k => k === 'chef' || k === 'wizard'));
+    }
   }
 
-  const ropa = findItem('ropa', eq.ropa);
-  const accesorio = findItem('accesorio', eq.accesorio);
-  const aura = findItem('aura', eq.aura);
-  const pet = findItem('pet', eq.pet);
-
-  // prendas y accesorios con overlay SVG (ropa va primero para que, si ambas
-  // piden ir "atrás", la capa quede más al fondo que la mochila, etc.)
-  el.querySelectorAll('.wardrobe-use').forEach(u=>u.remove());
-  const svg = el.querySelector('svg');
-  [ropa, accesorio].forEach(piece=>{
-    if(!piece || !piece.overlay || !svg) return;
-    const u = document.createElementNS('http://www.w3.org/2000/svg', 'use');
-    u.setAttribute('href', '#' + piece.overlay);
-    u.classList.add('wardrobe-use');
-    if(piece.overlayZ === 'back'){
-      svg.insertBefore(u, svg.firstElementChild);
-    } else {
-      svg.appendChild(u);
-    }
-  });
+  // mascota compañera (SVG)
+  const pk = (findItem('pet', eq.pet) || {}).k || '';
+  let pet = el.querySelector(':scope > svg.pet');
+  if(!pk){ if(pet) pet.remove(); }
+  else if(!pet || pet.dataset.k !== pk){
+    if(pet) pet.remove();
+    pet = document.createElementNS(NS, 'svg');
+    pet.setAttribute('class', 'pet'); pet.setAttribute('viewBox', '0 0 80 80'); pet.dataset.k = pk;
+    pet.innerHTML = petMarkup(pk);
+    el.appendChild(pet);
+  }
 
   // aura
-  AURA_CLASSES.forEach(c=>el.classList.remove(c));
-  if(aura && aura.auraClass) el.classList.add(aura.auraClass);
-
-  // partículas del aura
-  const RAINBOW = ['#ff5da2', '#ffc93c', '#16c98d', '#5db2ff', '#b98af6'];
-  el.querySelectorAll('.aura-particles').forEach(p=>p.remove());
-  if(aura && (aura.particleColor || aura.auraClass)){
-    const box = document.createElement('div');
-    box.className = 'aura-particles';
-    for(let i=0;i<12;i++){
-      const d = document.createElement('i');
-      d.style.left = (6 + Math.random()*88) + '%';
-      d.style.setProperty('--dur', (2.2 + Math.random()*2) + 's');
-      d.style.setProperty('--delay', (Math.random()*2.5) + 's');
-      d.style.setProperty('--drift', ((Math.random()*40) - 20) + 'px');
-      d.style.background = aura.particleColor === 'rainbow'
-        ? RAINBOW[Math.floor(Math.random()*RAINBOW.length)]
-        : aura.particleColor;
-      if(d.style.background) d.style.color = d.style.background;
-      box.appendChild(d);
-    }
-    el.appendChild(box);
-  }
-
-  // mascota compañera
-  el.querySelectorAll('.mascot-pet').forEach(p=>p.remove());
-  if(pet && pet.icon && pet.id !== 'p-none'){
-    const p = document.createElement('div');
-    p.className = 'mascot-pet';
-    p.textContent = pet.icon;
-    el.appendChild(p);
+  const ak = (findItem('aura', eq.aura) || {}).k || '';
+  let box = el.querySelector(':scope > .aura');
+  if(!ak){ if(box) box.remove(); }
+  else {
+    if(!box){ box = document.createElement('div'); box.className = 'aura on'; box.innerHTML = AURA_HTML; el.prepend(box); }
+    if(box.dataset.key !== ak){ box.dataset.key = ak; setAura(box, ak); }
   }
 }
 
 export function applyAvatar(){
   const eq = getEquipped();
-  document.querySelectorAll('.mascot').forEach(el=>applyTo(el, eq));
+  document.querySelectorAll('.mascot').forEach(el => applyTo(el, eq));
 }
 
 export function previewAvatar(cat, itemId){
   const el = document.getElementById('mascotPreview');
   if(!el) return;
-  const eq = getEquipped();
-  applyTo(el, { ...eq, [cat]: itemId });
+  applyTo(el, { ...getEquipped(), [cat]: itemId });
 }

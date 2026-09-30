@@ -5,7 +5,7 @@ import {
   recordQuizResult, recordAnswer, getMistakes, getHistory, getStreak, clearMistakes,
   getTheme, setTheme, getCourse, setCourse, exportSave, importSave, resetAll,
 } from './store.js';
-import { applyAvatar, previewAvatar } from './avatar.js';
+import { applyAvatar, previewAvatar, itemThumb } from './avatar.js';
 
 /* =================== MATERIA ACTIVA =================== */
 let activeCourse = COURSES.find(c=>c.id === getCourse()) || COURSES[0];
@@ -17,6 +17,7 @@ function switchCourse(id){
   renderCourseTabs();
   renderApuntes();
   renderClaves();
+  renderHome();
   renderQuizCounts();
   renderReviewCard();
   renderStreak();
@@ -104,8 +105,19 @@ const sideBubbleMsgs = [
   '¡Vamos, Zare! Una racha más en el quiz 🔥',
   'Junta chispas en el quiz y ven a cambiarme de look 🎨',
 ];
-const bubbleTimer = setInterval(()=>{
-  document.getElementById('sideBubble').textContent = sideBubbleMsgs[Math.floor(Math.random()*sideBubbleMsgs.length)];
+const sideBubbleEl = document.getElementById('sideBubble');
+let bubbleLastChange = Date.now();
+let bubbleOwnWrite = false;
+// registra cuándo otro código cambia el mensaje, para no pisarlo enseguida
+new MutationObserver(()=>{
+  if(bubbleOwnWrite){ bubbleOwnWrite = false; return; }
+  bubbleLastChange = Date.now();
+}).observe(sideBubbleEl, { childList:true, characterData:true, subtree:true });
+setInterval(()=>{
+  if(Date.now() - bubbleLastChange < 9000) return;
+  bubbleOwnWrite = true;
+  sideBubbleEl.textContent = sideBubbleMsgs[Math.floor(Math.random()*sideBubbleMsgs.length)];
+  bubbleLastChange = Date.now();
 }, 5000);
 
 /* =================== CONFETTI =================== */
@@ -215,6 +227,23 @@ function renderClaves(){
 }
 
 /* =================== RENDER: contadores =================== */
+function renderHome(){
+  const notes = activeCourse.notes || [];
+  const nItems = notes.reduce((t, n)=>t + n.items.length, 0);
+  const nKeys = (activeCourse.keypoints || []).length;
+  const a = document.getElementById('homeNotesText');
+  const k = document.getElementById('homeKeysText');
+  if(a) a.textContent = notes.length
+    ? `${notes.length} temas con ${nItems} notas expandibles: ${notes.map(n=>n.label.replace(/<[^>]*>/g,'')).join(', ')}.`
+    : 'Aún no hay apuntes para esta materia.';
+  if(k) k.textContent = nKeys
+    ? `${nKeys} ideas que casi seguro te preguntan en el examen, condensadas en tarjetas de repaso relámpago.`
+    : 'Aún no hay puntos clave para esta materia.';
+  const hc = document.getElementById('heroCourse');
+  if(hc) hc.textContent = activeCourse.id === 'atp' ? 'el ATP' : activeCourse.label;
+  document.querySelectorAll('.atp-only').forEach(el=>{ el.style.display = activeCourse.id === 'atp' ? '' : 'none'; });
+}
+
 function renderQuizCounts(){
   const n = activeCourse.questions.length;
   const all = document.getElementById('modeAllN');
@@ -395,7 +424,13 @@ function renderLives(){
 
 function renderQuestion(){
   answered = false;
-  const item = quizQuestions[qIndex];
+  const base = quizQuestions[qIndex];
+  // mezcla las opciones para que la respuesta correcta no siempre caiga en B/C
+  // (no se mezclan las preguntas con opciones tipo "A y B" que dependen de su posición)
+  const positional = base.opts.some(o=>/^\s*[A-D]\s*(y|e|,)\s*[A-D]\s*$|anteriores/i.test(o));
+  const order = positional ? base.opts.map((_, i)=>i) : shuffle(base.opts.map((_, i)=>i));
+  const item = { ...base, opts: order.map(i=>base.opts[i]), correct: order.indexOf(base.correct) };
+  quizQuestions[qIndex] = item;
   document.getElementById('qCat').textContent = item.cat.toUpperCase();
   document.getElementById('qText').textContent = item.q;
   document.getElementById('qIndexLabel').textContent = qIndex + 1;
@@ -619,6 +654,7 @@ function updatePreviewLabels(){
   set('pvColor','color');
   set('pvRopa','ropa');
   set('pvAccesorio','accesorio');
+  set('pvSombrero','sombrero');
   set('pvAura','aura');
   set('pvPet','pet');
 }
@@ -644,12 +680,13 @@ function renderShop(){
       card.className = 'shop-item' + (equipped ? ' equipped' : '');
       const visual = item.swatch
         ? `<span class="swatch" style="background:${item.swatch}"></span>`
-        : item.icon || '';
+        : itemThumb(cat.id, item);
       card.innerHTML = `
         <div class="si-visual">${visual}</div>
         <div class="si-name">${item.name}</div>`;
 
-      const mini = document.createElement('span');
+      const mini = document.createElement('button');
+      mini.type = 'button';
       mini.className = 'btn-mini' + (owned && !equipped ? ' equip-only' : '');
       if(equipped){
         mini.textContent = 'Equipado';
@@ -757,6 +794,15 @@ document.addEventListener('click', (e)=>{
 });
 
 function refreshAfterState(){
+  activeCourse = COURSES.find(c=>c.id === getCourse()) || COURSES[0];
+  renderCourseTabs();
+  renderApuntes();
+  renderClaves();
+  renderHome();
+  renderQuizCounts();
+  document.getElementById('quizPlay').style.display = 'none';
+  resetQuiz();
+  applyAvatar();
   applyTheme(getTheme());
   renderShop();
   updateBalance();
@@ -876,6 +922,7 @@ function renderProgress(){
 renderCourseTabs();
 renderApuntes();
 renderClaves();
+renderHome();
 renderQuizCounts();
 applyAvatar();
 renderShop();
@@ -885,3 +932,9 @@ renderStreak();
 renderSidebarStats();
 renderReviewCard();
 renderProgress();
+/* =================== SERVICE WORKER (solo producción) =================== */
+if(import.meta.env.PROD && 'serviceWorker' in navigator && location.protocol !== 'file:'){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register(import.meta.env.BASE_URL + 'sw.js').catch(()=>{});
+  });
+}

@@ -1,3 +1,15 @@
+import { WARDROBE, categoryOf } from './wardrobe.js';
+
+// Reubica prendas guardadas en versiones anteriores (p. ej. la corona ahora es un sombrero)
+function fixEquipped(eq){
+  const out = {};
+  WARDROBE.forEach(c=>{ out[c.id] = c.items[0].id; });
+  Object.values(eq || {}).forEach(id=>{
+    const cat = categoryOf(id);
+    if(cat && id !== WARDROBE.find(c=>c.id===cat).items[0].id) out[cat] = id;
+  });
+  return out;
+}
 const KEY = 'chispa-atp-v4';
 const PASSING_BONUS = 50;
 const HISTORY_LIMIT = 60;
@@ -7,7 +19,7 @@ function defaultState(){
   return {
     chispas: 0,
     owned: {},
-    equipped: { color:'c-mint', ropa:'r-none', accesorio:'ac-none', aura:'a-none', pet:'p-none' },
+    equipped: { color:'c-mint', ropa:'r-none', accesorio:'ac-none', sombrero:'s-none', aura:'a-none', pet:'p-none' },
     history: [],
     mistakes: {},
     streak: 0,
@@ -26,7 +38,7 @@ function load(){
         ...s,
         history: Array.isArray(s.history) ? s.history : [],
         mistakes: s.mistakes && typeof s.mistakes === 'object' ? s.mistakes : {},
-        equipped: { ...defaultState().equipped, ...s.equipped },
+        equipped: fixEquipped(s.equipped),
       };
     }
   }catch(e){ /* localStorage no disponible */ }
@@ -114,7 +126,7 @@ export function recordQuizResult({score, right, total, pct, cats, courseId}){
 
   if(state.lastDay === today){
     // misma racha del día: no cambia
-  } else if(dayBefore(state.lastDay) === today){
+  } else if(state.lastDay && dayBefore(today) === state.lastDay){
     state.streak++;
   } else {
     state.streak = 1;
@@ -201,7 +213,7 @@ export function importSave(json){
     ...s,
     history: Array.isArray(s.history) ? s.history : [],
     mistakes: s.mistakes && typeof s.mistakes === 'object' ? s.mistakes : {},
-    equipped: { ...defaultState().equipped, ...s.equipped },
+    equipped: fixEquipped(s.equipped),
   };
   if(typeof s.chispas !== 'number') throw new Error('Progreso inválido');
   Object.assign(state, merged);

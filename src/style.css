@@ -377,26 +377,7 @@ main{ padding:38px 46px 90px; max-width:1000px; }
 .mascot.small{ width:64px; height:64px; }
 @keyframes float{ 0%,100%{ transform:translateY(0) rotate(-1deg);} 50%{ transform:translateY(-9px) rotate(1deg);} }
 .mascot svg{ width:100%; height:100%; overflow:visible; }
-.mascot.state-happy{ animation: happyBounce .5s cubic-bezier(.3,1.8,.4,1); }
-.mascot.state-sad{ animation: sadWobble .5s ease; }
-.mascot.state-excited{ animation: excitedSpin .7s cubic-bezier(.3,1.6,.4,1); }
-@keyframes happyBounce{ 0%{transform:translateY(0) scale(1);} 30%{transform:translateY(-22px) scale(1.08);} 55%{transform:translateY(0) scale(0.98);} 100%{transform:translateY(0) scale(1);} }
-@keyframes sadWobble{ 0%,100%{transform:translateX(0) rotate(0);} 25%{transform:translateX(-5px) rotate(-4deg);} 75%{transform:translateX(5px) rotate(4deg);} }
-@keyframes excitedSpin{ 0%{transform:rotate(0) scale(1);} 50%{transform:rotate(8deg) scale(1.15);} 100%{transform:rotate(0) scale(1);} }
 
-.eyes-normal, .eyes-happy, .eyes-sad, .eyes-excited{ display:none; }
-.mascot.face-normal .eyes-normal{ display:block; }
-.mascot.face-happy .eyes-happy{ display:block; }
-.mascot.face-sad .eyes-sad{ display:block; }
-.mascot.face-excited .eyes-excited{ display:block; }
-
-.mouth-normal, .mouth-happy, .mouth-sad, .mouth-excited{ display:none; }
-.mascot.face-normal .mouth-normal{ display:block; }
-.mascot.face-happy .mouth-happy{ display:block; }
-.mascot.face-sad .mouth-sad{ display:block; }
-.mascot.face-excited .mouth-excited{ display:block; }
-
-.cheek{ opacity:0.55; }
 
 /* speech bubble on hero */
 .speech{
@@ -590,68 +571,10 @@ main{ padding:38px 46px 90px; max-width:1000px; }
   background:linear-gradient(135deg,var(--pink),var(--lilac)); color:#fff;
   transition:transform .1s ease, filter .15s ease;
 }
+.btn-mini{ font-family:inherit; border:0; }
 .btn-mini:hover{ transform:translateY(-1px); filter:brightness(1.05); }
 .btn-mini.equip-only{ background:var(--mint); color:#04352a; }
 .btn-mini[disabled]{ opacity:.5; cursor:not-allowed; transform:none; background:var(--ink-faint); filter:none; }
-
-/* mascota compañera + auras */
-.mascot{ --rise:120px; }
-.mascot.small{ --rise:55px; }
-.mascot svg{ position:relative; z-index:1; }
-
-.mascot-pet{
-  position:absolute; right:-16px; bottom:-6px; font-size:38px; z-index:3;
-  animation: float 2.8s ease-in-out infinite;
-}
-.mascot.small .mascot-pet{ font-size:19px; right:-9px; bottom:-3px; }
-
-.mascot.aura-mint::before, .mascot.aura-gold::before, .mascot.aura-rainbow::before{
-  content:''; position:absolute; inset:-22px; z-index:0; border-radius:50%;
-  pointer-events:none;
-  animation: auraGlow 2.4s ease-in-out infinite;
-}
-.mascot.aura-mint::before{
-  background:radial-gradient(circle, rgba(22,201,141,.95) 0%, rgba(22,201,141,.45) 38%, transparent 72%);
-}
-.mascot.aura-gold::before{
-  background:radial-gradient(circle, rgba(255,201,60,.95) 0%, rgba(255,201,60,.45) 38%, transparent 72%);
-}
-.mascot.aura-rainbow::before{
-  background:conic-gradient(#ff5da2, #ffc93c, #16c98d, #5db2ff, #b98af6, #ff5da2);
-  filter:blur(14px); opacity:.8;
-  animation: auraGlow 2.4s ease-in-out infinite, rainbowSpin 4.5s linear infinite;
-}
-.mascot.aura-mint svg{
-  filter:drop-shadow(0 0 10px rgba(37,222,160,.95)) drop-shadow(0 0 26px rgba(22,201,141,.75));
-}
-.mascot.aura-gold svg{
-  filter:drop-shadow(0 0 10px rgba(255,220,90,.95)) drop-shadow(0 0 26px rgba(255,201,60,.8));
-}
-.mascot.aura-rainbow svg{
-  filter:drop-shadow(0 0 9px rgba(255,93,162,.9)) drop-shadow(0 0 18px rgba(185,138,246,.85)) drop-shadow(0 0 28px rgba(22,201,141,.8));
-}
-@keyframes auraGlow{
-  0%,100%{ opacity:.68; transform:scale(.98); }
-  50%{ opacity:1; transform:scale(1.18); }
-}
-@keyframes rainbowSpin{
-  from{ filter:blur(14px) hue-rotate(0deg); }
-  to{ filter:blur(14px) hue-rotate(360deg); }
-}
-
-.aura-particles{ position:absolute; inset:-18px -26px; pointer-events:none; z-index:2; }
-.aura-particles i{
-  position:absolute; bottom:2%; width:7px; height:7px; border-radius:50%;
-  opacity:0;
-  box-shadow:0 0 8px currentColor;
-  animation: sparkRise var(--dur,3s) linear var(--delay,0s) infinite;
-}
-.mascot.small .aura-particles i{ width:3.5px; height:3.5px; }
-@keyframes sparkRise{
-  0%{ transform:translate(0,0) scale(.5); opacity:0; }
-  20%{ opacity:1; }
-  100%{ transform:translate(var(--drift,10px), calc(-1 * var(--rise,120px))) scale(1.15); opacity:0; }
-}
 
 /* dev / prueba */
 .dev-row{ margin-top:26px; text-align:center; }
@@ -727,3 +650,167 @@ main{ padding:38px 46px 90px; max-width:1000px; }
 }
 .data-row-label{ font-size:12.5px; color:var(--ink-faint); font-weight:700; margin-bottom:12px; }
 .data-row-btns{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+
+/* ================= MITO (arte nuevo) ================= */
+/* ===== Mito ===== */
+.rig{transform-origin:75px 128px;animation:breathe 3.6s ease-in-out infinite}
+@keyframes breathe{0%,100%{transform:scale(1,1)}50%{transform:scale(1.012,.985)}}
+.ant{animation:sway 3s ease-in-out infinite}
+.ant-l{animation-delay:-.7s}.ant-r{animation-delay:-1.5s}
+@keyframes sway{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(5deg)}}
+.blink{transform-origin:75px 82px;animation:blink 4.6s infinite}
+@keyframes blink{0%,93%,100%{transform:scaleY(1)}96%{transform:scaleY(.08)}}
+.f{display:none}
+.mascot.face-normal .f-normal,.mascot.face-happy .f-happy,.mascot.face-sad .f-sad,.mascot.face-excited .f-excited{display:inline}
+svg.has-crown .ant-c{translate:-3px -7px}
+svg.has-crown .ant-l{translate:-8px 2px}
+svg.has-crown .ant-r{translate:8px 2px}
+.tear{animation:tear 1.6s ease-in infinite}
+@keyframes tear{0%{transform:translateY(0);opacity:0}15%{opacity:1}100%{transform:translateY(16px);opacity:0}}
+.sparkles{opacity:0;transform-origin:75px 60px}
+.mascot.state-happy svg{animation:jump .8s cubic-bezier(.3,.7,.4,1)}
+@keyframes jump{0%{transform:scale(1,1)}14%{transform:scale(1.1,.86)}40%{transform:translateY(-30px) scale(.93,1.12)}66%{transform:translateY(0) scale(1.1,.88)}82%{transform:scale(.97,1.04)}100%{transform:scale(1,1)}}
+.mascot.state-sad svg{animation:wobble 1.1s ease}
+@keyframes wobble{0%{transform:scale(1)}15%{transform:scale(1.05,.9)}35%{transform:translateX(-5px) rotate(-3deg) scale(1.03,.94)}55%{transform:translateX(5px) rotate(3deg) scale(1.03,.94)}75%{transform:translateX(-2px) scale(1.02,.96)}100%{transform:scale(1)}}
+.mascot.state-excited svg{animation:spin 1s cubic-bezier(.3,1.4,.4,1)}
+@keyframes spin{0%{transform:rotate(0) scale(1)}25%{transform:translateY(-20px) scale(1.1)}70%{transform:translateY(-14px) rotate(360deg) scale(1.16)}100%{transform:rotate(360deg) scale(1)}}
+.mascot.state-happy svg .ant,.mascot.state-excited svg .ant{animation:whip .9s ease}
+@keyframes whip{0%{transform:rotate(0)}25%{transform:rotate(calc(var(--d)*-22deg))}55%{transform:rotate(calc(var(--d)*20deg))}80%{transform:rotate(calc(var(--d)*-8deg))}100%{transform:rotate(0)}}
+.mascot.state-sad svg .ant{animation:droop 1.5s ease}
+@keyframes droop{0%{transform:rotate(0)}25%,75%{transform:rotate(calc(var(--d)*38deg))}100%{transform:rotate(0)}}
+.mascot.state-excited svg .sparkles{animation:sp 1s ease-out}
+@keyframes sp{0%{opacity:0;transform:scale(.4)}30%{opacity:1;transform:scale(1.15)}100%{opacity:0;transform:scale(1)}}
+.mascot .pet{position:absolute;left:-16%;bottom:2%;width:34%;height:auto;overflow:visible;display:block;transform-origin:50% 90%}
+.mascot.state-happy .pet,.mascot.state-excited .pet{animation:phop .7s ease}
+@keyframes phop{0%{transform:none}30%{transform:translateY(-16px) scale(.94,1.1)}60%{transform:translateY(0) scale(1.1,.9)}100%{transform:none}}
+.mascot.state-sad .pet{animation:pshake .7s ease}
+@keyframes pshake{0%,100%{transform:none}25%{transform:translateX(-4px) rotate(-4deg)}75%{transform:translateX(4px) rotate(4deg)}}
+.pe{transform-box:fill-box;transform-origin:50% 50%;animation:blink 4.6s infinite}
+.pbob{transform-origin:40px 72px;animation:pbob 1.8s ease-in-out infinite}
+@keyframes pbob{0%,100%{transform:scale(1,1)}50%{transform:scale(1.03,.96)}}
+.wl{transform-origin:20px 48px;animation:flapL 2.6s infinite}
+.wr{transform-origin:60px 48px;animation:flapR 2.6s infinite}
+@keyframes flapL{0%,78%,100%{transform:rotate(0)}86%{transform:rotate(22deg)}93%{transform:rotate(-4deg)}}
+@keyframes flapR{0%,78%,100%{transform:rotate(0)}86%{transform:rotate(-22deg)}93%{transform:rotate(4deg)}}
+.thead{animation:poke 5.5s ease-in-out infinite}
+@keyframes poke{0%,58%,100%{transform:translateX(0)}66%,80%{transform:translateX(-10px)}88%{transform:translateX(0)}}
+.tfoot{animation:step 1s ease-in-out infinite alternate}
+.tfoot2{animation-delay:-.5s}
+@keyframes step{from{transform:translateY(0)}to{transform:translateY(-2px)}}
+.ftail{transform-origin:52px 66px;animation:wag .9s ease-in-out infinite alternate}
+@keyframes wag{from{transform:rotate(-10deg)}to{transform:rotate(14deg)}}
+.fhead{transform-origin:40px 56px;animation:tilt 5s ease-in-out infinite}
+@keyframes tilt{0%,100%{transform:rotate(0)}30%{transform:rotate(5deg)}60%{transform:rotate(-4deg)}}
+.otail{transform-origin:52px 62px;animation:wag 1.1s ease-in-out infinite alternate}
+.owave{transform-origin:52px 58px;animation:wave .7s ease-in-out infinite alternate}
+@keyframes wave{from{transform:rotate(-8deg)}to{transform:rotate(26deg)}}
+.oflt{animation:flt 2.6s ease-in-out infinite}
+@keyframes flt{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+svg.has-tall .ant-c{display:none}
+svg.has-tall .ant-l{translate:-8px 2px}
+svg.has-tall .ant-r{translate:8px 2px}
+.mascot svg.mito{position:relative;z-index:1}
+.mascot .pet{z-index:2}
+.aura{position:absolute;inset:-24%;z-index:0;pointer-events:none;display:none}
+.aura.on{display:block}
+.aura>div{position:absolute}
+.a-glow{inset:16%;border-radius:50%;background:radial-gradient(circle,var(--ac1),transparent 68%);animation:aglow 3s ease-in-out infinite}
+@keyframes aglow{0%,100%{transform:scale(.93);opacity:.65}50%{transform:scale(1.07);opacity:1}}
+.a-rays{inset:0;border-radius:50%;opacity:0;background:repeating-conic-gradient(rgba(255,214,90,.6) 0 5deg,transparent 5deg 20deg);-webkit-mask:radial-gradient(circle,transparent 30%,#000 36%,transparent 70%);mask:radial-gradient(circle,transparent 30%,#000 36%,transparent 70%);animation:arot 26s linear infinite}
+.a-ring{inset:6%;border-radius:50%;opacity:0;background:conic-gradient(#ff5da2,#ffc93c,#16c98d,#5db2ff,#b98af6,#ff5da2);-webkit-mask:radial-gradient(circle,transparent 66%,#000 67%,#000 71%,transparent 73%);mask:radial-gradient(circle,transparent 66%,#000 67%,#000 71%,transparent 73%);animation:arot 8s linear infinite}
+.a-parts{inset:0}
+@keyframes arot{to{transform:rotate(360deg)}}
+[data-a="mint"]{--ac1:rgba(31,215,154,.5)}
+[data-a="gold"]{--ac1:rgba(255,201,60,.5)}
+[data-a="gold"] .a-rays{opacity:.9}
+[data-a="rainbow"]{--ac1:rgba(255,120,190,.35)}
+[data-a="rainbow"] .a-ring{opacity:1}
+[data-a="cosmic"]{--ac1:rgba(120,90,255,.55)}
+/* ---------- AURA CÓSMICA ---------- */
+.a-neb,.a-gal{opacity:0}
+[data-a="cosmic"] .a-neb,[data-a="cosmic"] .a-gal{opacity:1}
+[data-a="cosmic"] .a-glow{background:radial-gradient(closest-side,rgba(150,115,255,.55),rgba(255,110,200,.18) 55%,transparent)}
+.a-neb{inset:-6%;filter:blur(16px);
+  background:radial-gradient(closest-side at 30% 35%,rgba(124,92,255,.8),transparent),radial-gradient(closest-side at 72% 60%,rgba(255,92,190,.6),transparent),radial-gradient(closest-side at 55% 22%,rgba(80,200,255,.42),transparent),radial-gradient(closest-side at 40% 78%,rgba(150,80,255,.55),transparent);
+  -webkit-mask:radial-gradient(closest-side,#000 60%,transparent);mask:radial-gradient(closest-side,#000 60%,transparent);
+  animation:arot 34s linear infinite}
+.a-neb::after{content:"";position:absolute;inset:8%;
+  background:radial-gradient(closest-side at 65% 30%,rgba(255,120,210,.6),transparent),radial-gradient(closest-side at 28% 66%,rgba(90,160,255,.55),transparent);
+  animation:arot 22s linear infinite reverse}
+.a-gal{inset:-2%;filter:blur(5px);
+  background:conic-gradient(from 20deg,transparent 0,rgba(200,180,255,.5) 10%,transparent 24%,transparent 50%,rgba(255,160,225,.45) 60%,transparent 74%);
+  -webkit-mask:radial-gradient(closest-side,transparent 40%,#000 58%,transparent 96%);mask:radial-gradient(closest-side,transparent 40%,#000 58%,transparent 96%);
+  animation:arot 48s linear infinite reverse}
+.orbit-t{position:absolute;inset:0;transform:rotate(-22deg)}
+.orbit-ring{position:absolute;left:3%;right:3%;top:33%;bottom:33%;border-radius:50%;border:1px solid rgba(190,170,255,.32);box-shadow:0 0 12px rgba(140,110,255,.25),inset 0 0 12px rgba(140,110,255,.18)}
+.pl{position:absolute;display:block;width:11px;height:11px;margin:-5.5px 0 0 -5.5px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff,#9fdcff 42%,#6a6bff);box-shadow:0 0 10px #8fd6ff;animation:plx 5.5s cubic-bezier(.37,0,.63,1) infinite alternate,ply 5.5s cubic-bezier(.37,0,.63,1) -2.75s infinite alternate}
+.pl.b{width:6px;height:6px;margin:-3px 0 0 -3px;background:#ffb3e6;box-shadow:0 0 8px #ff8fd0;animation:plx 5.5s cubic-bezier(.37,0,.63,1) -5.5s infinite alternate,ply 5.5s cubic-bezier(.37,0,.63,1) -8.25s infinite alternate}
+@keyframes plx{from{left:0}to{left:100%}}
+@keyframes ply{from{top:0;scale:.7}to{top:100%;scale:1.3}}
+.a-parts .p-star{left:var(--x);top:var(--y);width:var(--s);height:var(--s);
+  background:radial-gradient(circle,#fff 0 14%,transparent 18%),linear-gradient(90deg,transparent,var(--c) 50%,transparent) center/100% 1.5px no-repeat,linear-gradient(0deg,transparent,var(--c) 50%,transparent) center/1.5px 100% no-repeat;
+  filter:drop-shadow(0 0 3px var(--c));animation:twk var(--dur) var(--del) infinite ease-in-out}
+.a-parts .p-dust{left:var(--x);top:var(--y);width:var(--s);height:var(--s);border-radius:50%;box-shadow:0 0 4px var(--c);animation:dtw var(--dur) var(--del) infinite ease-in-out}
+@keyframes dtw{0%,100%{opacity:.1;transform:scale(.7)}50%{opacity:1;transform:scale(1.2)}}
+.a-parts .p-shoot{left:var(--x);top:var(--y);width:64px;height:2px;border-radius:2px;background:linear-gradient(90deg,transparent,#fff);opacity:0;filter:drop-shadow(0 0 3px #b9a8ff);animation:shoot calc(var(--dur)*2.8) var(--del) infinite linear}
+@keyframes shoot{0%,100%{opacity:0;transform:translate(0,0) rotate(28deg)}3%{opacity:1}12%{opacity:0;transform:translate(96px,51px) rotate(28deg)}}
+.mascot:has(.aura[data-a="cosmic"]) > svg.mito{filter:drop-shadow(0 0 10px rgba(140,110,255,.5))}
+@media (prefers-reduced-motion:reduce){.aura *,.aura *::after{animation:none!important}}
+.a-parts i{position:absolute;display:block;background:var(--c)}
+.p-rise{left:var(--x);bottom:14%;width:var(--s);height:var(--s);border-radius:50%;box-shadow:0 0 8px var(--c);animation:prise var(--dur) var(--del) infinite ease-in}
+.p-rise.leaf{width:calc(var(--s)*1.7);border-radius:70% 0 70% 0;box-shadow:none}
+@keyframes prise{0%{transform:translate(0,0) scale(.4);opacity:0}15%{opacity:1}100%{transform:translate(var(--dx),-150px) rotate(90deg) scale(1);opacity:0}}
+.p-twk{left:var(--x);top:var(--y);width:var(--s);height:var(--s);clip-path:polygon(50% 0,60% 40%,100% 50%,60% 60%,50% 100%,40% 60%,0 50%,40% 40%);animation:twk var(--dur) var(--del) infinite ease-in-out}
+@keyframes twk{0%,100%{transform:scale(.3) rotate(0);opacity:.2}50%{transform:scale(1.2) rotate(45deg);opacity:1}}
+.orb{position:absolute;animation:arot var(--dur) linear infinite}
+.p-orb{left:50%;top:0;width:10px;height:10px;margin-left:-5px;border-radius:50%;box-shadow:0 0 10px var(--c)}
+.wingL{--d:1;transform-origin:34px 85px;animation:wflap 2.4s ease-in-out infinite}
+.wingR{--d:-1;transform-origin:116px 85px;animation:wflap 2.4s ease-in-out infinite}
+@keyframes wflap{0%,100%{transform:rotate(0)}50%{transform:rotate(calc(var(--d)*13deg))}}
+.carbob{animation:cbob .45s ease-in-out infinite alternate}
+@keyframes cbob{to{transform:translateY(-1px)}}
+.mascot.state-happy svg .carbob,.mascot.state-excited svg .carbob{animation-duration:.16s}
+
+.aura:not([data-a="cosmic"]) .a-neb::after{content:none}
+[data-a="fire"] .a-neb,[data-a="ice"] .a-neb,[data-a="storm"] .a-neb,[data-a="sakura"] .a-neb,[data-a="ice"] .a-gal,[data-a="storm"] .a-gal{opacity:1}
+.a-parts{--bolt:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 40'%3E%3Cpath d='M15 0L3 23H11L7 40L21 15H13L18 0Z' fill='%23fff7a8' stroke='%23ffd21e' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E")}
+/* FUEGO */
+[data-a="fire"] .a-glow{background:radial-gradient(closest-side,rgba(255,150,40,.55),rgba(255,60,40,.16) 60%,transparent);animation:aglow .9s ease-in-out infinite}
+[data-a="fire"] .a-neb{transform-origin:50% 88%;animation:fflick 1.7s ease-in-out infinite alternate;background:radial-gradient(closest-side at 50% 82%,rgba(255,140,30,.9),transparent),radial-gradient(closest-side at 24% 68%,rgba(255,70,40,.65),transparent),radial-gradient(closest-side at 76% 68%,rgba(255,70,40,.65),transparent),radial-gradient(closest-side at 50% 42%,rgba(255,200,70,.32),transparent)}
+@keyframes fflick{from{transform:scale(1,.93)}to{transform:scale(1.05,1.08)}}
+.a-parts .p-flame{left:var(--x);bottom:12%;width:var(--s);height:calc(var(--s)*1.7);border-radius:50% 50% 50% 50%/65% 65% 35% 35%;background:radial-gradient(ellipse at 50% 75%,#fff6b0,#ffb02e 45%,#ff4a1c 78%,transparent);filter:blur(1.2px);transform-origin:50% 100%;animation:flame calc(var(--dur)*.55) var(--del) infinite ease-out}
+@keyframes flame{0%{transform:translate(0,0) scale(1);opacity:.95}70%{opacity:.7}100%{transform:translate(var(--dx),-90px) scale(.15);opacity:0}}
+/* ESCARCHA */
+[data-a="ice"] .a-glow{background:radial-gradient(closest-side,rgba(170,235,255,.55),rgba(90,170,255,.18) 60%,transparent)}
+[data-a="ice"] .a-neb{background:radial-gradient(closest-side at 30% 30%,rgba(160,230,255,.75),transparent),radial-gradient(closest-side at 70% 25%,rgba(255,255,255,.5),transparent),radial-gradient(closest-side at 55% 75%,rgba(90,150,255,.55),transparent),radial-gradient(closest-side at 25% 70%,rgba(140,255,240,.38),transparent)}
+[data-a="ice"] .a-gal{animation-duration:60s;background:conic-gradient(from 0deg,transparent,rgba(220,250,255,.65) 8%,transparent 20%,transparent 48%,rgba(170,225,255,.55) 56%,transparent 70%)}
+[data-a="ice"] .orb{filter:drop-shadow(0 0 5px #9fe3ff)}
+.a-parts .p-shard{left:50%;top:0;width:10px;height:16px;margin-left:-5px;background:linear-gradient(135deg,#fff,#8fdcff 55%,#4b8dff);clip-path:polygon(50% 0,100% 45%,50% 100%,0 45%)}
+.a-parts .p-snow{left:var(--x);top:-4%;width:var(--s);height:var(--s);border-radius:50%;box-shadow:0 0 6px #fff;animation:snow calc(var(--dur)*2.4) var(--del) infinite linear}
+@keyframes snow{0%{transform:translate(0,0);opacity:0}10%{opacity:1}100%{transform:translate(var(--dx),240px);opacity:.1}}
+/* RAYO */
+[data-a="storm"] .a-glow{background:radial-gradient(closest-side,rgba(255,230,90,.5),rgba(90,120,255,.2) 60%,transparent);animation:zap 2.6s linear infinite}
+@keyframes zap{0%,100%{opacity:.7}6%{opacity:1}9%{opacity:.4}14%{opacity:.95}50%{opacity:.6}53%{opacity:1}56%{opacity:.5}}
+[data-a="storm"] .a-neb{animation-duration:14s;background:radial-gradient(closest-side at 30% 35%,rgba(70,80,220,.75),transparent),radial-gradient(closest-side at 70% 62%,rgba(120,60,220,.6),transparent),radial-gradient(closest-side at 52% 24%,rgba(255,230,90,.35),transparent),radial-gradient(closest-side at 42% 80%,rgba(80,180,255,.5),transparent)}
+[data-a="storm"] .a-gal{animation-duration:7s;filter:blur(1.5px);background:conic-gradient(from 0deg,transparent,rgba(255,240,120,.9) 3%,transparent 6%,transparent 33%,rgba(150,230,255,.85) 36%,transparent 39%,transparent 66%,rgba(255,240,120,.9) 69%,transparent 72%)}
+.a-parts .p-bolt{left:var(--x);top:var(--y);width:calc(var(--s)*2);height:calc(var(--s)*3.6);background:var(--bolt) center/contain no-repeat;filter:drop-shadow(0 0 5px #ffe95a);opacity:0;animation:bolt calc(var(--dur)*2.2) var(--del) infinite}
+@keyframes bolt{0%,86%,100%{opacity:0;transform:scale(.8)}88%{opacity:1;transform:scale(1)}90%{opacity:.15}92%{opacity:1}96%{opacity:0}}
+.a-parts .p-spark{left:var(--x);top:var(--y);width:var(--s);height:var(--s);border-radius:50%;box-shadow:0 0 6px var(--c);animation:dtw calc(var(--dur)*.25) var(--del) infinite steps(2,end)}
+/* SAKURA */
+[data-a="sakura"] .a-glow{background:radial-gradient(closest-side,rgba(255,170,210,.5),rgba(255,120,180,.15) 60%,transparent)}
+[data-a="sakura"] .a-neb{animation-duration:40s;background:radial-gradient(closest-side at 30% 35%,rgba(255,150,200,.7),transparent),radial-gradient(closest-side at 70% 60%,rgba(255,200,225,.6),transparent),radial-gradient(closest-side at 55% 22%,rgba(255,255,255,.4),transparent),radial-gradient(closest-side at 40% 78%,rgba(255,120,180,.5),transparent)}
+.a-parts .p-petal{left:var(--x);top:-4%;width:var(--s);height:calc(var(--s)*.75);border-radius:100% 0 100% 0;background:linear-gradient(135deg,#ffe3ee,#ff9ec4);animation:petal calc(var(--dur)*2.2) var(--del) infinite linear}
+@keyframes petal{0%{transform:translate(0,0) rotate(0);opacity:0}10%{opacity:1}50%{transform:translate(calc(var(--dx)*2),110px) rotate(200deg)}100%{transform:translate(calc(var(--dx)*-1),230px) rotate(420deg);opacity:0}}
+.mascot:has(.aura[data-a="fire"]) > svg.mito{filter:drop-shadow(0 0 10px rgba(255,120,40,.55))}
+.mascot:has(.aura[data-a="ice"]) > svg.mito{filter:drop-shadow(0 0 10px rgba(140,225,255,.6))}
+.mascot:has(.aura[data-a="storm"]) > svg.mito{filter:drop-shadow(0 0 10px rgba(255,230,90,.55))}
+.mascot:has(.aura[data-a="sakura"]) > svg.mito{filter:drop-shadow(0 0 10px rgba(255,150,200,.5))}
+
+.mascot svg.mito,svg.th{--body:#1fd79a;--stroke:#0da876;--hi:#6cf0c4}
+.mascot svg{transform-origin:50% 88%}
+.mascot.small .a-parts{display:none}
+svg.th{width:100%;height:100%;overflow:visible}
+svg.th .f-normal{display:inline}
+svg.th *{animation:none!important}
+.si-visual svg{width:56px;height:56px;display:block;margin:0 auto}
+.btn-mini:focus-visible{ outline:3px solid var(--pink-deep, #e83e8c); outline-offset:2px; }
