@@ -2,23 +2,30 @@ import { findItem } from './wardrobe.js';
 import { getEquipped } from './store.js';
 import { DEFS, PRE, GBODY, SEGS, PET_BASE, PETS } from './mitoArt.js';
 import { setAura } from './mitoAura.js';
+import { skinParts } from './mitoSkins.js';
+import { HALLOWEEN_DEFS, HALLOWEEN_AFTER, HALLOWEEN_PETS } from './halloweenArt.js';
 
 const NS = 'http://www.w3.org/2000/svg';
 const AURA_HTML = '<div class="a-glow"></div><div class="a-neb"></div><div class="a-gal"></div><div class="a-rays"></div><div class="a-ring"></div><div class="a-parts"></div>';
 let uid = 0;
+const avatarSegments = SEGS.flatMap(segment=>[segment, ...(HALLOWEEN_AFTER[segment[0]] || [])]);
 
 // defs compartidos (gradientes, patrones, clipPaths) una sola vez
 if(!document.getElementById('mitoDefs')){
   document.body.insertAdjacentHTML('afterbegin',
-    `<svg id="mitoDefs" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>${DEFS}</defs></svg>`);
+    `<svg id="mitoDefs" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>${DEFS}${HALLOWEEN_DEFS}</defs></svg>`);
 }
 
-export function mascotMarkup(keys, id){
-  const inner = SEGS.filter(([k])=>!k || keys.includes(k)).map(s=>s[1]).join('');
+export function mascotMarkup(keys, id, fx = ''){
+  const sk = skinParts(fx, id);
+  // los efectos de la piel van justo encima del cuerpo, debajo de cara y ropa
+  const inner = avatarSegments.filter(([k])=>!k || keys.includes(k))
+    .map(s => !s[0] && s[1].includes('url(#gBody)') ? s[1] + sk.over : s[1]).join('')
+    .replaceAll('id="vcol"', `id="vcol-${id}"`).replaceAll('href="#vcol"', `href="#vcol-${id}"`);
   const g = GBODY.replace('id="gBody"', `id="gBody-${id}"`);
-  return (`<defs>${g}</defs>${PRE}<g class="rig">${inner}</g>`).split('url(#gBody)').join(`url(#gBody-${id})`);
+  return (`<defs>${g}${sk.defs}</defs>${PRE}<g class="rig">${inner}</g>`).split('url(#gBody)').join(`url(#gBody-${id})`);
 }
-const petMarkup = k => PET_BASE + (PETS[k] || '');
+const petMarkup = k => PET_BASE + (PETS[k] || HALLOWEEN_PETS[k] || '');
 
 // miniatura para la tienda: Mito con esa sola pieza, o la mascota sola
 export function itemThumb(catId, item){
@@ -26,7 +33,8 @@ export function itemThumb(catId, item){
   const st = c && c.defaults ? `--body:${c.defaults.body};--stroke:${c.defaults.stroke};--hi:${c.defaults.highlight}` : '';
   if(!item.k) return '<svg class="th" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="opacity:.5"><circle cx="12" cy="12" r="8"/><path d="M6.5 17.5l11-11"/></svg>';
   if(catId === 'pet') return `<svg class="th" viewBox="0 0 80 80">${petMarkup(item.k)}</svg>`;
-  return `<svg class="th" viewBox="0 0 150 150" style="${st}">${mascotMarkup([item.k], 'th' + (++uid))}</svg>`;
+  const hatClass = item.k === 'pumpkinhat' ? ' has-tall pumpkin-hat' : '';
+  return `<svg class="th${hatClass}" viewBox="0 0 150 150" style="${st}">${mascotMarkup([item.k], 'th' + (++uid))}</svg>`;
 }
 
 function applyTo(el, eq){
@@ -42,12 +50,15 @@ function applyTo(el, eq){
       svg.style.setProperty('--stroke', color.defaults.stroke);
       svg.style.setProperty('--hi', color.defaults.highlight);
     }
-    const sig = keys.join();
+    const fx = (color && color.fx) || '';
+    const sig = keys.join() + '|' + fx;
     if(svg.dataset.sig !== sig){
       svg.dataset.sig = sig;
-      svg.innerHTML = mascotMarkup(keys, id);
+      svg.dataset.fx = fx;
+      svg.innerHTML = mascotMarkup(keys, id, fx);
       svg.classList.toggle('has-crown', keys.some(k => k === 'crown' || k === 'grad'));
-      svg.classList.toggle('has-tall', keys.some(k => k === 'chef' || k === 'wizard'));
+      svg.classList.toggle('has-tall', keys.some(k => k === 'chef' || k === 'wizard' || k === 'pumpkinhat'));
+      svg.classList.toggle('pumpkin-hat', keys.includes('pumpkinhat'));
     }
   }
 
@@ -78,8 +89,8 @@ export function applyAvatar(){
   document.querySelectorAll('.mascot').forEach(el => applyTo(el, eq));
 }
 
-export function previewAvatar(cat, itemId){
-  const el = document.getElementById('mascotPreview');
+export function previewAvatar(cat, itemId, targetId = 'mascotPreview'){
+  const el = document.getElementById(targetId);
   if(!el) return;
   applyTo(el, { ...getEquipped(), [cat]: itemId });
 }

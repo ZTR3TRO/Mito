@@ -554,6 +554,9 @@ main{ padding:38px 46px 90px; max-width:1000px; }
 
 .shop-cat{ margin-bottom:28px; }
 .shop-cat h3{ font-size:18px; margin:0 0 12px; color:var(--ink); }
+.seasonal-shop{ margin-top:32px; }
+.seasonal-title{ font-size:22px; margin:0 0 20px; color:var(--ink); }
+.seasonal-note{ color:var(--ink-dim); font-size:12px; margin:12px 0 0; }
 .shop-items{ display:grid; grid-template-columns:repeat(auto-fill,minmax(128px,1fr)); gap:12px; }
 .shop-item{
   background:var(--card); border:2px solid var(--line); border-radius:16px;
@@ -575,6 +578,17 @@ main{ padding:38px 46px 90px; max-width:1000px; }
 .btn-mini:hover{ transform:translateY(-1px); filter:brightness(1.05); }
 .btn-mini.equip-only{ background:var(--mint); color:#04352a; }
 .btn-mini[disabled]{ opacity:.5; cursor:not-allowed; transform:none; background:var(--ink-faint); filter:none; }
+.btn-mini[aria-disabled="true"]{ opacity:.5; cursor:not-allowed; transform:none; background:var(--ink-faint); filter:none; }
+.btn-mini:focus-visible{ outline:3px solid var(--pink); outline-offset:4px; }
+.collection-notice{ color:var(--ink-dim); font-weight:800; }
+.collection-notice:empty{ display:none; }
+.shop-head-actions{ display:grid; grid-template-columns:repeat(2,1fr); align-items:stretch; gap:10px; flex-shrink:0; }
+.shop-head-actions .balance-chip{ justify-content:center; }
+.shop-head-actions .btn-mini{
+  justify-content:center; white-space:nowrap; padding:10px 18px; font-size:16px;
+  border:2px solid transparent; border-radius:999px; box-shadow:var(--shadow-soft);
+}
+#wardrobeHost > .empty-state{ margin-bottom:24px; }
 
 /* dev / prueba */
 .dev-row{ margin-top:26px; text-align:center; }
@@ -709,6 +723,8 @@ svg.has-crown .ant-r{translate:8px 2px}
 svg.has-tall .ant-c{display:none}
 svg.has-tall .ant-l{translate:-8px 2px}
 svg.has-tall .ant-r{translate:8px 2px}
+svg.pumpkin-hat .ant-l,svg.pumpkin-hat .ant-r{scale:.85}
+.mascot.face-sad [data-k="fangs"]{display:none}
 .mascot svg.mito{position:relative;z-index:1}
 .mascot .pet{z-index:2}
 .aura{position:absolute;inset:-24%;z-index:0;pointer-events:none;display:none}
@@ -721,6 +737,9 @@ svg.has-tall .ant-r{translate:8px 2px}
 .a-parts{inset:0}
 @keyframes arot{to{transform:rotate(360deg)}}
 [data-a="mint"]{--ac1:rgba(31,215,154,.5)}
+[data-a="haunt"]{--ac1:rgba(255,130,30,.5)}
+[data-a="haunt"] .a-glow{background:radial-gradient(closest-side,rgba(255,140,30,.5),rgba(120,60,200,.22) 62%,transparent)}
+[data-a="haunt"] .a-neb{opacity:1;background:radial-gradient(closest-side at 50% 84%,rgba(255,130,20,.85),transparent),radial-gradient(closest-side at 24% 38%,rgba(140,70,230,.75),transparent),radial-gradient(closest-side at 78% 40%,rgba(140,70,230,.65),transparent);animation:aglow 4s ease-in-out infinite}
 [data-a="gold"]{--ac1:rgba(255,201,60,.5)}
 [data-a="gold"] .a-rays{opacity:.9}
 [data-a="rainbow"]{--ac1:rgba(255,120,190,.35)}
@@ -814,3 +833,52 @@ svg.th .f-normal{display:inline}
 svg.th *{animation:none!important}
 .si-visual svg{width:56px;height:56px;display:block;margin:0 auto}
 .btn-mini:focus-visible{ outline:3px solid var(--pink-deep, #e83e8c); outline-offset:2px; }
+
+
+/* ================= GLOBITO DE LA MASCOTA COMPAÑERA ================= */
+.mascot .pet-bubble{
+  position:absolute; left:-72%; bottom:36%; z-index:5;
+  width:max-content; max-width:150px; padding:6px 10px;
+  background:#fff; color:var(--pink-deep);
+  font-size:11px; font-weight:800; line-height:1.25; text-align:center;
+  border-radius:12px 12px 4px 12px; box-shadow:0 4px 10px rgba(0,0,0,.18);
+  opacity:0; transform:translateY(6px) scale(.9); pointer-events:none;
+  transition:opacity .25s ease, transform .25s ease;
+}
+.mascot .pet-bubble.show{ opacity:1; transform:none; }
+.mascot.small .pet-bubble{ display:none; }
+[data-theme="dark"] .mascot .pet-bubble{ background:var(--card); color:var(--ink); }
+@media (prefers-reduced-motion: reduce){ .mascot .pet-bubble{ transition:none; } }
+
+
+/* ================= PIELES ANIMADAS (efectos dentro del SVG de Mito) ================= */
+.skinfx .fx-spin{ transform-origin:75px 72px; animation:fxSpin var(--d,14s) linear infinite; }
+.skinfx .fx-sweep{ animation:fxSweep var(--d,5s) ease-in-out infinite; }
+.skinfx .fx-flow{ animation:fxFlow 7s linear infinite; }
+.skinfx .fx-twk{ transform-box:fill-box; transform-origin:center; animation:fxTwk var(--d,2.6s) ease-in-out infinite; animation-delay:var(--dl,0s); }
+.skinfx .fx-pulse{ animation:fxPulse 2.4s ease-in-out infinite; animation-delay:var(--dl,0s); }
+.skinfx .fx-ember{ animation:fxEmber 3.2s ease-in infinite; animation-delay:var(--dl,0s); }
+.skinfx .fx-rise{ transform-box:fill-box; transform-origin:center; animation:fxRise 5s ease-in-out infinite; animation-delay:var(--dl,0s); }
+
+@keyframes fxSpin{ to{ transform:rotate(360deg); } }
+@keyframes fxSweep{ 0%{ transform:translateX(-30px); } 55%,100%{ transform:translateX(230px); } }
+@keyframes fxFlow{ from{ transform:translateX(0); } to{ transform:translateX(-150px); } }
+@keyframes fxTwk{ 0%,100%{ opacity:.1; transform:scale(.5); } 50%{ opacity:1; transform:scale(1.25); } }
+@keyframes fxPulse{ 0%,100%{ opacity:.45; } 50%{ opacity:1; } }
+@keyframes fxEmber{ 0%{ opacity:0; transform:translateY(0); } 20%{ opacity:1; } 100%{ opacity:0; transform:translateY(-46px); } }
+@keyframes fxRise{ 0%{ opacity:0; transform:translateY(16px) scale(.85); } 25%{ opacity:.95; } 100%{ opacity:0; transform:translateY(-34px) scale(1.15); } }
+
+/* miniaturas animadas en la tienda */
+.swatch.sw-dark{ background:radial-gradient(circle at 25% 30%,#8b5cf6,transparent 45%),radial-gradient(circle at 75% 75%,#e879f9,transparent 45%),#0f0a24; background-size:220% 220%; animation:swDrift 5s ease-in-out infinite alternate; }
+.swatch.sw-gold{ background:linear-gradient(115deg,#c98a0a 15%,#fff2a8 42%,#ffc93c 55%,#c98a0a 85%); background-size:260% 100%; animation:swSlide 3s ease-in-out infinite alternate; }
+.swatch.sw-aurora{ background:linear-gradient(90deg,#5bffd0,#4cc9f0,#b388ff,#5bffd0); background-size:300% 100%; animation:swSlide 4s linear infinite alternate; }
+.swatch.sw-lava{ background:radial-gradient(circle at 50% 105%,#ffd27a,#ff6a00 30%,transparent 65%),linear-gradient(135deg,transparent 46%,#ff8a00 48%,#ffd27a 50%,transparent 53%),#2b0f0b; animation:swPulse 1.8s ease-in-out infinite; }
+.swatch.sw-prism{ background:conic-gradient(#ff7ad9,#5ce1ff,#ffe66d,#b8a0ff,#ff7ad9); animation:swHue 5s linear infinite; }
+@keyframes swDrift{ from{ background-position:0% 0%; } to{ background-position:100% 100%; } }
+@keyframes swSlide{ from{ background-position:0% 50%; } to{ background-position:100% 50%; } }
+@keyframes swPulse{ 0%,100%{ filter:brightness(.85); } 50%{ filter:brightness(1.25); } }
+@keyframes swHue{ to{ filter:hue-rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce){
+  .skinfx *, .swatch[class*="sw-"]{ animation:none !important; }
+}

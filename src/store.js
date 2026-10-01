@@ -1,4 +1,4 @@
-import { WARDROBE, categoryOf } from './wardrobe.js';
+import { WARDROBE, categoryOf, findItem, isSeasonalOpen } from './wardrobe.js';
 
 // Reubica prendas guardadas en versiones anteriores (p. ej. la corona ahora es un sombrero)
 function fixEquipped(eq){
@@ -93,15 +93,23 @@ export function getEquipped(){
 }
 
 export function equipCategory(cat, id){
+  const item = findItem(cat, id);
+  if(!item || (item.cost > 0 && !owns(id))) return false;
   state.equipped[cat] = id;
   save();
   emit();
+  return true;
 }
 
-export function buyAndEquip(cat, id, cost){
-  if(!spendChispas(cost)) return false;
-  ownItem(id);
-  equipCategory(cat, id);
+export function buyAndEquip(cat, id){
+  const item = findItem(cat, id);
+  if(!item || item.cost <= 0 || owns(id) || state.chispas < item.cost) return false;
+  if(item.seasonal && !isSeasonalOpen()) return false;
+  state.chispas -= item.cost;
+  state.owned[id] = true;
+  state.equipped[cat] = id;
+  save();
+  emit();
   return true;
 }
 
@@ -166,7 +174,10 @@ export function getHistory(){
 }
 
 export function getStreak(){
-  return state.streak;
+  // La racha solo sigue viva si jugaste hoy o ayer; si no, ya se rompió
+  if(!state.lastDay) return 0;
+  const today = dayStr();
+  return (state.lastDay === today || state.lastDay === dayBefore(today)) ? state.streak : 0;
 }
 
 export function clearMistakes(){
@@ -206,17 +217,53 @@ export function exportSave(){
   return JSON.stringify(state, null, 2);
 }
 
+const num = (v, d = 0) => (typeof v === 'number' && Number.isFinite(v) ? v : d);
+
+function cleanHistory(list){
+  if(!Array.isArray(list)) return [];
+  return list.slice(-HISTORY_LIMIT).filter(h=>h && typeof h === 'object').map(h=>{
+    const cats = {};
+    if(h.cats && typeof h.cats === 'object'){
+      Object.keys(h.cats).forEach(k=>{
+        const c = h.cats[k] || {};
+        cats[k] = { right:num(c.right ?? c.r), total:num(c.total ?? c.t) };
+      });
+    }
+    return {
+      t:num(h.t), score:num(h.score), right:num(h.right), total:num(h.total),
+      pct:Math.min(100, Math.max(0, num(h.pct))), cats,
+      courseId: typeof h.courseId === 'string' ? h.courseId : undefined,
+    };
+  });
+}
+
+function cleanMistakes(m){
+  const out = {};
+  if(m && typeof m === 'object'){
+    Object.keys(m).slice(0, MISTAKES_LIMIT).forEach(k=>{
+      out[k] = { wrong:num(m[k] && m[k].wrong), right:num(m[k] && m[k].right) };
+    });
+  }
+  return out;
+}
+
 export function importSave(json){
   const s = JSON.parse(json);
-  const merged = {
-    ...defaultState(),
-    ...s,
-    history: Array.isArray(s.history) ? s.history : [],
-    mistakes: s.mistakes && typeof s.mistakes === 'object' ? s.mistakes : {},
+  if(!s || typeof s !== 'object' || typeof s.chispas !== 'number') throw new Error('Progreso inválido');
+  const d = defaultState();
+  // solo se copian campos conocidos, con su tipo validado
+  const clean = {
+    chispas: Math.max(0, num(s.chispas)),
+    owned: s.owned && typeof s.owned === 'object' ? Object.fromEntries(Object.keys(s.owned).map(k=>[k, true])) : {},
     equipped: fixEquipped(s.equipped),
+    history: cleanHistory(s.history),
+    mistakes: cleanMistakes(s.mistakes),
+    streak: Math.max(0, Math.floor(num(s.streak))),
+    lastDay: typeof s.lastDay === 'string' ? s.lastDay : null,
+    theme: s.theme === 'dark' ? 'dark' : 'light',
+    course: typeof s.course === 'string' ? s.course : d.course,
   };
-  if(typeof s.chispas !== 'number') throw new Error('Progreso inválido');
-  Object.assign(state, merged);
+  Object.assign(state, clean);
   save();
   emit();
 }

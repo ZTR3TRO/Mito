@@ -1,11 +1,12 @@
 import { COURSES } from './courses.js';
-import { WARDROBE, findItem, findItemById, categoryOf } from './wardrobe.js';
+import { WARDROBE, findItem, findItemById, categoryOf, isSeasonalOpen } from './wardrobe.js';
 import {
   addChispas, buyAndEquip, equipCategory, getChispas, getEquipped, owns, PASSING_BONUS,
   recordQuizResult, recordAnswer, getMistakes, getHistory, getStreak, clearMistakes,
   getTheme, setTheme, getCourse, setCourse, exportSave, importSave, resetAll,
 } from './store.js';
 import { applyAvatar, previewAvatar, itemThumb } from './avatar.js';
+import { greeting, idleMessage, courseSwitchMessage, firstRoundMessage, resultMessage, petMessage } from './mitoMessages.js';
 
 /* =================== MATERIA ACTIVA =================== */
 let activeCourse = COURSES.find(c=>c.id === getCourse()) || COURSES[0];
@@ -23,7 +24,8 @@ function switchCourse(id){
   renderStreak();
   document.getElementById('quizPlay').style.display = 'none';
   resetQuiz();
-  document.getElementById('sideBubble').textContent = `Cambiamos a ${activeCourse.label} 📚`;
+  say(courseSwitchMessage(activeCourse.label));
+  sayHero(idleMessage(activeCourse.id, heroLastMsg));
   if(viewVisible('progreso')) renderProgress();
 }
 
@@ -42,6 +44,8 @@ function renderCourseTabs(){
 
 /* =================== NAVEGACIÓN =================== */
 function goTo(view){
+  applyAvatar();
+  checkSeason();
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.getElementById('view-'+view).classList.add('active');
   document.querySelectorAll('.navbtn').forEach(b=>b.classList.toggle('active', b.dataset.view===view));
@@ -97,28 +101,81 @@ function playState(el, state){
   void el.offsetWidth;
   if(state) el.classList.add('state-'+state);
 }
-const sideBubbleMsgs = [
-  'Zare, ¿sabías que reciclas casi tu peso en ATP cada día? 🔋',
-  'El ATP guarda 7.3 kcal/mol, listas para usarse ⚡',
-  'La ATP-sintasa gira como una turbina diminuta 🌀',
-  'Repasa los apuntes antes de intentar el examen completo 📖',
-  '¡Vamos, Zare! Una racha más en el quiz 🔥',
-  'Junta chispas en el quiz y ven a cambiarme de look 🎨',
-];
 const sideBubbleEl = document.getElementById('sideBubble');
+const heroSpeechEl = document.getElementById('heroSpeech');
 let bubbleLastChange = Date.now();
 let bubbleOwnWrite = false;
+let sideLastMsg = '';
+let heroLastMsg = '';
+
 // registra cuándo otro código cambia el mensaje, para no pisarlo enseguida
 new MutationObserver(()=>{
   if(bubbleOwnWrite){ bubbleOwnWrite = false; return; }
   bubbleLastChange = Date.now();
 }).observe(sideBubbleEl, { childList:true, characterData:true, subtree:true });
+
+// escribe en la burbuja lateral (marca el cambio como "de otro código")
+function say(text){
+  sideBubbleEl.textContent = text;
+  sideLastMsg = text;
+}
+function sayHero(text){
+  if(!heroSpeechEl) return;
+  heroSpeechEl.textContent = text;
+  heroLastMsg = text;
+}
+
 setInterval(()=>{
-  if(Date.now() - bubbleLastChange < 9000) return;
-  bubbleOwnWrite = true;
-  sideBubbleEl.textContent = sideBubbleMsgs[Math.floor(Math.random()*sideBubbleMsgs.length)];
-  bubbleLastChange = Date.now();
+  if(document.hidden) return;
+  if(Date.now() - bubbleLastChange >= 9000){
+    bubbleOwnWrite = true;
+    sideBubbleEl.textContent = sideLastMsg = idleMessage(activeCourse.id, sideLastMsg);
+    bubbleLastChange = Date.now();
+  }
 }, 5000);
+setInterval(()=>{
+  if(document.hidden) return;
+  sayHero(idleMessage(activeCourse.id, heroLastMsg));
+}, 8000);
+
+/* =================== MASCOTA COMPAÑERA: globito propio =================== */
+const petLastMsg = {};
+const petTimers = new WeakMap();
+
+// Hace que la mascota compañera (si hay una en ese .mascot) diga algo un momento
+function petSay(mascotEl){
+  if(!mascotEl) return;
+  const pet = mascotEl.querySelector(':scope > svg.pet');
+  if(!pet) return;
+  const key = pet.dataset.k;
+  const msg = petMessage(key, petLastMsg[key]);
+  if(!msg) return;
+  petLastMsg[key] = msg;
+
+  let bub = mascotEl.querySelector(':scope > .pet-bubble');
+  if(!bub){
+    bub = document.createElement('div');
+    bub.className = 'pet-bubble';
+    bub.setAttribute('aria-hidden', 'true');
+    mascotEl.appendChild(bub);
+  }
+  bub.textContent = msg;
+  // reinicia la animación de entrada
+  bub.classList.remove('show');
+  void bub.offsetWidth;
+  bub.classList.add('show');
+
+  clearTimeout(petTimers.get(mascotEl));
+  petTimers.set(mascotEl, setTimeout(()=>bub.classList.remove('show'), 5000));
+}
+
+// Habla en la vista que estás viendo: portada (Mito grande) o guardarropa (vista previa)
+setInterval(()=>{
+  if(document.hidden) return;
+  if(viewVisible('home')) petSay(document.getElementById('mascotHero'));
+  else if(viewVisible('shop')) petSay(document.getElementById('mascotPreview'));
+  else if(viewVisible('wardrobe')) petSay(document.getElementById('mascotWardrobe'));
+}, 11000);
 
 /* =================== CONFETTI =================== */
 function burstConfetti(x, y, count){
@@ -239,6 +296,8 @@ function renderHome(){
   if(k) k.textContent = nKeys
     ? `${nKeys} ideas que casi seguro te preguntan en el examen, condensadas en tarjetas de repaso relámpago.`
     : 'Aún no hay puntos clave para esta materia.';
+  const hq = document.getElementById('homeQuizTitle');
+  if(hq) hq.textContent = 'Quiz de ' + activeCourse.label;
   const hc = document.getElementById('heroCourse');
   if(hc) hc.textContent = activeCourse.id === 'atp' ? 'el ATP' : activeCourse.label;
   document.querySelectorAll('.atp-only').forEach(el=>{ el.style.display = activeCourse.id === 'atp' ? '' : 'none'; });
@@ -328,8 +387,9 @@ function weakTopics(minAnswers = 3){
     if(!h.courseId && activeCourse.id !== COURSES[0].id) return;
     Object.entries(h.cats || {}).forEach(([cat, s])=>{
       agg[cat] = agg[cat] || { r:0, t:0 };
-      agg[cat].r += s.r || 0;
-      agg[cat].t += s.t || 0;
+      // catStats guarda { right, total }; se acepta también { r, t } por compatibilidad
+      agg[cat].r += s.right ?? s.r ?? 0;
+      agg[cat].t += s.total ?? s.t ?? 0;
     });
   });
   return Object.entries(agg)
@@ -415,11 +475,20 @@ function startQuiz(){
 
 function renderLives(){
   const host = document.getElementById('livesRow');
-  host.innerHTML = '';
+  let html = '';
   for(let i=0;i<3;i++){
     const filled = i < lives;
-    host.innerHTML += `<svg viewBox="0 0 24 24" fill="${filled ? '#ff5da2' : 'none'}" stroke="${filled ? '#e83e8c' : '#f0c9dd'}" stroke-width="1.8"><path d="M13 2 3 14h7l-1 8 11-14h-8l1-6Z"/></svg>`;
+    html += `<svg viewBox="0 0 24 24" fill="${filled ? '#ff5da2' : 'none'}" stroke="${filled ? '#e83e8c' : '#f0c9dd'}" stroke-width="1.8"><path d="M13 2 3 14h7l-1 8 11-14h-8l1-6Z"/></svg>`;
   }
+  host.innerHTML = html;
+}
+
+// Opciones como ['2','10','24','38'] se leen mejor en orden, no revueltas
+function isNumericSeries(opts){
+  if(!opts.every(o=>/^\s*[<>~≈]?\s*-?\d/.test(o))) return false;
+  const nums = opts.map(o=>parseFloat(String(o).replace(/[^0-9.,-]/g,'').replace(',','.')));
+  if(nums.some(n=>!Number.isFinite(n))) return false;
+  return nums.every((n,i)=> i===0 || n>=nums[i-1]) || nums.every((n,i)=> i===0 || n<=nums[i-1]);
 }
 
 function renderQuestion(){
@@ -428,7 +497,8 @@ function renderQuestion(){
   // mezcla las opciones para que la respuesta correcta no siempre caiga en B/C
   // (no se mezclan las preguntas con opciones tipo "A y B" que dependen de su posición)
   const positional = base.opts.some(o=>/^\s*[A-D]\s*(y|e|,)\s*[A-D]\s*$|anteriores/i.test(o));
-  const order = positional ? base.opts.map((_, i)=>i) : shuffle(base.opts.map((_, i)=>i));
+  const keepOrder = positional || isNumericSeries(base.opts);
+  const order = keepOrder ? base.opts.map((_, i)=>i) : shuffle(base.opts.map((_, i)=>i));
   const item = { ...base, opts: order.map(i=>base.opts[i]), correct: order.indexOf(base.correct) };
   quizQuestions[qIndex] = item;
   document.getElementById('qCat').textContent = item.cat.toUpperCase();
@@ -448,7 +518,12 @@ function renderQuestion(){
   item.opts.forEach((opt, idx)=>{
     const b = document.createElement('button');
     b.className = 'opt';
-    b.innerHTML = `<span class="letter">${letters[idx]}</span><span>${opt}</span>`;
+    const letter = document.createElement('span');
+    letter.className = 'letter';
+    letter.textContent = letters[idx];
+    const label = document.createElement('span');
+    label.textContent = opt;
+    b.append(letter, label);
     b.onclick = ()=> selectAnswer(idx);
     optsHost.appendChild(b);
   });
@@ -528,6 +603,7 @@ function finishQuiz(){
   document.getElementById('resultScore').textContent = score;
   document.getElementById('resultSub').textContent = `puntos · ${totalRight}/${totalAnswered} correctas (${pct}%)`;
 
+  const mascotResult = document.getElementById('mascotResult');
   const approved = pct >= 70;
   const awarded = score + (approved ? PASSING_BONUS : 0);
   if(awarded > 0){
@@ -540,7 +616,6 @@ function finishQuiz(){
   }
 
   let title = '¡Sigue así!';
-  const mascotResult = document.getElementById('mascotResult');
   if(lives <= 0){
     title = 'Se acabaron las vidas';
     setFace(mascotResult, 'sad');
@@ -602,7 +677,6 @@ function renderSidebarStats(){
   if(n === 0){
     label.textContent = 'Aún no juegas — 0 rondas';
     bar.style.width = '0%';
-    document.getElementById('sideBubble').textContent = '¡Vamos, Zare! Primera ronda del quiz 🔥';
     return;
   }
   label.textContent = `${n} ronda${n===1?'':'s'} jugada${n===1?'':'s'} · última: ${last.pct}%`;
@@ -611,7 +685,7 @@ function renderSidebarStats(){
 
 function updateSideProgress(pct){
   renderSidebarStats();
-  document.getElementById('sideBubble').textContent = pct >= 80 ? '¡Wow, vas increíble! 🌟' : '¡Buen intento! Repasemos un poco más 💪';
+  say(resultMessage(pct));
 }
 
 /* =================== ACCIONES (data-action / data-nav) =================== */
@@ -657,13 +731,58 @@ function updatePreviewLabels(){
   set('pvSombrero','sombrero');
   set('pvAura','aura');
   set('pvPet','pet');
+  document.querySelectorAll('[data-equipped-label]').forEach(el=>{
+    const cat = el.dataset.equippedLabel;
+    el.textContent = findItem(cat, eq[cat])?.name || '—';
+  });
 }
 
+let lastSeasonOpen = isSeasonalOpen();
+let seasonTimer;
+
+function checkSeason(){
+  if(lastSeasonOpen === isSeasonalOpen()) return;
+  applyAvatar();
+  renderShop();
+  document.getElementById('shopNotice').textContent = lastSeasonOpen
+    ? 'La tienda de Halloween ya está abierta.'
+    : 'La temporada ha terminado. Tus compras siguen disponibles en el armario.';
+}
+
+function scheduleSeasonCheck(){
+  clearTimeout(seasonTimer);
+  checkSeason();
+  const now = new Date();
+  const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  seasonTimer = setTimeout(scheduleSeasonCheck, Math.max(1, midnight - now));
+}
+
+// Recalcular al volver a la app, también si el dispositivo durmió durante el cierre.
+document.addEventListener('visibilitychange', ()=>{
+  if(!document.hidden) scheduleSeasonCheck();
+});
+window.addEventListener('focus', scheduleSeasonCheck);
+
 function renderShop(){
-  const host = document.getElementById('shopHost');
+  lastSeasonOpen = isSeasonalOpen();
+  renderCollection('shopHost', true);
+  renderCollection('wardrobeHost', false);
+}
+
+function renderCollection(hostId, shopping, seasonalOnly = false){
+  const host = document.getElementById(hostId);
   if(!host) return;
   host.innerHTML = '';
+  const eq = getEquipped();
+  const previewId = shopping ? 'mascotPreview' : 'mascotWardrobe';
+  if(!shopping && !WARDROBE.some(cat=>cat.items.some(item=>item.cost > 0 && owns(item.id)))){
+    host.innerHTML = '<div class="empty-state">Todavía no has comprado productos. Puedes usar las opciones básicas o <button class="btn-mini" data-nav="shop">Visitar tienda</button>.</div>';
+  }
   WARDROBE.forEach(cat=>{
+    const items = cat.items.filter(item=>shopping
+      ? item.cost > 0 && !owns(item.id) && !!item.seasonal === seasonalOnly
+      : item.cost === 0 || owns(item.id));
+    if(!items.length) return;
     const sec = document.createElement('div');
     sec.className = 'shop-cat';
     const h = document.createElement('h3');
@@ -671,15 +790,16 @@ function renderShop(){
     const grid = document.createElement('div');
     grid.className = 'shop-items';
 
-    cat.items.forEach(item=>{
-      const equipped = getEquipped()[cat.id] === item.id;
-      const owned = item.cost === 0 || owns(item.id);
+    items.forEach(item=>{
+      const equipped = !shopping && eq[cat.id] === item.id;
       const affordable = getChispas() >= item.cost;
 
       const card = document.createElement('div');
       card.className = 'shop-item' + (equipped ? ' equipped' : '');
       const visual = item.swatch
-        ? `<span class="swatch" style="background:${item.swatch}"></span>`
+        ? (item.fx
+            ? `<span class="swatch sw-${item.fx}"></span>`
+            : `<span class="swatch" style="background:${item.swatch}"></span>`)
         : itemThumb(cat.id, item);
       card.innerHTML = `
         <div class="si-visual">${visual}</div>
@@ -687,21 +807,27 @@ function renderShop(){
 
       const mini = document.createElement('button');
       mini.type = 'button';
-      mini.className = 'btn-mini' + (owned && !equipped ? ' equip-only' : '');
+      mini.className = 'btn-mini' + (!shopping && !equipped ? ' equip-only' : '');
       if(equipped){
         mini.textContent = 'Equipado';
         mini.setAttribute('disabled','');
-      } else if(owned){
+      } else if(!shopping){
         mini.textContent = 'Equipar';
-        mini.dataset.buy = item.id;
+        mini.dataset.equip = item.id;
       } else {
-        mini.textContent = '⚡ ' + item.cost;
+        mini.textContent = 'Comprar · ⚡ ' + item.cost;
         mini.dataset.buy = item.id;
-        if(!affordable) mini.setAttribute('disabled','');
+        if(!affordable){
+          mini.setAttribute('aria-disabled','true');
+          mini.title = `Te faltan ${item.cost - getChispas()} chispas`;
+        }
       }
+      mini.setAttribute('aria-label', `${mini.textContent}: ${item.name}`);
       card.appendChild(mini);
-      card.addEventListener('mouseenter', ()=>previewAvatar(cat.id, item.id));
+      card.addEventListener('mouseenter', ()=>previewAvatar(cat.id, item.id, previewId));
       card.addEventListener('mouseleave', ()=>applyAvatar());
+      mini.addEventListener('focus', ()=>previewAvatar(cat.id, item.id, previewId));
+      mini.addEventListener('blur', ()=>applyAvatar());
       grid.appendChild(card);
     });
 
@@ -709,30 +835,60 @@ function renderShop(){
     sec.appendChild(grid);
     host.appendChild(sec);
   });
+  if(shopping && !host.children.length){
+    host.innerHTML = `<div class="empty-state">${seasonalOnly ? '¡Ya tienes toda la colección de Halloween!' : '¡Ya tienes todos los productos del catálogo habitual!'} Disfruta tu colección en el <button class="btn-mini" data-nav="wardrobe">Armario</button>.</div>`;
+  }
+  if(shopping && !seasonalOnly && isSeasonalOpen()){
+    const season = document.createElement('section');
+    season.className = 'seasonal-shop';
+    season.setAttribute('aria-labelledby', 'seasonalTitle');
+    season.innerHTML = `
+      <h2 id="seasonalTitle" class="seasonal-title">🎃 Tienda de temporada · Halloween</h2>
+      <div id="seasonalShopHost"></div>
+      <p class="seasonal-note">Estos productos solo estarán disponibles durante el mes de octubre.</p>`;
+    host.appendChild(season);
+    renderCollection('seasonalShopHost', true, true);
+  }
 }
 
 document.addEventListener('click', (e)=>{
-  const btn = e.target.closest('[data-buy]');
+  const btn = e.target.closest('[data-buy], [data-equip]');
   if(!btn) return;
-  const item = findItemById(btn.dataset.buy);
+  const shopping = btn.hasAttribute('data-buy');
+  const notice = document.getElementById(shopping ? 'shopNotice' : 'wardrobeNotice');
+  const item = findItemById(shopping ? btn.dataset.buy : btn.dataset.equip);
   if(!item) return;
+  if(shopping && item.seasonal && !isSeasonalOpen()){
+    applyAvatar();
+    renderShop();
+    notice.textContent = 'La temporada ha terminado. Tus compras siguen disponibles en el armario.';
+    return;
+  }
+  if(btn.getAttribute('aria-disabled') === 'true'){
+    notice.textContent = btn.title;
+    return;
+  }
   const cat = categoryOf(item.id);
-  const equipped = getEquipped()[cat] === item.id;
-  const owned = item.cost === 0 || owns(item.id);
-  let bought = false;
-
-  if(!owned && item.cost > 0){
-    bought = buyAndEquip(cat, item.id, item.cost);
-  } else if(!equipped){
-    equipCategory(cat, item.id);
+  const success = shopping ? buyAndEquip(cat, item.id) : equipCategory(cat, item.id);
+  if(!success){
+    notice.textContent = 'No se pudo completar la acción. Revisa tu saldo y tu colección.';
+    renderShop();
+    return;
   }
 
-  const preview = document.getElementById('mascotPreview');
-  if(preview) sparkAt(preview, bought ? '🛍️' : '✨');
+  const preview = document.getElementById(shopping ? 'mascotPreview' : 'mascotWardrobe');
+  if(preview) sparkAt(preview, shopping ? '🛍️' : '✨');
+  const hadFocus = document.activeElement === btn;
   applyAvatar();
   renderShop();
   updateBalance();
   updatePreviewLabels();
+  notice.textContent = shopping ? `${item.name}: comprado y equipado. Ya está en tu armario.` : `${item.name}: equipado.`;
+  if(hadFocus){
+    notice.tabIndex = -1;
+    notice.focus({preventScroll:true});
+  }
+  if(cat === 'pet' && preview) setTimeout(()=>petSay(preview), 350);
 });
 
 document.addEventListener('click', (e)=>{
@@ -749,7 +905,7 @@ document.addEventListener('click', (e)=>{
     a.click();
     a.remove();
     URL.revokeObjectURL(url);
-    sparkAt(document.getElementById('mascotPreview'), '💾');
+    sparkAt(btn, '💾');
     return;
   }
 
@@ -769,7 +925,7 @@ document.addEventListener('click', (e)=>{
           return;
         }
         refreshAfterState();
-        sparkAt(document.getElementById('mascotPreview'), '📥');
+        sparkAt(btn, '📥');
       };
       fr.readAsText(file);
     };
@@ -778,10 +934,10 @@ document.addEventListener('click', (e)=>{
   }
 
   if(btn.dataset.progress === 'reset'){
-    if(!confirm('¿Reiniciar TODO el progreso? Chispas, guardarropa, racha e historial volverán a cero.')) return;
+    if(!confirm('¿Reiniciar TODO el progreso? Chispas, armario, racha e historial volverán a cero.')) return;
     resetAll();
     refreshAfterState();
-    document.getElementById('sideBubble').textContent = 'Listo, fresco como una célula nueva 🧼';
+    say('Listo, todo desde cero. ¡A empezar de nuevo, Zare! 🧼');
     return;
   }
 
@@ -789,11 +945,12 @@ document.addEventListener('click', (e)=>{
     clearMistakes();
     renderProgress();
     renderReviewCard();
-    sparkAt(document.getElementById('mascotPreview'), '🧽');
+    sparkAt(btn, '🧽');
   }
 });
 
 function refreshAfterState(){
+  document.querySelectorAll('.collection-notice').forEach(el=>{ el.textContent = ''; });
   activeCourse = COURSES.find(c=>c.id === getCourse()) || COURSES[0];
   renderCourseTabs();
   renderApuntes();
@@ -838,7 +995,7 @@ function renderWeakTopics(){
   }
   host.innerHTML = weak.map(t=>`
     <div class="wt-row">
-      <div class="wt-name">${t.cat}</div>
+      <div class="wt-name">${escapeHtml(t.cat)}</div>
       <div class="wt-num">${Math.round(t.pct*100)}% <small>· ${t.r}/${t.t}</small></div>
       <div class="cb-track"><div class="cb-fill" style="width:${t.pct*100}%; background:${pctColor(t.pct*100)}"></div></div>
     </div>`).join('');
@@ -926,12 +1083,16 @@ renderHome();
 renderQuizCounts();
 applyAvatar();
 renderShop();
+scheduleSeasonCheck();
 updateBalance();
 updatePreviewLabels();
 renderStreak();
 renderSidebarStats();
 renderReviewCard();
 renderProgress();
+say(getHistory().length === 0 ? `${greeting()} ${firstRoundMessage()}` : greeting());
+sayHero(idleMessage(activeCourse.id, ''));
+
 /* =================== SERVICE WORKER (solo producción) =================== */
 if(import.meta.env.PROD && 'serviceWorker' in navigator && location.protocol !== 'file:'){
   window.addEventListener('load', ()=>{

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mito · Ecosistema de estudio</title>
-<meta name="description" content="Apuntes, puntos clave y quiz arcade de metabolismo y bioenergética del ATP con Mito. Gana chispas y personaliza tu mascota.">
+<meta name="description" content="Apuntes, puntos clave y quiz arcade para repasar tus materias con Mito. Gana chispas y personaliza tu mascota.">
 <meta name="theme-color" content="#ff5da2">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="icon" href="./icon.png" type="image/png">
@@ -43,9 +43,13 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>
         Progreso
       </button>
-      <button class="navbtn" data-view="wardrobe">
+      <button class="navbtn" data-view="shop">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.4 6.6L21 11l-6.6 2.4L12 20l-2.4-6.6L3 11l6.6-2.4Z"/></svg>
-        Guardarropa
+        Tienda
+      </button>
+      <button class="navbtn" data-view="wardrobe">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M12 3v18M9 10v4M15 10v4"/></svg>
+        Armario
       </button>
     </div>
 
@@ -60,7 +64,7 @@
     </div>
 
     <div class="mascot-side">
-      <div class="bubble" id="sideBubble">¡Hola, Zare! Soy Mito 👋 Vamos a repasar ATP juntas.</div>
+      <div class="bubble" id="sideBubble">¡Hola, Zare! Soy Mito 👋 ¿Lista para estudiar?</div>
       <div class="mascot small face-normal" id="mascotSide">
         <svg class="mito" viewBox="0 0 150 150"></svg>
       </div>
@@ -95,7 +99,7 @@
             </div>
           </div>
           <div class="mascot-hero-wrap">
-            <div class="speech" id="heroSpeech">7.3 kcal/mol de energía pura ⚡</div>
+            <div class="speech" id="heroSpeech">¡Hola, Zare! ¿Lista para estudiar? 📚</div>
             <div class="mascot face-happy state-idle" id="mascotHero">
               <svg class="mito" viewBox="0 0 150 150"></svg>
             </div>
@@ -119,7 +123,7 @@
           <p id="homeKeysText"></p>
         </div>
         <div class="home-card" data-nav="quiz">
-          <div class="hc-top"><div class="hc-icon" style="background:var(--pink-light)"><svg viewBox="0 0 24 24" fill="none" stroke="#e83e8c" stroke-width="2"><path d="M12 2 2 7l10 5 10-5-10-5Z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div><h3>Quiz de ATP</h3></div>
+          <div class="hc-top"><div class="hc-icon" style="background:var(--pink-light)"><svg viewBox="0 0 24 24" fill="none" stroke="#e83e8c" stroke-width="2"><path d="M12 2 2 7l10 5 10-5-10-5Z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div><h3 id="homeQuizTitle">Quiz</h3></div>
           <p>Modo arcade con 3 vidas, racha, confeti y Mito reaccionando a cada respuesta. Elige cuántas preguntas jugar y revisa tu desempeño por tema al final.</p>
         </div>
         <div class="home-card atp-only" data-nav="apuntes">
@@ -162,7 +166,7 @@
     <section class="view" id="view-quiz">
       <div class="page-head">
         <div>
-          <h2 class="page-title" id="quizTitle">Quiz de Bioquímica del ATP</h2>
+          <h2 class="page-title" id="quizTitle">Quiz</h2>
           <p class="page-sub">Un fallo le cuesta una vida a Mito. Acierta seguido para subir tu racha y ganar más puntos.</p>
         </div>
       </div>
@@ -259,17 +263,28 @@
         <h3 class="prog-title">🎯 Fallos a repasar</h3>
         <div id="mistakesList"></div>
       </div>
+      <div class="data-row">
+        <div class="data-row-label">Tu progreso se guarda en este dispositivo.</div>
+        <div class="data-row-btns">
+          <button class="btn-dev" data-progress="export">💾 Exportar progreso</button>
+          <button class="btn-dev" data-progress="import">📥 Importar progreso</button>
+          <button class="btn-dev danger" data-progress="reset">🗑️ Reiniciar todo</button>
+        </div>
+      </div>
     </section>
 
-    <!-- ---------- GUARDARROPA ---------- -->
-    <section class="view" id="view-wardrobe">
+    <!-- ---------- TIENDA ---------- -->
+    <section class="view" id="view-shop">
       <div class="page-head">
         <div>
-          <h2 class="page-title">Guardarropa</h2>
-          <p class="page-sub">Gana chispas respondiendo bien el quiz (y más si lo apruebas) y personaliza a Mito: color de piel, ropa, aura y una mascota compañera. Pasa el cursor sobre un ítem para previsualizarlo sin comprar.</p>
+          <h2 class="page-title">Tienda</h2>
+          <p class="page-sub">Descubre lo que aún no tienes. Cada compra se equipa automáticamente y se guarda en tu armario. Previsualiza los productos con el cursor o al enfocar su botón.</p>
         </div>
-        <div class="balance-chip big">
-          <span class="bc-emoji">⚡</span><span id="sparkBalance">0</span><span class="bc-label">chispas</span>
+        <div class="shop-head-actions">
+          <div class="balance-chip big">
+            <span class="bc-emoji">⚡</span><span id="sparkBalance">0</span><span class="bc-label">chispas</span>
+          </div>
+          <button class="btn-mini equip-only" data-nav="wardrobe">Armario →</button>
         </div>
       </div>
 
@@ -288,15 +303,33 @@
       </div>
 
       <div id="shopHost"></div>
+      <p id="shopNotice" class="collection-notice" role="status"></p>
+    </section>
 
-      <div class="data-row">
-        <div class="data-row-label">Tu progreso se guarda en este dispositivo.</div>
-        <div class="data-row-btns">
-          <button class="btn-dev" data-progress="export">💾 Exportar progreso</button>
-          <button class="btn-dev" data-progress="import">📥 Importar progreso</button>
-          <button class="btn-dev danger" data-progress="reset">🗑️ Reiniciar todo</button>
+    <!-- ---------- ARMARIO ---------- -->
+    <section class="view" id="view-wardrobe">
+      <div class="page-head">
+        <div>
+          <h2 class="page-title">Armario</h2>
+          <p class="page-sub">Todas tus compras y opciones básicas. Elige qué lleva Mito y cambia de estilo cuando quieras.</p>
+        </div>
+        <button class="btn btn-mint" data-nav="shop">Visitar tienda →</button>
+      </div>
+      <div class="wardrobe-preview">
+        <div class="mascot face-happy" id="mascotWardrobe">
+          <svg class="mito" viewBox="0 0 150 150"></svg>
+        </div>
+        <div class="preview-labels">
+          <div>Color: <b data-equipped-label="color"></b></div>
+          <div>Ropa: <b data-equipped-label="ropa"></b></div>
+          <div>Accesorio: <b data-equipped-label="accesorio"></b></div>
+          <div>Sombrero: <b data-equipped-label="sombrero"></b></div>
+          <div>Aura: <b data-equipped-label="aura"></b></div>
+          <div>Compañera: <b data-equipped-label="pet"></b></div>
         </div>
       </div>
+      <div id="wardrobeHost"></div>
+      <p id="wardrobeNotice" class="collection-notice" role="status"></p>
     </section>
   </main>
 </div>

@@ -1,4 +1,4 @@
-const CACHE = 'chispa-atp-v2';
+const CACHE = 'chispa-atp-v3';
 const CORE = ['./', './index.html', './manifest.webmanifest'];
 
 self.addEventListener('install', (e)=>{
