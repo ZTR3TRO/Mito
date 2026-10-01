@@ -1,4 +1,4 @@
-import { WARDROBE, categoryOf, findItem, isSeasonalOpen } from './wardrobe.js';
+import { WARDROBE, SECRET_IDS, categoryOf, findItem, isSeasonalOpen } from './wardrobe.js';
 
 // Reubica prendas guardadas en versiones anteriores (p. ej. la corona ahora es un sombrero)
 function fixEquipped(eq){
@@ -94,16 +94,30 @@ export function getEquipped(){
 
 export function equipCategory(cat, id){
   const item = findItem(cat, id);
-  if(!item || (item.cost > 0 && !owns(id))) return false;
+  if(!item || ((item.cost > 0 || item.secret) && !owns(id))) return false;
   state.equipped[cat] = id;
   save();
   emit();
   return true;
 }
 
+// Easter egg: entrega los premios secretos. Devuelve los ids recién desbloqueados ([] si ya los tenías).
+export function unlockSecrets(){
+  const fresh = SECRET_IDS.filter(id => !state.owned[id]);
+  if(!fresh.length) return [];
+  fresh.forEach(id => { state.owned[id] = true; });
+  save();
+  emit();
+  return fresh;
+}
+
+export function secretsUnlocked(){
+  return SECRET_IDS.every(id => state.owned[id]);
+}
+
 export function buyAndEquip(cat, id){
   const item = findItem(cat, id);
-  if(!item || item.cost <= 0 || owns(id) || state.chispas < item.cost) return false;
+  if(!item || item.secret || item.cost <= 0 || owns(id) || state.chispas < item.cost) return false;
   if(item.seasonal && !isSeasonalOpen()) return false;
   state.chispas -= item.cost;
   state.owned[id] = true;

@@ -4,6 +4,7 @@ import { DEFS, PRE, GBODY, SEGS, PET_BASE, PETS } from './mitoArt.js';
 import { setAura } from './mitoAura.js';
 import { skinParts } from './mitoSkins.js';
 import { HALLOWEEN_DEFS, HALLOWEEN_AFTER, HALLOWEEN_PETS } from './halloweenArt.js';
+import { SECRET_PETS } from './secretArt.js';
 
 const NS = 'http://www.w3.org/2000/svg';
 const AURA_HTML = '<div class="a-glow"></div><div class="a-neb"></div><div class="a-gal"></div><div class="a-rays"></div><div class="a-ring"></div><div class="a-parts"></div>';
@@ -25,7 +26,10 @@ export function mascotMarkup(keys, id, fx = ''){
   const g = GBODY.replace('id="gBody"', `id="gBody-${id}"`);
   return (`<defs>${g}${sk.defs}</defs>${PRE}<g class="rig">${inner}</g>`).split('url(#gBody)').join(`url(#gBody-${id})`);
 }
-const petMarkup = k => PET_BASE + (PETS[k] || HALLOWEEN_PETS[k] || '');
+const petMarkup = k => PET_BASE + (PETS[k] || HALLOWEEN_PETS[k] || SECRET_PETS[k] || '');
+
+// Sombreros que tapan la cabeza: Mito se queda sin antenas para que no asomen por encima.
+const NO_ANT = ['pumpkinhat', 'vamphair'];
 
 // miniatura para la tienda: Mito con esa sola pieza, o la mascota sola
 export function itemThumb(catId, item){
@@ -33,7 +37,7 @@ export function itemThumb(catId, item){
   const st = c && c.defaults ? `--body:${c.defaults.body};--stroke:${c.defaults.stroke};--hi:${c.defaults.highlight}` : '';
   if(!item.k) return '<svg class="th" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="opacity:.5"><circle cx="12" cy="12" r="8"/><path d="M6.5 17.5l11-11"/></svg>';
   if(catId === 'pet') return `<svg class="th" viewBox="0 0 80 80">${petMarkup(item.k)}</svg>`;
-  const hatClass = item.k === 'pumpkinhat' ? ' has-tall pumpkin-hat' : '';
+  const hatClass = (item.k === 'pumpkinhat' ? ' has-tall pumpkin-hat' : '') + (NO_ANT.includes(item.k) ? ' no-ant' : '');
   return `<svg class="th${hatClass}" viewBox="0 0 150 150" style="${st}">${mascotMarkup([item.k], 'th' + (++uid))}</svg>`;
 }
 
@@ -59,6 +63,7 @@ function applyTo(el, eq){
       svg.classList.toggle('has-crown', keys.some(k => k === 'crown' || k === 'grad'));
       svg.classList.toggle('has-tall', keys.some(k => k === 'chef' || k === 'wizard' || k === 'pumpkinhat'));
       svg.classList.toggle('pumpkin-hat', keys.includes('pumpkinhat'));
+      svg.classList.toggle('no-ant', keys.some(k => NO_ANT.includes(k)));
     }
   }
 

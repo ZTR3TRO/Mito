@@ -48,7 +48,8 @@ const normalize = svg=>svg.replace(/>\s+</g, '><').trim();
 test('trazos, colores, degradados y mascotas coinciden con mito-halloween.html', async ()=>{
   const reference = await readFile(new URL('../mito-halloween.html', import.meta.url), 'utf8');
   const segments = Object.values(HALLOWEEN_AFTER).flat();
-  for(const key of new Set(segments.map(([key])=>key))){
+  // `fangs` se rehízo con un juego de colmillos por cara (ya no es idéntico al HTML de referencia): se valida aparte.
+  for(const key of [...new Set(segments.map(([key])=>key))].filter(key=>key !== 'fangs')){
     assert.deepEqual(segments.filter(([k])=>k === key).map(([,svg])=>normalize(svg)),
       groups(reference, 'data-k', key).map(normalize), key);
   }
@@ -127,4 +128,14 @@ test('la capa tiene ambas capas y referencias únicas para cada avatar', async (
   } finally {
     delete globalThis.document;
   }
+});
+
+test('colmillos: un juego por cara, los de sonrisa con dientes quedan dentro de la boca', ()=>{
+  const [, svg] = Object.values(HALLOWEEN_AFTER).flat().find(([key])=>key === 'fangs');
+  for(const face of ['fg-n', 'fg-h', 'fg-e']) assert.equal((svg.match(new RegExp(`class="fg ${face}"`, 'g')) || []).length, 1, face);
+  // boca feliz: abre en y=95 y su punto más bajo (x≈75) es ~108; los colmillos (x≈62–88) no pasan de y=103
+  const happy = svg.split('class="fg fg-h"')[1].split('</g>')[0];
+  const ys = [...happy.matchAll(/[ML]\s*[\d.]+\s+([\d.]+)|[HL]\s*[\d.]+\s+([\d.]+)/g)].flatMap(m=>[m[1], m[2]]).filter(Boolean).map(Number);
+  assert.ok(ys.length >= 4);
+  assert.ok(Math.max(...ys) <= 103, 'los colmillos felices no deben salirse de la boca');
 });

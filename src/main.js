@@ -6,6 +6,7 @@ import {
   getTheme, setTheme, getCourse, setCourse, exportSave, importSave, resetAll,
 } from './store.js';
 import { applyAvatar, previewAvatar, itemThumb } from './avatar.js';
+import { initEasterEgg } from './easter.js';
 import { greeting, idleMessage, courseSwitchMessage, firstRoundMessage, resultMessage, petMessage } from './mitoMessages.js';
 
 /* =================== MATERIA ACTIVA =================== */
@@ -775,13 +776,13 @@ function renderCollection(hostId, shopping, seasonalOnly = false){
   host.innerHTML = '';
   const eq = getEquipped();
   const previewId = shopping ? 'mascotPreview' : 'mascotWardrobe';
-  if(!shopping && !WARDROBE.some(cat=>cat.items.some(item=>item.cost > 0 && owns(item.id)))){
+  if(!shopping && !WARDROBE.some(cat=>cat.items.some(item=>(item.cost > 0 || item.secret) && owns(item.id)))){
     host.innerHTML = '<div class="empty-state">Todavía no has comprado productos. Puedes usar las opciones básicas o <button class="btn-mini" data-nav="shop">Visitar tienda</button>.</div>';
   }
   WARDROBE.forEach(cat=>{
     const items = cat.items.filter(item=>shopping
-      ? item.cost > 0 && !owns(item.id) && !!item.seasonal === seasonalOnly
-      : item.cost === 0 || owns(item.id));
+      ? item.cost > 0 && !item.secret && !owns(item.id) && !!item.seasonal === seasonalOnly
+      : (item.cost === 0 && !item.secret) || owns(item.id));
     if(!items.length) return;
     const sec = document.createElement('div');
     sec.className = 'shop-cat';
@@ -1092,6 +1093,25 @@ renderReviewCard();
 renderProgress();
 say(getHistory().length === 0 ? `${greeting()} ${firstRoundMessage()}` : greeting());
 sayHero(idleMessage(activeCourse.id, ''));
+
+/* =================== EASTER EGG: 10 toques a Mito en la portada =================== */
+initEasterEgg({
+  target: document.getElementById('mascotHero'),
+  say: sayHero,
+  onUnlock: ()=>{
+    const hero = document.getElementById('mascotHero');
+    applyAvatar();
+    renderShop(); // refresca tienda y armario: los premios ya aparecen en el armario
+    updatePreviewLabels();
+    setFace(hero, 'excited');
+    playState(hero, 'excited');
+    setTimeout(()=>setFace(hero, 'happy'), 1400);
+    const r = hero.getBoundingClientRect();
+    burstConfetti(r.left + r.width/2, r.top, 70);
+    sayHero('¡Bzzz! Mira lo que encontraste 🐝');
+  },
+  onOpenWardrobe: ()=>goTo('wardrobe'),
+});
 
 /* =================== SERVICE WORKER (solo producción) =================== */
 if(import.meta.env.PROD && 'serviceWorker' in navigator && location.protocol !== 'file:'){

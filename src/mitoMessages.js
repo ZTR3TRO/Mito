@@ -123,6 +123,12 @@ const PET_MESSAGES = {
     `¡Nada mal, ${USER_NAME}! 🌊`,
     'Chii chii, ¿otro quiz? 🎮',
   ],
+  bee: [
+    '¡Bzzz! Repasar es como hacer miel: poquito a poco 🍯',
+    `¡Bzzz, ${USER_NAME}! Qué buen trabajo en equipo 🐝`,
+    'Bzz bzz… ¡encontraste mi escondite! 🤫',
+    'Cada acierto es una gotita de miel ✨',
+  ],
 };
 
 /* ---------- Helpers ---------- */

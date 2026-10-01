@@ -1,4 +1,5 @@
 // Piezas extraídas de mito-halloween.html: conservar trazos, colores y orden de capas.
+// (Excepción: `fangs` se rehízo con un juego por cara y ya no coincide con el HTML de referencia.)
 export const HALLOWEEN_DEFS = `
 <radialGradient id="gPk" cx=".35" cy=".3" r=".9"><stop offset="0" stop-color="#ffc48a"/><stop offset=".55" stop-color="#ff8f2a"/><stop offset="1" stop-color="#d9601c"/></radialGradient>
 <radialGradient id="gBat" cx=".35" cy=".3" r=".9"><stop offset="0" stop-color="#a98aea"/><stop offset=".55" stop-color="#6a4aa8"/><stop offset="1" stop-color="#3a2470"/></radialGradient>
@@ -22,7 +23,13 @@ export const HALLOWEEN_AFTER = {
   <path d="M20 100Q75 119 130 100" stroke="#2d7a34" stroke-width="8" fill="none" stroke-linecap="round"/>
   <path d="M20 100Q75 119 130 100" stroke="#6fcf5a" stroke-width="4.6" fill="none" stroke-linecap="round" stroke-dasharray="9 4"/>
   <path d="M60 124L67 133L75 126L83 133L90 124" stroke="#5a2a08" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity=".7"/></g>`],
-    ['fangs', `<g data-k="fangs"><path d="M67 100.4L72 102.4L69.5 108.5Z M83 100.4L78 102.4L80.5 108.5Z" fill="#fff" stroke="#2b2140" stroke-width="1.4" stroke-linejoin="round"/></g>`],
+    // Un juego de colmillos por cara: con la sonrisa de dientes (feliz/emocionado) quedan DENTRO de la boca,
+    // colgando de la fila de dientes; con la cara normal cuelgan de la línea de la sonrisa. style.css muestra uno según la cara.
+    ['fangs', `<g data-k="fangs">
+  <g class="fg fg-n"><path d="M67 100.4L72 102.4L69.5 108.5Z M83 100.4L78 102.4L80.5 108.5Z" fill="#fff" stroke="#2b2140" stroke-width="1.4" stroke-linejoin="round"/></g>
+  <g class="fg fg-h"><path d="M62.4 95.2H69.4L65.9 102.8Z M80.6 95.2H87.6L84.1 102.8Z" fill="#fff"/><path d="M62.9 96.2L65.9 102.8L68.9 96.2 M81.1 96.2L84.1 102.8L87.1 96.2" fill="none" stroke="#2b2140" stroke-width="1.3" stroke-linejoin="round" stroke-linecap="round"/></g>
+  <g class="fg fg-e"><path d="M60 94.2H67L63.5 101.6Z M83 94.2H90L86.5 101.6Z" fill="#fff"/><path d="M60.5 95.2L63.5 101.6L66.5 95.2 M83.5 95.2L86.5 101.6L89.5 95.2" fill="none" stroke="#2b2140" stroke-width="1.3" stroke-linejoin="round" stroke-linecap="round"/></g>
+</g>`],
     ['candy', `<g data-k="candy"><g transform="rotate(-8 122 110)">
   <path d="M107 100Q122 76 137 100" stroke="#4a2f1c" stroke-width="3" fill="none" stroke-linecap="round"/>
   <circle cx="115" cy="96" r="4.5" fill="#ff5da2" stroke="#b3245f" stroke-width="1.4"/><circle cx="124" cy="93" r="4.5" fill="#ffd23c" stroke="#b9790a" stroke-width="1.4"/><circle cx="131" cy="98" r="4" fill="#b98af6" stroke="#6a3fb8" stroke-width="1.4"/>
