@@ -71,7 +71,7 @@ test('compra automática, cobro único, cierre, persistencia y regreso al año s
   };
   globalThis.localStorage = { getItem:()=>saved, setItem:(_, value)=>{ saved=value; writes++; } };
   try{
-    const store = await import('../src/store.js?halloween-tests');
+    const store = await import('../src/state/store.js?halloween-tests');
     assert.equal(store.buyAndEquip('ropa','r-pumpkin'), false);
     store.addChispas(499);
     assert.equal(store.buyAndEquip('ropa','r-pumpkin'), false);
@@ -88,7 +88,7 @@ test('compra automática, cobro único, cierre, persistencia y regreso al año s
     }
     const backup = store.exportSave();
     now = new RealDate(2026,10,1).getTime();
-    const reloaded = await import('../src/store.js?halloween-reload');
+    const reloaded = await import('../src/state/store.js?halloween-reload');
     for(const item of seasonal){
       assert.equal(reloaded.owns(item.id), true);
       assert.equal(reloaded.equipCategory(item.cat,item.id), true);

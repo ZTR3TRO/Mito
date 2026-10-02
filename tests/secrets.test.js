@@ -23,7 +23,7 @@ test('premios secretos: un aura y una mascota, gratis, no se venden y no estorba
 test('easter egg: no se pueden equipar ni comprar sin desbloquear; al desbloquear se añaden al armario una sola vez', async ()=>{
   fakeStorage();
   try{
-    const store = await import('../src/store.js?secrets-1');
+    const store = await import('../src/state/store.js?secrets-1');
     store.addChispas(9999);
     for(const id of SECRET_IDS){
       const cat = WARDROBE.find(c=>c.items.some(i=>i.id === id)).id;
@@ -43,7 +43,7 @@ test('easter egg: no se pueden equipar ni comprar sin desbloquear; al desbloquea
 
     // sobrevive a recargar y a exportar/importar el progreso
     const backup = store.exportSave();
-    const reloaded = await import('../src/store.js?secrets-2');
+    const reloaded = await import('../src/state/store.js?secrets-2');
     assert.equal(reloaded.secretsUnlocked(), true);
     reloaded.resetAll();
     assert.equal(reloaded.secretsUnlocked(), false);

@@ -1,5 +1,5 @@
 import { findItem } from './wardrobe.js';
-import { getEquipped } from './store.js';
+import { getEquipped } from './state/store.js';
 import { DEFS, PRE, GBODY, SEGS, PET_BASE, PETS } from './mitoArt.js';
 import { setAura } from './mitoAura.js';
 import { skinParts } from './mitoSkins.js';
