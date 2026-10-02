@@ -27,7 +27,7 @@ export function currentQuestion(){
   return session.questions[session.index];
 }
 
-export function isLastQuestion(){
+function isLastQuestion(){
   return session.index === session.questions.length - 1;
 }
 
@@ -36,7 +36,7 @@ export function isGameOver(){
 }
 
 // Elige el banco de preguntas según el modo seleccionado.
-export function buildRound(setup){
+function buildRound(setup){
   const qs = activeCourse().questions;
   if(setup === 'repaso') return buildReviewPool();
   const nRaw = parseInt(document.querySelector('.mode-card.selected')?.dataset.n, 10);
@@ -117,7 +117,7 @@ export function submitAnswer(idx){
 }
 
 // Totales de la ronda, para el resultado y para el historial.
-export function totals(){
+function totals(){
   const answered = Object.values(session.catStats).reduce((s,c)=>s+c.total, 0);
   const right = Object.values(session.catStats).reduce((s,c)=>s+c.right, 0);
   const pct = answered ? Math.round(right/answered*100) : 0;

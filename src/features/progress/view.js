@@ -5,7 +5,7 @@ import { getHistory } from '../../state/store.js';
 import { escapeHtml, pctColor } from '../../core/utils.js';
 import { weakTopics, activeMistakeEntries, findQuestionByKey } from '../quiz/review.js';
 
-export function renderWeakTopics(){
+function renderWeakTopics(){
   const host = byId('weakTopics');
   if(!host) return;
   const weak = weakTopics();
@@ -21,7 +21,7 @@ export function renderWeakTopics(){
     </div>`).join('');
 }
 
-export function renderHistory(){
+function renderHistory(){
   const host = byId('historyList');
   if(!host) return;
   const hist = getHistory();
@@ -42,7 +42,7 @@ export function renderHistory(){
   }).join('');
 }
 
-export function renderMistakes(){
+function renderMistakes(){
   const host = byId('mistakesList');
   if(!host) return;
   const pending = activeMistakeEntries();

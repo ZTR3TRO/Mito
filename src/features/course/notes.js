@@ -5,7 +5,7 @@ import { activeCourse } from './course.js';
 
 const CHEV = `<svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>`;
 
-export function renderApuntes(){
+export function renderNotes(){
   const tabHost = byId('topicTabs');
   const host = byId('notesHost');
   const cheatWrap = byId('cheatSheet');

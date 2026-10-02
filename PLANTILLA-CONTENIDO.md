@@ -9,8 +9,8 @@ Copia la **plantilla vacía** de más abajo, llénala y me la pegas. Yo me encar
 
 | Archivo | Qué contiene |
 |---|---|
-| `src/data.js` | Solo la materia de **Bioquímica del ATP** (`COURSE_ATP`) |
-| `src/courses.js` | El registro `COURSES`. Aquí van las materias nuevas (`calculo-dietetico`, `fisiopatologia-gi`, etc.) |
+| `src/content/atp.js` | Solo la materia de **Bioquímica del ATP** (`COURSE_ATP`) |
+| `src/content/courses.js` | El registro `COURSES`. Aquí van las materias nuevas (`calculo-dietetico`, `fisiopatologia-gi`, etc.) |
 
 Tú **nunca** escribes código. Solo me pasas la información ya redactada en el formato de abajo.
 
@@ -176,7 +176,7 @@ El texto se inserta directo en la app, así que puedes usar etiquetas:
 ## 7. Qué hago yo al recibirlo
 
 1. Valido ids únicos, `cat` coincidentes e índices de `correct`.
-2. Escribo el bloque en `src/courses.js` (o `src/data.js` si es ATP).
+2. Escribo el bloque en `src/content/courses.js` (o `src/content/atp.js` si es ATP).
 3. Corro `npm run build` para confirmar que no se rompe nada.
 4. Te paso un resumen de qué se agregó.
 

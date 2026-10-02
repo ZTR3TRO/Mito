@@ -6,7 +6,10 @@
 import { WARDROBE, categoryOf } from '../content/wardrobe.js';
 import * as bus from '../core/bus.js';
 
-export const KEY = 'chispa-atp-v4';
+// Clave de la partida guardada. Privada a propósito: nadie fuera de state/ debe
+// leer ni escribir el localStorage, se escribe por commit() y se borra por resetAll().
+const KEY = 'chispa-atp-v4';
+
 export const HISTORY_LIMIT = 60;
 export const MISTAKES_LIMIT = 80;
 
@@ -61,13 +64,11 @@ function save(){
 }
 
 // Todo cambio pasa por aquí: se persiste y se avisa a quien esté escuchando.
+// Quien reacciona a un cambio se suscribe al bus, no al estado: así el estado no
+// necesita saber quién lo observa.
 export function commit(){
   save();
   bus.emit('state:changed', state);
-}
-
-export function onChange(fn){
-  bus.on('state:changed', fn);
 }
 
 export const num = (v, d = 0) => (typeof v === 'number' && Number.isFinite(v) ? v : d);

@@ -7,11 +7,6 @@ export function owns(id){
   return !!state.owned[id];
 }
 
-export function ownItem(id){
-  state.owned[id] = true;
-  commit();
-}
-
 export function getEquipped(){
   return { ...state.equipped };
 }

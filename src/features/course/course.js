@@ -11,7 +11,7 @@ let active = COURSES.find(c=>c.id === getCourse()) || COURSES[0];
 
 export const activeCourse = ()=> active;
 
-export function selectCourse(id){
+function selectCourse(id){
   active = COURSES.find(c=>c.id === id) || COURSES[0];
 }
 
@@ -36,7 +36,7 @@ export function renderCourseTabs(){
 
 // Cambia de materia y avisa al resto de la app para que se refresquen las vistas.
 // Los ids de los pills se guardan como data-id para no depender del texto (traducible).
-export function switchCourse(id){
+function switchCourse(id){
   if(id === active.id) return;
   selectCourse(id);
   setCourse(active.id);

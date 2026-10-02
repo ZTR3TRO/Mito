@@ -60,7 +60,6 @@ export function sayHero(text){
 }
 
 export const getHeroLastMsg = ()=> heroLastMsg;
-export const getSideLastMsg = ()=> sideLastMsg;
 
 // Hace que la mascota compañera (si hay una en ese .mascot) diga algo un momento.
 export function petSay(mascotEl){

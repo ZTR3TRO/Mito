@@ -1,7 +1,7 @@
 // Mensajes de Mito. Todo el texto de la mascota vive aquí para no ensuciar main.js.
 // Para agregar mensajes de una materia nueva: añade una clave con su `id` en BY_COURSE.
 
-export const USER_NAME = 'Zare';
+const USER_NAME = 'Zare';
 
 /* ---------- Mensajes generales (sirven para cualquier materia) ---------- */
 const GENERAL = [

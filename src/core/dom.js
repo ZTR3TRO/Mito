@@ -38,7 +38,3 @@ export function setText(id, value){
   const node = byId(id);
   if(node) node.textContent = value;
 }
-
-export function toggleDisplay(node, show){
-  if(node) node.style.display = show ? '' : 'none';
-}

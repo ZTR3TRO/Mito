@@ -3,7 +3,7 @@
 import { el, clear, byId } from '../../core/dom.js';
 import { activeCourse } from './course.js';
 
-export function renderClaves(){
+export function renderKeys(){
   const host = byId('keyGrid');
   if(!host) return;
   clear(host);

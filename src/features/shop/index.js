@@ -45,7 +45,7 @@ export function renderShop(){
   renderCollection('wardrobeHost', false);
 }
 
-export function renderCollection(hostId, shopping, seasonalOnly = false){
+function renderCollection(hostId, shopping, seasonalOnly = false){
   const host = byId(hostId);
   if(!host) return;
   clear(host);
@@ -150,7 +150,7 @@ function buildSeasonSection(){
 // El botón de compra lleva el precio y el bloqueo por saldo. Cuando cambian las
 // chispas hay que reajustarlos sin repintar todo el catálogo: se repinta en cada
 // respuesta del quiz y rehacer todos los SVG en cada una sería wasteful.
-export function updateAffordability(){
+function updateAffordability(){
   const balance = getChispas();
   document.querySelectorAll('[data-buy]').forEach(btn=>{
     const item = findItemById(btn.dataset.buy);
@@ -167,7 +167,7 @@ export function updateAffordability(){
 }
 
 /* ---------- Compra / equipar ---------- */
-export function handlePurchase(btn){
+function handlePurchase(btn){
   const shopping = btn.hasAttribute('data-buy');
   const notice = byId(shopping ? 'shopNotice' : 'wardrobeNotice');
   const item = findItemById(shopping ? btn.dataset.buy : btn.dataset.equip);

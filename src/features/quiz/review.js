@@ -11,8 +11,6 @@ import { activeCourse } from '../course/course.js';
 const SEP = '::';
 const DEFAULT_COURSE = COURSES[0].id;
 
-export const mistakeKey = (courseId, q) => courseId + SEP + q;
-
 // Fallos de la materia activa. Las claves viejas (sin prefijo de materia)
 // pertenecen a la primera materia, que es de donde venían.
 export function activeMistakeEntries(){

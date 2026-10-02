@@ -13,10 +13,3 @@ export function addChispas(n){
   commit();
   return state.chispas;
 }
-
-export function spendChispas(n){
-  if(state.chispas < n) return false;
-  state.chispas -= n;
-  commit();
-  return true;
-}

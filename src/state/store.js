@@ -2,16 +2,14 @@
 //
 // La implementación está partida por dominio: core guarda y carga, y cada módulo
 // sibling (economy, inventory, progress, preferences, backup) expone su parte.
-// Este fichero solo reexporta, de modo que la app importa siempre desde aquí y la
-// API pública no cambia respecto a la versión anterior: mismos nombres, misma
-// semántica, mismos errores.
+// Este fichero solo reexporta la API pública: lo que la app necesita desde fuera.
+// Los módulos de state/ se importan entre sí directamente desde ./core.js, sin
+// pasar por aquí, y lo interno no se reexporta.
 
-export { state, KEY, onChange } from './core.js';
-
-export { PASSING_BONUS, getChispas, addChispas, spendChispas } from './economy.js';
+export { PASSING_BONUS, getChispas, addChispas } from './economy.js';
 
 export {
-  owns, ownItem, getEquipped, equipCategory,
+  owns, getEquipped, equipCategory,
   unlockSecrets, secretsUnlocked, buyAndEquip,
 } from './inventory.js';
 

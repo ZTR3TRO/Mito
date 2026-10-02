@@ -44,5 +44,3 @@ export function pctColor(p){
   if(p >= 60) return 'var(--yellow)';
   return '#ff6b6b';
 }
-
-export const sum = (list, pick) => list.reduce((t, x)=>t + pick(x), 0);

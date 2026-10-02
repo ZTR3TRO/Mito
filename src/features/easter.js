@@ -91,5 +91,3 @@ function showUnlockAlert(ids, onOpenWardrobe){
   });
   btns[0].focus();
 }
-
-export { TAPS, GAP_MS };

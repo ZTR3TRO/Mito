@@ -18,13 +18,13 @@ export function startQuiz(){
   emit('quiz:started');
 }
 
-export function answer(idx){
+function answer(idx){
   const outcome = s.submitAnswer(idx);
   if(!outcome) return;
   view.renderAnswerResult(idx, outcome);
 }
 
-export function nextQuestion(){
+function nextQuestion(){
   if(!s.advance()){
     finishQuiz();
     return;
@@ -32,7 +32,7 @@ export function nextQuestion(){
   view.renderQuestion(answer);
 }
 
-export function finishQuiz(){
+function finishQuiz(){
   const result = s.finishRound();
   view.renderResult(result);
 

@@ -17,8 +17,8 @@ import { goTo, isVisible, initNavButtons, initNavLinks } from './features/nav/ro
 import { initTheme, applyTheme } from './features/theme/index.js';
 
 import { initCourseTabs, renderCourseTabs, reloadCourse, activeCourse } from './features/course/course.js';
-import { renderApuntes, initNotes } from './features/course/notes.js';
-import { renderClaves } from './features/course/keys.js';
+import { renderNotes, initNotes } from './features/course/notes.js';
+import { renderKeys } from './features/course/keys.js';
 import { renderHome } from './features/course/home.js';
 
 import { init as initQuiz, renderReviewCard, resetQuiz } from './features/quiz/index.js';
@@ -39,8 +39,8 @@ import { initEasterEgg } from './features/easter.js';
 /* ---------- Re-render de las vistas que dependen de la materia ---------- */
 function renderCourseViews(){
   renderCourseTabs();
-  renderApuntes();
-  renderClaves();
+  renderNotes();
+  renderKeys();
   renderHome();
   renderQuizCounts();
   renderReviewCard();

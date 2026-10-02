@@ -1,4 +1,5 @@
-// Generado a partir de mito-nuevo.html (auras). Embrujada y Panal se añadieron después (ver HAUNT_HTML / PANAL_HTML).
+// Aura de la mascota: qué SVG se pinta detrás de Mito para cada variante.
+// Los SVG están en content/art/secrets.js; aquí solo se montan en el DOM.
 import { AURA_BAT, AURA_BEE } from '../../content/art/secrets.js';
 const RB = ['#ff5da2','#ffc93c','#16c98d','#5db2ff','#b98af6'];
 const AURAS = [['none','Sin aura'],['mint','Menta'],['gold','Dorada'],['rainbow','Arcoíris'],['cosmic','Cósmica'],['fire','Fuego'],['ice','Escarcha'],['storm','Rayo'],['sakura','Sakura']];
