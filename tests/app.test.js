@@ -11,7 +11,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { parseHTML } from 'linkedom';
 import { emit } from '../src/core/bus.js';
-import { isSeasonalOpen, WARDROBE } from '../src/wardrobe.js';
+import { isSeasonalOpen, WARDROBE } from '../src/content/wardrobe.js';
 
 function memoryStorage(){
   const data = new Map();
@@ -72,8 +72,8 @@ before(async ()=>{
   await import('../src/main.js');
   quiz = await import('../src/features/quiz/index.js');
   quizSession = await import('../src/features/quiz/session.js');
-  theme = await import('../src/features/theme.js');
-  courses = (await import('../src/courses.js')).COURSES;
+  theme = await import('../src/features/theme/index.js');
+  courses = (await import('../src/content/courses.js')).COURSES;
 });
 
 // Vuelve al estado inicial y repinta, como si el usuario acabara de recargar.

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { WARDROBE, SECRET_IDS, findItemById } from '../src/wardrobe.js';
-import { SECRET_PETS } from '../src/secretArt.js';
+import { WARDROBE, SECRET_IDS, findItemById } from '../src/content/wardrobe.js';
+import { SECRET_PETS } from '../src/content/art/secrets.js';
 
 function fakeStorage(){
   let saved = null;
@@ -57,7 +57,7 @@ test('easter egg: no se pueden equipar ni comprar sin desbloquear; al desbloquea
 test('avatar: la abejita se dibuja como mascota y el cabello de vampiro/sombrero calabaza marcan "sin antenas"', async ()=>{
   globalThis.document = { getElementById:()=>({}) };
   try{
-    const avatar = await import('../src/avatar.js');
+    const avatar = await import('../src/features/mascot/avatar.js');
     const thumb = avatar.itemThumb('pet', findItemById('p-bee'));
     assert.ok(thumb.includes('data-p="bee"'));
     const hair = avatar.itemThumb('sombrero', findItemById('s-vampire'));

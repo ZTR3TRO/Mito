@@ -1,7 +1,7 @@
 // Tema claro / oscuro. Persiste en el store y se refleja en <html data-theme>.
 
-import { byId } from '../core/dom.js';
-import { getTheme, setTheme } from '../state/store.js';
+import { byId } from '../../core/dom.js';
+import { getTheme, setTheme } from '../../state/store.js';
 
 const LABELS = {
   dark:  { emoji:'☀️', label:'Modo claro' },

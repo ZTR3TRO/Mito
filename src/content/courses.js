@@ -1,4 +1,4 @@
-import { COURSE_ATP } from './data.js';
+import { COURSE_ATP } from './atp.js';
 
 export const COURSES = [
   COURSE_ATP,

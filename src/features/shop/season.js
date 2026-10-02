@@ -2,9 +2,9 @@
 // avisar al usuario cuando la ventana se abra o se cierre, incluso si la app
 // estuvo en segundo plano durante el cambio.
 
-import { isSeasonalOpen } from '../../wardrobe.js';
+import { isSeasonalOpen } from '../../content/wardrobe.js';
 import { byId } from '../../core/dom.js';
-import { applyAvatar } from '../../avatar.js';
+import { applyAvatar } from '../mascot/avatar.js';
 import { renderShop } from './index.js';
 
 const OPENED = 'La tienda de Halloween ya está abierta.';

@@ -10,11 +10,11 @@
 import { on } from './core/bus.js';
 import { byId } from './core/dom.js';
 
-import { applyAvatar } from './avatar.js';
+import { applyAvatar } from './features/mascot/avatar.js';
 import { getHistory, getTheme, addChispas, getChispas } from './state/store.js';
 
 import { goTo, isVisible, initNavButtons, initNavLinks } from './features/nav/router.js';
-import { initTheme, applyTheme } from './features/theme.js';
+import { initTheme, applyTheme } from './features/theme/index.js';
 
 import { initCourseTabs, renderCourseTabs, reloadCourse, activeCourse } from './features/course/course.js';
 import { renderApuntes, initNotes } from './features/course/notes.js';
@@ -33,7 +33,7 @@ import { renderProgress, renderSidebarStats } from './features/progress/view.js'
 import { init as initSpeech, initPetTalk, say, sayHero, getHeroLastMsg } from './features/mascot/speech.js';
 import { setFace, playState } from './features/mascot/face.js';
 import { burstConfetti } from './features/mascot/effects.js';
-import { greeting, idleMessage, courseSwitchMessage, firstRoundMessage, resultMessage } from './mitoMessages.js';
+import { greeting, idleMessage, courseSwitchMessage, firstRoundMessage, resultMessage } from './content/messages.js';
 import { initEasterEgg } from './features/easter.js';
 
 /* ---------- Re-render de las vistas que dependen de la materia ---------- */

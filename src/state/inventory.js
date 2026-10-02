@@ -1,6 +1,6 @@
 // Inventario: qué prendas tienes compradas y cuál llevas puesta en cada categoría.
 
-import { SECRET_IDS, findItem, isSeasonalOpen } from '../wardrobe.js';
+import { SECRET_IDS, findItem, isSeasonalOpen } from '../content/wardrobe.js';
 import { state, commit } from './core.js';
 
 export function owns(id){

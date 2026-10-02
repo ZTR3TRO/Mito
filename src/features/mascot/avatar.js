@@ -1,10 +1,10 @@
-import { findItem } from './wardrobe.js';
-import { getEquipped } from './state/store.js';
-import { DEFS, PRE, GBODY, SEGS, PET_BASE, PETS } from './mitoArt.js';
-import { setAura } from './mitoAura.js';
-import { skinParts } from './mitoSkins.js';
-import { HALLOWEEN_DEFS, HALLOWEEN_AFTER, HALLOWEEN_PETS } from './halloweenArt.js';
-import { SECRET_PETS } from './secretArt.js';
+import { findItem } from '../../content/wardrobe.js';
+import { getEquipped } from '../../state/store.js';
+import { DEFS, PRE, GBODY, SEGS, PET_BASE, PETS } from '../../content/art/base.js';
+import { setAura } from './auras.js';
+import { skinParts } from '../../content/art/skins.js';
+import { HALLOWEEN_DEFS, HALLOWEEN_AFTER, HALLOWEEN_PETS } from '../../content/art/halloween.js';
+import { SECRET_PETS } from '../../content/art/secrets.js';
 
 const NS = 'http://www.w3.org/2000/svg';
 const AURA_HTML = '<div class="a-glow"></div><div class="a-neb"></div><div class="a-gal"></div><div class="a-rays"></div><div class="a-ring"></div><div class="a-parts"></div>';

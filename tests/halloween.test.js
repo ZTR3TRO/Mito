@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { WARDROBE, isSeasonalOpen } from '../src/wardrobe.js';
-import { HALLOWEEN_AFTER, HALLOWEEN_DEFS, HALLOWEEN_PETS } from '../src/halloweenArt.js';
+import { WARDROBE, isSeasonalOpen } from '../src/content/wardrobe.js';
+import { HALLOWEEN_AFTER, HALLOWEEN_DEFS, HALLOWEEN_PETS } from '../src/content/art/halloween.js';
 
 const seasonal = WARDROBE.flatMap(cat=>cat.items.filter(item=>item.seasonal).map(item=>({cat:cat.id, ...item})));
 
@@ -117,7 +117,7 @@ test('compra automática, cobro único, cierre, persistencia y regreso al año s
 test('la capa tiene ambas capas y referencias únicas para cada avatar', async ()=>{
   globalThis.document = { getElementById:()=>({}) };
   try{
-    const { mascotMarkup } = await import('../src/avatar.js');
+    const { mascotMarkup } = await import('../src/features/mascot/avatar.js');
     const first = mascotMarkup(['vampcape','fangs','vamphair'], 'test1');
     const second = mascotMarkup(['vampcape'], 'test2');
     assert.equal((first.match(/data-k="vampcape"/g) || []).length, 2);

@@ -2,7 +2,7 @@
 // La materia activa se inyecta como callback para no importar el módulo de cursos
 // (evita ciclo con course, que usa este módulo para hablar al cambiar de materia).
 
-import { idleMessage, petMessage } from '../../mitoMessages.js';
+import { idleMessage, petMessage } from '../../content/messages.js';
 import { byId } from '../../core/dom.js';
 
 const IDLE_SIDE_MS = 9000;

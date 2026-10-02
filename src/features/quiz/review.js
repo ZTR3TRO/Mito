@@ -3,7 +3,7 @@
 // Prioriza los fallos pendientes, luego los temas débiles por porcentaje de aciertos,
 // y rellena con el resto del banco barajado.
 
-import { COURSES } from '../../courses.js';
+import { COURSES } from '../../content/courses.js';
 import { getMistakes, getHistory } from '../../state/store.js';
 import { shuffle } from '../../core/utils.js';
 import { activeCourse } from '../course/course.js';

@@ -1,8 +1,8 @@
 // easter.js
 
 import { unlockSecrets } from '../state/store.js';
-import { categoryOf, findItemById } from '../wardrobe.js';
-import { itemThumb } from '../avatar.js';
+import { categoryOf, findItemById } from '../content/wardrobe.js';
+import { itemThumb } from './mascot/avatar.js';
 
 const TAPS = 10;
 const GAP_MS = 2500;

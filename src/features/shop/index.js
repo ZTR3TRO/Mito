@@ -2,10 +2,10 @@
 // tienda de temporada de Halloween.
 
 import { clear, byId, delegate } from '../../core/dom.js';
-import { WARDROBE, findItem, findItemById, categoryOf, isSeasonalOpen } from '../../wardrobe.js';
+import { WARDROBE, findItem, findItemById, categoryOf, isSeasonalOpen } from '../../content/wardrobe.js';
 import { getChispas, getEquipped, owns, buyAndEquip, equipCategory } from '../../state/store.js';
 import { on } from '../../core/bus.js';
-import { applyAvatar, previewAvatar, itemThumb } from '../../avatar.js';
+import { applyAvatar, previewAvatar, itemThumb } from '../mascot/avatar.js';
 import { sparkAt } from '../mascot/effects.js';
 import { petSay } from '../mascot/speech.js';
 

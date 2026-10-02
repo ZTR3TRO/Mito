@@ -3,7 +3,7 @@
 // Los módulos de dominio (economy, inventory, progress, preferences, backup) importan
 // de aquí. La app nunca importa este fichero directamente: usa src/state/store.js.
 
-import { WARDROBE, categoryOf } from '../wardrobe.js';
+import { WARDROBE, categoryOf } from '../content/wardrobe.js';
 import * as bus from '../core/bus.js';
 
 export const KEY = 'chispa-atp-v4';

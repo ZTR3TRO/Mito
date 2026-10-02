@@ -2,7 +2,7 @@
 // Es el módulo del que dependen casi todas las vistas, así que expone un getter
 // en lugar de que cada vista imports y almacene su propia copia.
 
-import { COURSES } from '../../courses.js';
+import { COURSES } from '../../content/courses.js';
 import { getCourse, setCourse } from '../../state/store.js';
 import { emit } from '../../core/bus.js';
 import { el, clear, byId } from '../../core/dom.js';
