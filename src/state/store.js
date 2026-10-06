@@ -6,7 +6,7 @@
 // Los módulos de state/ se importan entre sí directamente desde ./core.js, sin
 // pasar por aquí, y lo interno no se reexporta.
 
-export { PASSING_BONUS, getChispas, addChispas } from './economy.js';
+export { PASSING_BONUS, SPARK_CLICK_EGG_REWARD, getChispas, addChispas, claimSparkClickEgg } from './economy.js';
 
 export {
   owns, getEquipped, equipCategory,

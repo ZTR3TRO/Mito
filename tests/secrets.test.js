@@ -92,6 +92,28 @@ test('las mascotas compradas se pueden renombrar y el respaldo conserva el nombr
   }
 });
 
+test('easter egg de chispas: 50 clicks regalan 1000 una sola vez y queda en el respaldo', async ()=>{
+  fakeStorage();
+  try{
+    const store = await import('../src/state/store.js?spark-egg-1');
+    store.resetAll();
+    assert.equal(store.getChispas(), 0);
+    assert.equal(store.claimSparkClickEgg(), true);
+    assert.equal(store.getChispas(), store.SPARK_CLICK_EGG_REWARD);
+    assert.equal(store.claimSparkClickEgg(), false, 'no debe poder reclamarse dos veces');
+    assert.equal(store.getChispas(), store.SPARK_CLICK_EGG_REWARD);
+
+    const backup = store.exportSave();
+    const reloaded = await import('../src/state/store.js?spark-egg-2');
+    reloaded.resetAll();
+    reloaded.importSave(backup);
+    assert.equal(reloaded.claimSparkClickEgg(), false, 'el respaldo conserva el claim');
+    assert.equal(reloaded.getChispas(), store.SPARK_CLICK_EGG_REWARD);
+  } finally {
+    delete globalThis.localStorage;
+  }
+});
+
 test('avatar: la abejita se dibuja como mascota y el cabello de vampiro/sombrero calabaza marcan "sin antenas"', async ()=>{
   globalThis.document = { getElementById:()=>({}) };
   try{

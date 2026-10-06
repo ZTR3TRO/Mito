@@ -18,6 +18,7 @@ export function defaultState(){
     chispas: 0,
     owned: {},
     petNames: {},
+    claimedEggs: {},
     equipped: { color:'c-mint', ropa:'r-none', accesorio:'ac-none', sombrero:'s-none', aura:'a-none', pet:'p-none' },
     history: [],
     mistakes: {},
@@ -50,6 +51,12 @@ export function cleanPetNames(names){
   return out;
 }
 
+export function cleanClaimedEggs(claimed){
+  const out = {};
+  if(claimed && typeof claimed === 'object' && claimed.spark50 === true) out.spark50 = true;
+  return out;
+}
+
 function load(){
   try{
     const s = JSON.parse(localStorage.getItem(KEY));
@@ -60,6 +67,7 @@ function load(){
         history: Array.isArray(s.history) ? s.history : [],
         mistakes: s.mistakes && typeof s.mistakes === 'object' ? s.mistakes : {},
         petNames: cleanPetNames(s.petNames),
+        claimedEggs: cleanClaimedEggs(s.claimedEggs),
         equipped: fixEquipped(s.equipped),
       };
     }

@@ -34,7 +34,7 @@ import { init as initSpeech, initPetTalk, say, sayHero, getHeroLastMsg } from '.
 import { setFace, playState } from './features/mascot/face.js';
 import { burstConfetti } from './features/mascot/effects.js';
 import { greeting, idleMessage, courseSwitchMessage, firstRoundMessage, resultMessage } from './content/messages.js';
-import { initEasterEgg, initPerfectEgg } from './features/easter.js';
+import { initEasterEgg, initPerfectEgg, initSparkEgg } from './features/easter.js';
 
 /* ---------- Re-render de las vistas que dependen de la materia ---------- */
 function renderCourseViews(){
@@ -153,6 +153,11 @@ function boot(){
     say: sayHero,
     onUnlock: celebrateSecrets,
     onOpenWardrobe: ()=> goTo('wardrobe'),
+  });
+
+  initSparkEgg({
+    target: document.querySelector('.sidebar .balance-chip'),
+    say,
   });
 
   // Solo cuenta mientras se ve la pantalla de resultado de la ronda perfecta.

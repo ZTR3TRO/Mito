@@ -7,23 +7,26 @@
 //                  toca a Mito tantas veces como preguntas tuvo la ronda → mascota Ajolote.
 //                  (8 preguntas = 8 toques, 50 preguntas = 50 toques.)
 
-import { unlockSecrets } from '../state/store.js';
+import { claimSparkClickEgg, SPARK_CLICK_EGG_REWARD, unlockSecrets } from '../state/store.js';
 import { categoryOf, findItemById } from '../content/wardrobe.js';
 import { itemThumb } from './mascot/avatar.js';
+import { sparkAt } from './mascot/effects.js';
 
 const TAPS = 10;
+const SPARK_TAPS = 50;
 const GAP_MS = 2500; // si pasas más de esto sin tocar, la cuenta vuelve a cero
 
 // Cuenta toques seguidos sobre el <svg> de Mito dentro de `target`.
-//   goal()    → toques necesarios ahora mismo (0 = apagado)
-//   enabled() → ¿se puede contar ahora?
-//   hints     → [{ at: 0.5, text }]: avisos cuando llevas esa fracción del camino
-function tapCounter({ target, goal, enabled = ()=> true, hints = [], onHint, onGoal }){
+//   goal()      → toques necesarios ahora mismo (0 = apagado)
+//   enabled()   → ¿se puede contar ahora?
+//   hit(e)      → qué clicks cuentan
+//   hints       → [{ at: 0.5, text }]: avisos cuando llevas esa fracción del camino
+function tapCounter({ target, goal, enabled = ()=> true, hit = e=> e.target.closest('svg.mito'), hints = [], onHint, onGoal }){
   if(!target) return { reset(){} };
   let count = 0, timer;
 
   target.addEventListener('click', e=>{
-    if(!e.target.closest('svg.mito') || !enabled()) return;
+    if(!hit(e) || !enabled()) return;
     const n = goal();
     if(!n) return;
 
@@ -100,6 +103,24 @@ export function initPerfectEgg({ target, enabled, onUnlock, onOpenWardrobe }){
   });
 
   return { arm(total){ armed = total > 0 ? total : 0; counter.reset(); } };
+}
+
+/* ---------- 3) Chispas: 50 toques al saldo ---------- */
+export function initSparkEgg({ target, say }){
+  tapCounter({
+    target,
+    hit: ()=> true,
+    goal: ()=> SPARK_TAPS,
+    enabled: ()=> true,
+    onGoal: ()=>{
+      if(claimSparkClickEgg()){
+        sparkAt(target, `+${SPARK_CLICK_EGG_REWARD} ⚡`);
+        say(`¡Encontraste una reserva secreta de chispas! +${SPARK_CLICK_EGG_REWARD} ⚡`);
+        return;
+      }
+      say('Ya encontraste ese escondite de chispas ⚡');
+    },
+  });
 }
 
 // Globito breve sobre Mito (se reutiliza el mismo nodo).

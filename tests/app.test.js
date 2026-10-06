@@ -261,6 +261,23 @@ test('el easter egg necesita 10 toques y entrega los premios secretos', ()=>{
   assert.ok(document.querySelector('#wardrobeHost [data-equip="p-bee"]'));
 });
 
+test('el easter egg de chispas da 1000 al tocar 50 veces el saldo y solo una vez', ()=>{
+  resetApp();
+  const chip = document.querySelector('.sidebar .balance-chip');
+  assert.ok(chip, 'debería existir el chip de chispas de la sidebar');
+
+  for(let i=0; i<49; i++) chip.click();
+  assert.equal(store.getChispas(), 0);
+  assert.equal(document.getElementById('sideSparks').textContent, '0');
+
+  chip.click();
+  assert.equal(store.getChispas(), 1000);
+  assert.equal(document.getElementById('sideSparks').textContent, '1000');
+
+  for(let i=0; i<50; i++) chip.click();
+  assert.equal(store.getChispas(), 1000, 'no debe repetirse en la misma partida');
+});
+
 test('la tienda de Halloween pinta sus productos dentro de su propia sección', ()=>{
   resetApp();
   if(!isSeasonalOpen()){
