@@ -261,20 +261,24 @@ test('el easter egg necesita 10 toques y entrega los premios secretos', ()=>{
   assert.ok(document.querySelector('#wardrobeHost [data-equip="p-bee"]'));
 });
 
-test('el easter egg de chispas da 1000 al tocar 50 veces el saldo y solo una vez', ()=>{
+test('el easter egg de chispas da 1000 desde cualquier saldo visible y solo una vez', ()=>{
   resetApp();
-  const chip = document.querySelector('.sidebar .balance-chip');
-  assert.ok(chip, 'debería existir el chip de chispas de la sidebar');
+  const sideChip = document.querySelector('.sidebar .balance-chip');
+  const shopChip = document.querySelector('.shop-head-actions .balance-chip');
+  assert.ok(sideChip, 'debería existir el chip de chispas de la sidebar');
+  assert.ok(shopChip, 'debería existir el chip de chispas de la tienda');
 
-  for(let i=0; i<49; i++) chip.click();
+  for(let i=0; i<20; i++) sideChip.click();
+  for(let i=0; i<29; i++) shopChip.click();
   assert.equal(store.getChispas(), 0);
   assert.equal(document.getElementById('sideSparks').textContent, '0');
 
-  chip.click();
+  shopChip.click();
   assert.equal(store.getChispas(), 1000);
   assert.equal(document.getElementById('sideSparks').textContent, '1000');
+  assert.equal(document.getElementById('sparkBalance').textContent, '1000');
 
-  for(let i=0; i<50; i++) chip.click();
+  for(let i=0; i<50; i++) shopChip.click();
   assert.equal(store.getChispas(), 1000, 'no debe repetirse en la misma partida');
 });
 

@@ -106,20 +106,27 @@ export function initPerfectEgg({ target, enabled, onUnlock, onOpenWardrobe }){
 }
 
 /* ---------- 3) Chispas: 50 toques al saldo ---------- */
-export function initSparkEgg({ target, say }){
-  tapCounter({
-    target,
-    hit: ()=> true,
-    goal: ()=> SPARK_TAPS,
-    enabled: ()=> true,
-    onGoal: ()=>{
+export function initSparkEgg({ targets, say }){
+  const nodes = [...(targets || [])].filter(Boolean);
+  let count = 0, timer;
+
+  nodes.forEach(target=>{
+    target.addEventListener('click', ()=>{
+      clearTimeout(timer);
+      count++;
+      timer = setTimeout(()=>{ count = 0; }, GAP_MS);
+
+      if(count < SPARK_TAPS) return;
+      count = 0;
+      clearTimeout(timer);
+
       if(claimSparkClickEgg()){
         sparkAt(target, `+${SPARK_CLICK_EGG_REWARD} ⚡`);
         say(`¡Encontraste una reserva secreta de chispas! +${SPARK_CLICK_EGG_REWARD} ⚡`);
         return;
       }
       say('Ya encontraste ese escondite de chispas ⚡');
-    },
+    });
   });
 }
 

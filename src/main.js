@@ -156,7 +156,7 @@ function boot(){
   });
 
   initSparkEgg({
-    target: document.querySelector('.sidebar .balance-chip'),
+    targets: document.querySelectorAll('.balance-chip'),
     say,
   });
 
