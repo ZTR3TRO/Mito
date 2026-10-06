@@ -65,13 +65,14 @@ test('easter egg: no se pueden equipar ni comprar sin desbloquear; al desbloquea
   }
 });
 
-test('las mascotas compradas se pueden renombrar y el respaldo conserva el nombre', async ()=>{
+test('las mascotas compradas se pueden personalizar y el respaldo conserva los cambios', async ()=>{
   fakeStorage();
   try{
     const store = await import('../src/state/store.js?pet-names-1');
     assert.equal(store.renamePet('p-chick', 'Pío'), false, 'no se renombra una mascota no comprada');
 
     store.addChispas(9999);
+    assert.equal(store.setPetLook('p-chick', 'c-sky'), false, 'no se personaliza una mascota no comprada');
     assert.equal(store.buyAndEquip('pet', 'p-chick'), true);
     assert.equal(store.renamePet('p-chick', '  Pío  '), true);
     assert.equal(store.getPetName('p-chick'), 'Pío');
@@ -81,12 +82,17 @@ test('las mascotas compradas se pueden renombrar y el respaldo conserva el nombr
     assert.equal(store.getPetDisplayName('p-chick'), 'Pollito');
 
     store.renamePet('p-chick', 'Chispa');
+    assert.equal(store.buyAndEquip('color', 'c-sky'), true);
+    assert.equal(store.setPetLook('p-chick', 'c-sky'), true);
+    assert.equal(store.getPetLook('p-chick'), 'c-sky');
     const backup = store.exportSave();
     const reloaded = await import('../src/state/store.js?pet-names-2');
     reloaded.resetAll();
     assert.equal(reloaded.getPetDisplayName('p-chick'), 'Pollito');
+    assert.equal(reloaded.getPetLook('p-chick'), '');
     reloaded.importSave(backup);
     assert.equal(reloaded.getPetDisplayName('p-chick'), 'Chispa');
+    assert.equal(reloaded.getPetLook('p-chick'), 'c-sky');
   } finally {
     delete globalThis.localStorage;
   }

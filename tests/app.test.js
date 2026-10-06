@@ -208,6 +208,34 @@ test('el armario permite renombrar la mascota compañera', ()=>{
   assert.ok(document.getElementById('wardrobeNotice').textContent.includes('Chispa'));
 });
 
+test('el armario permite cambiar el color de la mascota sin recolorear la cara', ()=>{
+  resetApp();
+  store.addChispas(5000);
+  emit('state:changed');
+
+  document.querySelector('#shopHost [data-buy="c-sky"]').click();
+  document.querySelector('#shopHost [data-buy="p-chick"]').click();
+
+  const customize = document.querySelector('#wardrobeHost [data-rename-pet="p-chick"]');
+  assert.ok(customize, 'la mascota comprada debería poder personalizarse');
+  customize.click();
+
+  const modal = document.querySelector('.pet-modal-backdrop');
+  assert.ok(modal, 'debería abrirse el modal de personalización');
+  const sky = modal.querySelector('[data-set-pet-look="p-chick"][data-pet-look="c-sky"]');
+  assert.ok(sky, 'debería ofrecer los colores comprados');
+  sky.click();
+
+  assert.equal(store.getPetLook('p-chick'), 'c-sky');
+  const pet = document.querySelector('#mascotWardrobe svg.pet');
+  assert.ok(pet.innerHTML.includes('var(--pet-body)'), 'la mascota debería usar variables de color');
+  assert.ok(pet.innerHTML.includes('fill="#2b2140"'), 'ojos y boca deberían conservar su color base');
+  assert.ok(pet.innerHTML.includes('fill="#fff"'), 'brillos de la cara deberían conservarse');
+
+  modal.querySelector('[data-set-pet-look="p-chick"][data-pet-look=""]').click();
+  assert.equal(store.getPetLook('p-chick'), '');
+});
+
 test('el modo repaso se habilita solo cuando hay fallos pendientes', ()=>{
   resetApp();
   const card = document.getElementById('modeRev');

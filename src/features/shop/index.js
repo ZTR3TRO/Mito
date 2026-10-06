@@ -5,7 +5,7 @@ import { clear, byId, delegate } from '../../core/dom.js';
 import { WARDROBE, findItem, findItemById, categoryOf, isSeasonalOpen } from '../../content/wardrobe.js';
 import {
   getChispas, getEquipped, owns, buyAndEquip, equipCategory,
-  getPetName, getPetDisplayName, renamePet,
+  getPetName, getPetDisplayName, renamePet, getPetLook, setPetLook,
 } from '../../state/store.js';
 import { on } from '../../core/bus.js';
 import { applyAvatar, previewAvatar, itemThumb } from '../mascot/avatar.js';
@@ -19,6 +19,12 @@ let petNameReturnFocus = null;
 
 function displayName(cat, item, custom){
   return custom && cat === 'pet' ? getPetDisplayName(item.id) : item.name;
+}
+
+function petLookOptions(){
+  const colorCat = WARDROBE.find(cat=>cat.id === 'color');
+  const colors = colorCat ? colorCat.items.filter(item=>!item.secret && (item.cost === 0 || owns(item.id))) : [];
+  return [{ id:'', name:'Original', swatch:'linear-gradient(135deg,#fff,#f2e8ff)' }, ...colors];
 }
 
 function esc(text){
@@ -143,9 +149,9 @@ function buildCard(cat, item, { shopping, equipped, previewId }){
     const rename = document.createElement('button');
     rename.type = 'button';
     rename.className = 'btn-mini rename-pet';
-    rename.textContent = 'Renombrar';
+    rename.textContent = 'Personalizar';
     rename.dataset.renamePet = item.id;
-    rename.setAttribute('aria-label', `Renombrar: ${item.name}`);
+    rename.setAttribute('aria-label', `Personalizar: ${item.name}`);
     actions.appendChild(rename);
   }
   card.appendChild(actions);
@@ -171,17 +177,29 @@ function showPetNameModal(btn){
   closePetNameModal();
   petNameReturnFocus = btn;
   const current = getPetName(item.id);
+  const currentLook = getPetLook(item.id);
+  const options = petLookOptions();
   const back = document.createElement('div');
   back.className = 'pet-modal-backdrop';
   back.innerHTML = `
     <form class="pet-modal-card" role="dialog" aria-modal="true" aria-labelledby="petModalTitle">
       <button type="button" class="pet-modal-close" data-close-pet-modal aria-label="Cerrar">×</button>
       <div class="pet-modal-visual">${itemThumb('pet', item)}</div>
-      <h2 id="petModalTitle">Renombrar mascota</h2>
+      <h2 id="petModalTitle">Personalizar mascota</h2>
       <p>Nombre original: <b>${esc(item.name)}</b></p>
       <label class="pet-modal-field">Nombre personalizado
         <input name="petName" maxlength="${PET_NAME_MAX}" value="${esc(current || item.name)}" autocomplete="off">
       </label>
+      <div class="pet-look-field" aria-label="Color de mascota">
+        <span>Color</span>
+        <div class="pet-look-options">
+          ${options.map(opt=>`
+            <button type="button" class="pet-look-btn${opt.id === currentLook ? ' selected' : ''}" data-set-pet-look="${item.id}" data-pet-look="${opt.id}" aria-pressed="${opt.id === currentLook ? 'true' : 'false'}" title="${esc(opt.name)}">
+              <span class="pet-look-swatch" style="background:${opt.swatch || opt.defaults?.body}"></span>
+              <span>${esc(opt.name)}</span>
+            </button>`).join('')}
+        </div>
+      </div>
       <div class="pet-modal-actions">
         <button type="submit" class="btn-mini equip-only" data-save-pet-name="${item.id}">Guardar nombre</button>
         ${current ? `<button type="button" class="btn-mini pet-modal-ghost" data-clear-pet-name="${item.id}">Quitar nombre</button>` : ''}
@@ -203,6 +221,32 @@ function savePetName(id, name){
   renderShop();
   updatePreviewLabels();
   if(notice) notice.textContent = `${getPetDisplayName(id)}: nombre actualizado.`;
+}
+
+function savePetLook(btn){
+  const id = btn.dataset.setPetLook;
+  const colorId = btn.dataset.petLook || '';
+  const notice = byId('wardrobeNotice');
+  if(!setPetLook(id, colorId)){
+    if(notice) notice.textContent = ACTION_FAILED;
+    return;
+  }
+  const item = findItem('pet', id);
+  const modal = btn.closest('.pet-modal-backdrop');
+  if(modal && item){
+    const visual = modal.querySelector('.pet-modal-visual');
+    if(visual) visual.innerHTML = itemThumb('pet', item);
+    modal.querySelectorAll('[data-set-pet-look]').forEach(opt=>{
+      const selected = (opt.dataset.petLook || '') === colorId;
+      opt.classList.toggle('selected', selected);
+      opt.setAttribute('aria-pressed', selected ? 'true' : 'false');
+    });
+  }
+  applyAvatar();
+  renderShop();
+  updatePreviewLabels();
+  const color = colorId ? findItem('color', colorId) : null;
+  if(notice) notice.textContent = `${getPetDisplayName(id)}: color ${color ? color.name : 'Original'}.`;
 }
 
 // Un aura o un color con efecto se muestra como swatch; el resto, como miniatura de Mito.
@@ -293,6 +337,8 @@ export function init(){
   delegate('click', e=>{
     const rename = e.target.closest('[data-rename-pet]');
     if(rename){ showPetNameModal(rename); return; }
+    const petLook = e.target.closest('[data-set-pet-look]');
+    if(petLook){ savePetLook(petLook); return; }
     const save = e.target.closest('[data-save-pet-name]');
     if(save){ e.preventDefault(); savePetName(save.dataset.savePetName, save.closest('form')?.querySelector('input[name="petName"]')?.value); return; }
     const clear = e.target.closest('[data-clear-pet-name]');

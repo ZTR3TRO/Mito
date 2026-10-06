@@ -18,6 +18,7 @@ export function defaultState(){
     chispas: 0,
     owned: {},
     petNames: {},
+    petLooks: {},
     claimedEggs: {},
     equipped: { color:'c-mint', ropa:'r-none', accesorio:'ac-none', sombrero:'s-none', aura:'a-none', pet:'p-none' },
     history: [],
@@ -51,6 +52,17 @@ export function cleanPetNames(names){
   return out;
 }
 
+export function cleanPetLooks(looks){
+  const out = {};
+  if(!looks || typeof looks !== 'object') return out;
+  Object.keys(looks).forEach(id=>{
+    const colorId = looks[id];
+    if(categoryOf(id) !== 'pet' || id === 'p-none') return;
+    if(typeof colorId === 'string' && categoryOf(colorId) === 'color') out[id] = colorId;
+  });
+  return out;
+}
+
 export function cleanClaimedEggs(claimed){
   const out = {};
   if(claimed && typeof claimed === 'object' && claimed.spark50 === true) out.spark50 = true;
@@ -67,6 +79,7 @@ function load(){
         history: Array.isArray(s.history) ? s.history : [],
         mistakes: s.mistakes && typeof s.mistakes === 'object' ? s.mistakes : {},
         petNames: cleanPetNames(s.petNames),
+        petLooks: cleanPetLooks(s.petLooks),
         claimedEggs: cleanClaimedEggs(s.claimedEggs),
         equipped: fixEquipped(s.equipped),
       };

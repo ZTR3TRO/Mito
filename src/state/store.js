@@ -11,6 +11,7 @@ export { PASSING_BONUS, SPARK_CLICK_EGG_REWARD, getChispas, addChispas, claimSpa
 export {
   owns, getEquipped, equipCategory,
   getPetName, getPetDisplayName, renamePet,
+  getPetLook, setPetLook,
   unlockSecrets, secretsUnlocked, buyAndEquip,
 } from './inventory.js';
 

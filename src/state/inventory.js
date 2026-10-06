@@ -22,6 +22,21 @@ export function getPetDisplayName(id){
   return getPetName(id) || (item ? item.name : '—');
 }
 
+export function getPetLook(id){
+  return state.petLooks[id] || '';
+}
+
+export function setPetLook(id, colorId){
+  const pet = findItem('pet', id);
+  const color = colorId ? findItem('color', colorId) : null;
+  if(!pet || id === 'p-none' || !owns(id)) return false;
+  if(colorId && (!color || ((color.cost > 0 || color.secret) && !owns(colorId)))) return false;
+  if(colorId) state.petLooks[id] = colorId;
+  else delete state.petLooks[id];
+  commit();
+  return true;
+}
+
 export function renamePet(id, name){
   const item = findItem('pet', id);
   if(!item || id === 'p-none' || !owns(id)) return false;
