@@ -945,7 +945,9 @@ svg.th *{animation:none!important}
 @keyframes bflapR{from{transform:rotate(14deg)}to{transform:rotate(-12deg)}}
 
 /* ================= EASTER EGG DE LA PORTADA ================= */
-#mascotHero > svg.mito{cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+/* Mito es tocable en la portada y en la pantalla de resultado (egg de ronda perfecta). touch-action evita el zoom por doble toque en móvil. */
+#mascotHero > svg.mito,
+#mascotResult > svg.mito{cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
 .mascot.tickle > svg.mito{animation:tickle .24s ease}
 @keyframes tickle{0%{transform:scale(1)}40%{transform:scale(1.08,.9)}100%{transform:scale(1)}}
 .egg-backdrop{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:20px;background:rgba(36,18,52,.55);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);animation:eggFade .2s ease both}
