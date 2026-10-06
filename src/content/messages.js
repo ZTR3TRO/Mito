@@ -123,6 +123,12 @@ const PET_MESSAGES = {
     `¡Nada mal, ${USER_NAME}! 🌊`,
     'Chii chii, ¿otro quiz? 🎮',
   ],
+  ajolote: [
+    '¡Glub glub! A flote con tus apuntes 🫧',
+    'Los ajolotes regeneran todo; tú, tu energía repasando 🌸',
+    `Ronda perfecta, ${USER_NAME}: eso sí que es raro 💖`,
+    'Dato: soy de Xochimilco, pero vivo en tu racha ✨',
+  ],
   bee: [
     '¡Bzzz! Repasar es como hacer miel: poquito a poco 🍯',
     `¡Bzzz, ${USER_NAME}! Qué buen trabajo en equipo 🐝`,

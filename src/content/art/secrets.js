@@ -18,6 +18,26 @@ export const SECRET_PETS = {
   <circle cx="23.5" cy="50" r="4.2" fill="#ff8fc0" opacity=".55"/><circle cx="56.5" cy="50" r="4.2" fill="#ff8fc0" opacity=".55"/>
   <path d="M36 49.4q4 3.4 8 0" stroke="#2b2140" stroke-width="2" fill="none" stroke-linecap="round"/>
 </g></g>`,
+  // Ajolote (premio de la ronda perfecta): nada suave, mueve las branquias y la cola y suelta burbujas.
+  // Convención de siempre: viewBox 80x80, `.pe` = parpadeo, `.oflt` = flotar. Las clases .agl/.agr/.atail/.abub se animan en style.css.
+  ajolote: `<g data-p="ajolote"><g class="oflt">
+  <g class="atail"><path d="M47 60C60 66 71 60 74 49C76 43 71 41 69 46C65 54 57 55 47 55Z" fill="#ffb5d3" stroke="#d9578f" stroke-width="2.2" stroke-linejoin="round"/><path d="M52 58C60 59 66 56 70 50" fill="none" stroke="#ff8fb8" stroke-width="1.6" stroke-linecap="round" opacity=".8"/></g>
+  <g class="agl"><path d="M23 34C16 35 10 30 8 21C15 22 21 26 24.5 32Z" fill="#ff5d9e" stroke="#c4306a" stroke-width="1.6" stroke-linejoin="round"/><path d="M22 32C17 31 13 28 10.5 23.5" fill="none" stroke="#ffb0d0" stroke-width="1.2" stroke-linecap="round"/><path d="M21 41.5C14 42 8 40 3.5 36C9.5 33 16.5 35 22.5 38.5Z" fill="#ff5d9e" stroke="#c4306a" stroke-width="1.6" stroke-linejoin="round"/><path d="M20.5 40C14 39.5 9 38 6 36" fill="none" stroke="#ffb0d0" stroke-width="1.2" stroke-linecap="round"/><path d="M23 48C16 50 11 54.5 9.5 62C16 60.5 22 56 24.5 50Z" fill="#ff5d9e" stroke="#c4306a" stroke-width="1.6" stroke-linejoin="round"/><path d="M22 50.5C16.5 52 13 55.5 11 59" fill="none" stroke="#ffb0d0" stroke-width="1.2" stroke-linecap="round"/></g>
+  <g class="agr"><g transform="translate(80 0) scale(-1 1)"><path d="M23 34C16 35 10 30 8 21C15 22 21 26 24.5 32Z" fill="#ff5d9e" stroke="#c4306a" stroke-width="1.6" stroke-linejoin="round"/><path d="M22 32C17 31 13 28 10.5 23.5" fill="none" stroke="#ffb0d0" stroke-width="1.2" stroke-linecap="round"/><path d="M21 41.5C14 42 8 40 3.5 36C9.5 33 16.5 35 22.5 38.5Z" fill="#ff5d9e" stroke="#c4306a" stroke-width="1.6" stroke-linejoin="round"/><path d="M20.5 40C14 39.5 9 38 6 36" fill="none" stroke="#ffb0d0" stroke-width="1.2" stroke-linecap="round"/><path d="M23 48C16 50 11 54.5 9.5 62C16 60.5 22 56 24.5 50Z" fill="#ff5d9e" stroke="#c4306a" stroke-width="1.6" stroke-linejoin="round"/><path d="M22 50.5C16.5 52 13 55.5 11 59" fill="none" stroke="#ffb0d0" stroke-width="1.2" stroke-linecap="round"/></g></g>
+  <ellipse cx="31" cy="69" rx="5.4" ry="3.2" fill="#ffb5d3" stroke="#d9578f" stroke-width="2"/><ellipse cx="49" cy="69" rx="5.4" ry="3.2" fill="#ffb5d3" stroke="#d9578f" stroke-width="2"/>
+  <ellipse cx="40" cy="60" rx="16" ry="11" fill="#ffb5d3" stroke="#d9578f" stroke-width="2.4"/>
+  <ellipse cx="40" cy="64" rx="9.5" ry="6" fill="#ffe3ef"/>
+  <ellipse cx="40" cy="42" rx="22" ry="18" fill="#ffc2da" stroke="#d9578f" stroke-width="2.4"/>
+  <ellipse cx="30" cy="31" rx="8" ry="3.4" transform="rotate(-25 30 31)" fill="#fff" opacity=".5"/>
+  <circle cx="45" cy="29" r="1.3" fill="#e8407e" opacity=".45"/><circle cx="50" cy="33" r="1" fill="#e8407e" opacity=".45"/><circle cx="36" cy="28.5" r="1" fill="#e8407e" opacity=".4"/>
+  <circle cx="24.5" cy="48" r="4.4" fill="#ff7fb2" opacity=".55"/><circle cx="55.5" cy="48" r="4.4" fill="#ff7fb2" opacity=".55"/>
+  <g class="pe"><ellipse cx="31" cy="41" rx="3.3" ry="4.3" fill="#2b2140"/><ellipse cx="49" cy="41" rx="3.3" ry="4.3" fill="#2b2140"/><circle cx="32.1" cy="39.4" r="1.4" fill="#fff"/><circle cx="50.1" cy="39.4" r="1.4" fill="#fff"/></g>
+  <path d="M33 49Q40 55.5 47 49" stroke="#2b2140" stroke-width="2.1" fill="none" stroke-linecap="round"/>
+  <circle cx="38.6" cy="45.6" r=".8" fill="#d9578f"/><circle cx="41.4" cy="45.6" r=".8" fill="#d9578f"/>
+  <g class="abub" style="--dl:0s"><circle cx="64" cy="22" r="2.4" fill="#e8f6ff" fill-opacity=".7" stroke="#8cc4f0" stroke-width="1.3"/></g>
+  <g class="abub" style="--dl:1.1s"><circle cx="68" cy="14" r="1.8" fill="#e8f6ff" fill-opacity=".7" stroke="#8cc4f0" stroke-width="1.2"/></g>
+  <g class="abub" style="--dl:2.1s"><circle cx="60" cy="10" r="1.3" fill="#e8f6ff" fill-opacity=".7" stroke="#8cc4f0" stroke-width="1.1"/></g>
+</g></g>`,
 };
 
 // Mini-vuelos para las auras (se orbitan alrededor de Mito). Se insertan como HTML en el aura.

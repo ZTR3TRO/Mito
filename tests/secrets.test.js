@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { WARDROBE, SECRET_IDS, findItemById } from '../src/content/wardrobe.js';
+import { WARDROBE, SECRET_IDS, secretIdsFor, findItemById } from '../src/content/wardrobe.js';
 import { SECRET_PETS } from '../src/content/art/secrets.js';
 
 function fakeStorage(){
@@ -8,8 +8,10 @@ function fakeStorage(){
   globalThis.localStorage = { getItem:()=>saved, setItem:(_, v)=>{ saved = v; } };
 }
 
-test('premios secretos: un aura y una mascota, gratis, no se venden y no estorban a los demás', ()=>{
-  assert.deepEqual([...SECRET_IDS].sort(), ['a-panal', 'p-bee']);
+test('premios secretos: un aura y dos mascotas, gratis, no se venden y no estorban a los demás', ()=>{
+  assert.deepEqual([...SECRET_IDS].sort(), ['a-panal', 'p-ajolote', 'p-bee']);
+  assert.deepEqual([...secretIdsFor('tap10')].sort(), ['a-panal', 'p-bee'], 'los 10 toques regalan el aura Panal y la Abejita');
+  assert.deepEqual([...secretIdsFor('perfect')], ['p-ajolote'], 'la ronda perfecta regala el Ajolote');
   for(const id of SECRET_IDS){
     const item = findItemById(id);
     assert.equal(item.secret, true);
@@ -17,6 +19,7 @@ test('premios secretos: un aura y una mascota, gratis, no se venden y no estorba
     assert.ok(!item.seasonal);
   }
   assert.ok(SECRET_PETS.bee.includes('data-p="bee"'));
+  assert.ok(SECRET_PETS.ajolote.includes('data-p="ajolote"'));
   assert.ok(WARDROBE.every(cat=>!cat.items[0].secret), 'el primer ítem de cada categoría sigue siendo el básico');
 });
 
@@ -31,24 +34,32 @@ test('easter egg: no se pueden equipar ni comprar sin desbloquear; al desbloquea
       assert.equal(store.buyAndEquip(cat, id), false, `${id}: no comprable`);
       assert.equal(store.owns(id), false);
     }
-    assert.equal(store.secretsUnlocked(), false);
+    assert.equal(store.secretsUnlocked('tap10'), false);
+    assert.equal(store.secretsUnlocked('perfect'), false, 'ningún egg desbloqueado todavía');
     const balance = store.getChispas();
 
-    assert.deepEqual([...store.unlockSecrets()].sort(), ['a-panal', 'p-bee']);
+    assert.deepEqual([...store.unlockSecrets('tap10')].sort(), ['a-panal', 'p-bee']);
     assert.equal(store.getChispas(), balance, 'desbloquear no cuesta chispas');
-    assert.equal(store.secretsUnlocked(), true);
-    assert.deepEqual(store.unlockSecrets(), [], 'segunda vez: no hay nada nuevo');
+    assert.equal(store.secretsUnlocked('tap10'), true);
+    assert.equal(store.secretsUnlocked('perfect'), false, 'el Ajolote es de otro egg: sigue sin desbloquearse');
+    assert.deepEqual(store.unlockSecrets('tap10'), [], 'segunda vez: no hay nada nuevo');
+    assert.deepEqual([...store.unlockSecrets('perfect')], ['p-ajolote']);
+    assert.equal(store.secretsUnlocked('perfect'), true);
     assert.equal(store.equipCategory('aura', 'a-panal'), true);
     assert.equal(store.equipCategory('pet', 'p-bee'), true);
+    assert.equal(store.equipCategory('pet', 'p-ajolote'), true);
 
     // sobrevive a recargar y a exportar/importar el progreso
     const backup = store.exportSave();
     const reloaded = await import('../src/state/store.js?secrets-2');
-    assert.equal(reloaded.secretsUnlocked(), true);
+    assert.equal(reloaded.secretsUnlocked('tap10'), true);
+    assert.equal(reloaded.secretsUnlocked('perfect'), true);
     reloaded.resetAll();
-    assert.equal(reloaded.secretsUnlocked(), false);
+    assert.equal(reloaded.secretsUnlocked('tap10'), false);
+    assert.equal(reloaded.secretsUnlocked('perfect'), false);
     reloaded.importSave(backup);
-    assert.equal(reloaded.secretsUnlocked(), true);
+    assert.equal(reloaded.secretsUnlocked('tap10'), true);
+    assert.equal(reloaded.secretsUnlocked('perfect'), true);
   } finally {
     delete globalThis.localStorage;
   }

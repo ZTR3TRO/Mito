@@ -34,7 +34,7 @@ import { init as initSpeech, initPetTalk, say, sayHero, getHeroLastMsg } from '.
 import { setFace, playState } from './features/mascot/face.js';
 import { burstConfetti } from './features/mascot/effects.js';
 import { greeting, idleMessage, courseSwitchMessage, firstRoundMessage, resultMessage } from './content/messages.js';
-import { initEasterEgg } from './features/easter.js';
+import { initEasterEgg, initPerfectEgg } from './features/easter.js';
 
 /* ---------- Re-render de las vistas que dependen de la materia ---------- */
 function renderCourseViews(){
@@ -64,6 +64,9 @@ function refreshAll(){
   renderProgress();
 }
 
+// Easter egg de ronda perfecta: se crea en boot() y lo arma/apaga el evento quiz:finished.
+let perfectEgg = null;
+
 /* ---------- Reacciones entre módulos ---------- */
 function wire(){
   on('nav:before', ()=>{
@@ -86,7 +89,8 @@ function wire(){
     if(isVisible('progreso')) renderProgress();
   });
 
-  on('quiz:finished', ({ pct, awarded })=>{
+  on('quiz:finished', ({ pct, awarded, perfect, total })=>{
+    perfectEgg?.arm(perfect ? total : 0);
     renderSidebarStats();
     renderReviewCard();
     renderStreak();
@@ -151,6 +155,14 @@ function boot(){
     onOpenWardrobe: ()=> goTo('wardrobe'),
   });
 
+  // Solo cuenta mientras se ve la pantalla de resultado de la ronda perfecta.
+  perfectEgg = initPerfectEgg({
+    target: byId('mascotResult'),
+    enabled: ()=> byId('quizResult').style.display === 'block',
+    onUnlock: celebratePerfectEgg,
+    onOpenWardrobe: ()=> goTo('wardrobe'),
+  });
+
   registerServiceWorker();
 }
 
@@ -166,6 +178,19 @@ function celebrateSecrets(){
   const r = hero.getBoundingClientRect();
   burstConfetti(r.left + r.width/2, r.top, 70);
   sayHero('¡Bzzz! Mira lo que encontraste 🐝');
+}
+
+// Recompensa del egg de ronda perfecta: la celebración ocurre sobre Mito en la pantalla de resultado.
+function celebratePerfectEgg(){
+  const mascot = byId('mascotResult');
+  applyAvatar();
+  renderShop();
+  updatePreviewLabels();
+  setFace(mascot, 'excited');
+  playState(mascot, 'excited');
+  const r = mascot.getBoundingClientRect();
+  burstConfetti(r.left + r.width/2, r.top, 90);
+  sayHero('¡Glub glub! Tienes un ajolote 🌸');
 }
 
 // Solo en producción. import.meta.env no existe fuera de Vite (p. ej. en tests),

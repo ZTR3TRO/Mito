@@ -9,6 +9,8 @@ import { recordAnswer } from '../../state/store.js';
 const LIVES = 3;
 const STREAK_CAP = 4;
 const BASE_POINTS = 3;
+// Una ronda es "perfecta" si se contestan TODAS sus preguntas y todas bien. Sube este mínimo si no quieres que cuenten las rondas diminutas.
+const PERFECT_MIN_QUESTIONS = 1;
 
 const session = {
   questions: [],
@@ -126,5 +128,8 @@ function totals(){
 
 export function finishRound(){
   session.roundsPlayed++;
-  return { ...totals(), score: session.score };
+  const t = totals();
+  const total = session.questions.length;
+  const perfect = total >= PERFECT_MIN_QUESTIONS && t.answered === total && t.right === total;
+  return { ...t, total, perfect, score: session.score };
 }

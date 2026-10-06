@@ -1,6 +1,6 @@
 // Inventario: qué prendas tienes compradas y cuál llevas puesta en cada categoría.
 
-import { SECRET_IDS, findItem, isSeasonalOpen } from '../content/wardrobe.js';
+import { secretIdsFor, findItem, isSeasonalOpen } from '../content/wardrobe.js';
 import { state, commit } from './core.js';
 
 export function owns(id){
@@ -19,17 +19,17 @@ export function equipCategory(cat, id){
   return true;
 }
 
-// Easter egg: entrega los premios secretos. Devuelve los ids recién desbloqueados ([] si ya los tenías).
-export function unlockSecrets(){
-  const fresh = SECRET_IDS.filter(id => !state.owned[id]);
+// Easter egg: entrega los premios secretos de ESE egg ('tap10' | 'perfect'). Devuelve los ids recién desbloqueados ([] si ya los tenías).
+export function unlockSecrets(egg){
+  const fresh = secretIdsFor(egg).filter(id => !state.owned[id]);
   if(!fresh.length) return [];
   fresh.forEach(id => { state.owned[id] = true; });
   commit();
   return fresh;
 }
 
-export function secretsUnlocked(){
-  return SECRET_IDS.every(id => state.owned[id]);
+export function secretsUnlocked(egg){
+  return secretIdsFor(egg).every(id => state.owned[id]);
 }
 
 export function buyAndEquip(cat, id){

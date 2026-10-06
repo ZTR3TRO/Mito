@@ -1131,3 +1131,19 @@ svg.th *{animation:none!important}
   background: rgba(255, 255, 255, 0.1);
   color: #ffffff;
 }
+
+/* ================= Ajolote (premio secreto de la ronda perfecta) ================= */
+.agl{transform-box:fill-box;transform-origin:100% 50%;animation:agillL 1.3s ease-in-out infinite alternate}
+.agr{transform-box:fill-box;transform-origin:0% 50%;animation:agillR 1.3s ease-in-out infinite alternate}
+@keyframes agillL{from{transform:rotate(-7deg)}to{transform:rotate(8deg)}}
+@keyframes agillR{from{transform:rotate(7deg)}to{transform:rotate(-8deg)}}
+.atail{transform-box:fill-box;transform-origin:0% 50%;animation:atail 1.6s ease-in-out infinite alternate}
+@keyframes atail{from{transform:rotate(-6deg)}to{transform:rotate(9deg)}}
+.abub{animation:abub 3.2s ease-in infinite;animation-delay:var(--dl,0s);opacity:0}
+@keyframes abub{0%{opacity:0;transform:translateY(5px)}20%{opacity:1}100%{opacity:0;transform:translateY(-14px)}}
+
+/* Susurro de Mito mientras se cuentan los toques del easter egg de ronda perfecta */
+.egg-whisper{position:absolute;left:50%;bottom:calc(100% + 4px);transform:translateX(-50%) translateY(6px);width:max-content;max-width:210px;padding:7px 12px;border-radius:14px;background:#fff;color:var(--pink-deep);font-size:12px;font-weight:800;line-height:1.3;text-align:center;box-shadow:0 8px 18px -8px rgba(60,10,40,.45);opacity:0;pointer-events:none;transition:opacity .2s ease,transform .2s ease;z-index:6}
+.egg-whisper.show{opacity:1;transform:translateX(-50%) translateY(0)}
+[data-theme="dark"] .egg-whisper{background:var(--card);color:var(--ink)}
+@media (prefers-reduced-motion:reduce){.agl,.agr,.atail,.abub{animation:none}.abub{opacity:0}.egg-whisper{transition:none}}

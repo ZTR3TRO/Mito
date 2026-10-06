@@ -1,8 +1,9 @@
 const W = (id,name,cost,k)=>({id,name,cost,k});
 const A = (id,name,cost,k,swatch)=>({id,name,cost,k,swatch});
 const H = (id,name,k,swatch)=>({id,name,k,swatch,cost:500,seasonal:true});
-// Premios secretos (easter egg de la portada): no se venden, no tienen precio y solo aparecen en el armario una vez desbloqueados.
-const S = (id,name,k,swatch)=>({id,name,k,swatch,cost:0,secret:true});
+// Premios secretos: no se venden, no tienen precio y solo aparecen en el armario una vez desbloqueados.
+// `egg` dice qué easter egg los entrega: 'tap10' (10 toques en la portada) o 'perfect' (ronda perfecta + toques en el resultado).
+const S = (egg,id,name,k,swatch)=>({id,name,k,swatch,cost:0,secret:true,egg});
 
 // Ventana anual, según la hora local del dispositivo: [30 septiembre, 1 noviembre).
 export function isSeasonalOpen(date = new Date()){
@@ -50,16 +51,18 @@ export const WARDROBE = [
     A('a-storm','Rayo',140,'storm','radial-gradient(circle,#fff7a8,#ffd21e 35%,#4650dc 85%)'),
     A('a-cosmic','Cósmica',150,'cosmic','radial-gradient(circle at 35% 35%,#c8b8ff,#7c5cff 45%,#ff5cbe 90%)'),
     H('a-haunt','Embrujada','haunt','radial-gradient(circle,#ffd27a,#ff8a1c 50%,#b36bff)'),
-    S('a-panal','Panal','panal','radial-gradient(circle at 40% 35%,#fff2a8,#ffc933 45%,#e08a00)') ] },
+    S('tap10','a-panal','Panal','panal','radial-gradient(circle at 40% 35%,#fff2a8,#ffc933 45%,#e08a00)') ] },
   { id:'pet', label:'Mascota compañera', items:[
     W('p-none','Ninguna',0), W('p-chick','Pollito',70,'chick'), W('p-turtle','Tortuguita',90,'turtle'), W('p-fox','Zorrito',110,'fox'),
     W('p-ufo','Platillo',220,'ufo'), W('p-dragon','Dragón',250,'dragon'), W('p-unicorn','Unicornio',280,'unicorn'), W('p-nutria','Nutria',300,'otter'),
     H('p-pumpkin','Calabacita','pumpkin'), H('p-bat','Murciélago','bat'),
-    S('p-bee','Abejita','bee') ] },
+    S('tap10','p-bee','Abejita','bee'),
+    S('perfect','p-ajolote','Ajolote','ajolote') ] },
 ];
 
-// Ids que entrega el easter egg de Mito (10 toques en la portada).
+// Todos los premios secretos, y los que entrega cada easter egg.
 export const SECRET_IDS = WARDROBE.flatMap(cat=>cat.items.filter(item=>item.secret).map(item=>item.id));
+export const secretIdsFor = egg => WARDROBE.flatMap(cat=>cat.items.filter(item=>item.secret && item.egg === egg).map(item=>item.id));
 
 export function findItem(catId, itemId){
   const cat = WARDROBE.find(c=>c.id===catId);

@@ -36,7 +36,7 @@ function finishQuiz(){
   const result = s.finishRound();
   view.renderResult(result);
 
-  const { score, right, answered, pct } = result;
+  const { score, right, answered, pct, total, perfect } = result;
   const mascotResult = document.getElementById('mascotResult');
   const approved = pct >= view.PASS_PCT;
   const awarded = score + (approved ? PASSING_BONUS : 0);
@@ -49,7 +49,7 @@ function finishQuiz(){
   }
 
   recordQuizResult({ score, right, total: answered, pct, cats: s.getSession().catStats, courseId: activeCourse().id });
-  emit('quiz:finished', { pct, awarded });
+  emit('quiz:finished', { pct, awarded, perfect, total });
 }
 
 export function resetQuiz(){

@@ -223,10 +223,11 @@ test('el easter egg necesita 10 toques y entrega los premios secretos', ()=>{
   const tap = ()=> svg.dispatchEvent(new window.Event('click', { bubbles:true }));
 
   for(let i=0;i<9;i++) tap();
-  assert.equal(store.secretsUnlocked(), false, 'con 9 toques aún no debe desbloquear');
+  assert.equal(store.secretsUnlocked('tap10'), false, 'con 9 toques aún no debe desbloquear');
 
   tap();
-  assert.equal(store.secretsUnlocked(), true, 'el décimo toque entrega los premios');
+  assert.equal(store.secretsUnlocked('tap10'), true, 'el décimo toque entrega los premios');
+  assert.equal(store.secretsUnlocked('perfect'), false, 'el Ajolote no viene de los toques de portada');
 
   // Los premios ya no se venden y se ven en el armario.
   assert.equal(document.querySelector('#shopHost [data-buy="p-bee"]'), null);
