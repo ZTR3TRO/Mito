@@ -65,6 +65,33 @@ test('easter egg: no se pueden equipar ni comprar sin desbloquear; al desbloquea
   }
 });
 
+test('las mascotas compradas se pueden renombrar y el respaldo conserva el nombre', async ()=>{
+  fakeStorage();
+  try{
+    const store = await import('../src/state/store.js?pet-names-1');
+    assert.equal(store.renamePet('p-chick', 'Pío'), false, 'no se renombra una mascota no comprada');
+
+    store.addChispas(9999);
+    assert.equal(store.buyAndEquip('pet', 'p-chick'), true);
+    assert.equal(store.renamePet('p-chick', '  Pío  '), true);
+    assert.equal(store.getPetName('p-chick'), 'Pío');
+    assert.equal(store.getPetDisplayName('p-chick'), 'Pío');
+
+    assert.equal(store.renamePet('p-chick', ''), true, 'vacío borra el nombre personalizado');
+    assert.equal(store.getPetDisplayName('p-chick'), 'Pollito');
+
+    store.renamePet('p-chick', 'Chispa');
+    const backup = store.exportSave();
+    const reloaded = await import('../src/state/store.js?pet-names-2');
+    reloaded.resetAll();
+    assert.equal(reloaded.getPetDisplayName('p-chick'), 'Pollito');
+    reloaded.importSave(backup);
+    assert.equal(reloaded.getPetDisplayName('p-chick'), 'Chispa');
+  } finally {
+    delete globalThis.localStorage;
+  }
+});
+
 test('avatar: la abejita se dibuja como mascota y el cabello de vampiro/sombrero calabaza marcan "sin antenas"', async ()=>{
   globalThis.document = { getElementById:()=>({}) };
   try{

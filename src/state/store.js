@@ -10,6 +10,7 @@ export { PASSING_BONUS, getChispas, addChispas } from './economy.js';
 
 export {
   owns, getEquipped, equipCategory,
+  getPetName, getPetDisplayName, renamePet,
   unlockSecrets, secretsUnlocked, buyAndEquip,
 } from './inventory.js';
 

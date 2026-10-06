@@ -17,6 +17,7 @@ export function defaultState(){
   return {
     chispas: 0,
     owned: {},
+    petNames: {},
     equipped: { color:'c-mint', ropa:'r-none', accesorio:'ac-none', sombrero:'s-none', aura:'a-none', pet:'p-none' },
     history: [],
     mistakes: {},
@@ -38,6 +39,17 @@ export function fixEquipped(eq){
   return out;
 }
 
+export function cleanPetNames(names){
+  const out = {};
+  if(!names || typeof names !== 'object') return out;
+  Object.keys(names).forEach(id=>{
+    if(categoryOf(id) !== 'pet' || id === 'p-none') return;
+    const name = String(names[id] || '').trim().slice(0, 20);
+    if(name) out[id] = name;
+  });
+  return out;
+}
+
 function load(){
   try{
     const s = JSON.parse(localStorage.getItem(KEY));
@@ -47,6 +59,7 @@ function load(){
         ...s,
         history: Array.isArray(s.history) ? s.history : [],
         mistakes: s.mistakes && typeof s.mistakes === 'object' ? s.mistakes : {},
+        petNames: cleanPetNames(s.petNames),
         equipped: fixEquipped(s.equipped),
       };
     }

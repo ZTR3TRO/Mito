@@ -3,12 +3,33 @@
 import { secretIdsFor, findItem, isSeasonalOpen } from '../content/wardrobe.js';
 import { state, commit } from './core.js';
 
+const PET_NAME_MAX = 20;
+
 export function owns(id){
   return !!state.owned[id];
 }
 
 export function getEquipped(){
   return { ...state.equipped };
+}
+
+export function getPetName(id){
+  return state.petNames[id] || '';
+}
+
+export function getPetDisplayName(id){
+  const item = findItem('pet', id);
+  return getPetName(id) || (item ? item.name : '—');
+}
+
+export function renamePet(id, name){
+  const item = findItem('pet', id);
+  if(!item || id === 'p-none' || !owns(id)) return false;
+  const clean = String(name || '').trim().slice(0, PET_NAME_MAX);
+  if(clean) state.petNames[id] = clean;
+  else delete state.petNames[id];
+  commit();
+  return true;
 }
 
 export function equipCategory(cat, id){

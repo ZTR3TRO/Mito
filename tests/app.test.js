@@ -181,6 +181,33 @@ test('comprar y luego equipar deja la pieza activa en el avatar', ()=>{
     'una pieza equipada no debe ofrecer el botón Equipar');
 });
 
+test('el armario permite renombrar la mascota compañera', ()=>{
+  resetApp();
+  store.addChispas(5000);
+  emit('state:changed');
+
+  const buy = document.querySelector('#shopHost [data-buy="p-chick"]');
+  assert.ok(buy, 'el pollito debería poder comprarse');
+  buy.click();
+
+  const rename = document.querySelector('#wardrobeHost [data-rename-pet="p-chick"]');
+  assert.ok(rename, 'la mascota comprada debería ofrecer renombrar');
+  rename.click();
+
+  const modal = document.querySelector('.pet-modal-backdrop');
+  assert.ok(modal, 'debería abrirse el modal de nombre');
+  const input = modal.querySelector('input[name="petName"]');
+  assert.ok(input, 'el modal debería incluir el campo de nombre');
+  input.value = 'Chispa';
+  modal.querySelector('[data-save-pet-name="p-chick"]').click();
+
+  assert.equal(store.getPetDisplayName('p-chick'), 'Chispa');
+  assert.equal(document.querySelector('.pet-modal-backdrop'), null, 'el modal debería cerrarse al guardar');
+  assert.equal(document.getElementById('pvPet').textContent, 'Chispa');
+  assert.equal(document.querySelector('#wardrobeHost [data-item="p-chick"] .si-name').textContent, 'Chispa');
+  assert.ok(document.getElementById('wardrobeNotice').textContent.includes('Chispa'));
+});
+
 test('el modo repaso se habilita solo cuando hay fallos pendientes', ()=>{
   resetApp();
   const card = document.getElementById('modeRev');

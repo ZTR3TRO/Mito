@@ -4,7 +4,7 @@
 // tipos raros ni tirar la partida.
 
 import {
-  state, commit, defaultState, fixEquipped,
+  state, commit, defaultState, fixEquipped, cleanPetNames,
   HISTORY_LIMIT, MISTAKES_LIMIT, num,
 } from './core.js';
 
@@ -48,6 +48,7 @@ export function importSave(json){
   const clean = {
     chispas: Math.max(0, num(s.chispas)),
     owned: s.owned && typeof s.owned === 'object' ? Object.fromEntries(Object.keys(s.owned).map(k=>[k, true])) : {},
+    petNames: cleanPetNames(s.petNames),
     equipped: fixEquipped(s.equipped),
     history: cleanHistory(s.history),
     mistakes: cleanMistakes(s.mistakes),

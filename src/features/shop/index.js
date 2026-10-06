@@ -3,7 +3,10 @@
 
 import { clear, byId, delegate } from '../../core/dom.js';
 import { WARDROBE, findItem, findItemById, categoryOf, isSeasonalOpen } from '../../content/wardrobe.js';
-import { getChispas, getEquipped, owns, buyAndEquip, equipCategory } from '../../state/store.js';
+import {
+  getChispas, getEquipped, owns, buyAndEquip, equipCategory,
+  getPetName, getPetDisplayName, renamePet,
+} from '../../state/store.js';
 import { on } from '../../core/bus.js';
 import { applyAvatar, previewAvatar, itemThumb } from '../mascot/avatar.js';
 import { sparkAt } from '../mascot/effects.js';
@@ -11,6 +14,16 @@ import { petSay } from '../mascot/speech.js';
 
 const SEASON_CLOSED = 'La temporada ha terminado. Tus compras siguen disponibles en el armario.';
 const ACTION_FAILED = 'No se pudo completar la acción. Revisa tu saldo y tu colección.';
+const PET_NAME_MAX = 20;
+let petNameReturnFocus = null;
+
+function displayName(cat, item, custom){
+  return custom && cat === 'pet' ? getPetDisplayName(item.id) : item.name;
+}
+
+function esc(text){
+  return String(text).replace(/[&<>"]/g, c=>({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+}
 
 /* ---------- Saldo y etiquetas de la vista previa ---------- */
 export function updateBalance(){
@@ -31,11 +44,12 @@ export function updatePreviewLabels(){
   PREVIEW_LABELS.forEach(([elId, catId])=>{
     const item = findItem(catId, eq[catId]);
     const node = byId(elId);
-    if(node) node.textContent = item ? item.name : '—';
+    if(node) node.textContent = item ? displayName(catId, item, elId === 'pvPet') : '—';
   });
   document.querySelectorAll('[data-equipped-label]').forEach(node=>{
     const cat = node.dataset.equippedLabel;
-    node.textContent = findItem(cat, eq[cat])?.name || '—';
+    const item = findItem(cat, eq[cat]);
+    node.textContent = item ? displayName(cat, item, true) : '—';
   });
 }
 
@@ -92,12 +106,15 @@ function hasAnythingToEquip(){
 
 function buildCard(cat, item, { shopping, equipped, previewId }){
   const affordable = getChispas() >= item.cost;
+  const name = displayName(cat.id, item, !shopping);
+  const hasCustomPetName = cat.id === 'pet' && !shopping && !!getPetName(item.id);
   const card = document.createElement('div');
   card.className = 'shop-item' + (equipped ? ' equipped' : '');
   card.dataset.item = item.id;
   card.innerHTML = `
     <div class="si-visual">${visualFor(cat, item)}</div>
-    <div class="si-name">${item.name}</div>`;
+    <div class="si-name">${esc(name)}</div>
+    ${hasCustomPetName ? `<div class="si-subname">Original: ${esc(item.name)}</div>` : ''}`;
 
   const mini = document.createElement('button');
   mini.type = 'button';
@@ -117,7 +134,21 @@ function buildCard(cat, item, { shopping, equipped, previewId }){
     }
   }
   mini.setAttribute('aria-label', `${mini.textContent}: ${item.name}`);
-  card.appendChild(mini);
+
+  const actions = document.createElement('div');
+  actions.className = 'si-actions';
+  actions.appendChild(mini);
+
+  if(!shopping && cat.id === 'pet' && item.id !== 'p-none'){
+    const rename = document.createElement('button');
+    rename.type = 'button';
+    rename.className = 'btn-mini rename-pet';
+    rename.textContent = 'Renombrar';
+    rename.dataset.renamePet = item.id;
+    rename.setAttribute('aria-label', `Renombrar: ${item.name}`);
+    actions.appendChild(rename);
+  }
+  card.appendChild(actions);
 
   // Preview al pasar el ratón o al tabular por el botón.
   const preview = ()=> previewAvatar(cat.id, item.id, previewId);
@@ -126,6 +157,52 @@ function buildCard(cat, item, { shopping, equipped, previewId }){
   mini.addEventListener('focus', preview);
   mini.addEventListener('blur', applyAvatar);
   return card;
+}
+
+function closePetNameModal(){
+  document.querySelector('.pet-modal-backdrop')?.remove();
+  if(petNameReturnFocus && document.contains(petNameReturnFocus)) petNameReturnFocus.focus({ preventScroll:true });
+  petNameReturnFocus = null;
+}
+
+function showPetNameModal(btn){
+  const item = findItem('pet', btn.dataset.renamePet);
+  if(!item) return;
+  closePetNameModal();
+  petNameReturnFocus = btn;
+  const current = getPetName(item.id);
+  const back = document.createElement('div');
+  back.className = 'pet-modal-backdrop';
+  back.innerHTML = `
+    <form class="pet-modal-card" role="dialog" aria-modal="true" aria-labelledby="petModalTitle">
+      <button type="button" class="pet-modal-close" data-close-pet-modal aria-label="Cerrar">×</button>
+      <div class="pet-modal-visual">${itemThumb('pet', item)}</div>
+      <h2 id="petModalTitle">Renombrar mascota</h2>
+      <p>Nombre original: <b>${esc(item.name)}</b></p>
+      <label class="pet-modal-field">Nombre personalizado
+        <input name="petName" maxlength="${PET_NAME_MAX}" value="${esc(current || item.name)}" autocomplete="off">
+      </label>
+      <div class="pet-modal-actions">
+        <button type="submit" class="btn-mini equip-only" data-save-pet-name="${item.id}">Guardar nombre</button>
+        ${current ? `<button type="button" class="btn-mini pet-modal-ghost" data-clear-pet-name="${item.id}">Quitar nombre</button>` : ''}
+        <button type="button" class="btn-mini pet-modal-ghost" data-close-pet-modal>Cancelar</button>
+      </div>
+    </form>`;
+  document.body.appendChild(back);
+  back.querySelector('input').focus();
+}
+
+function savePetName(id, name){
+  const notice = byId('wardrobeNotice');
+  if(!renamePet(id, name)){
+    if(notice) notice.textContent = ACTION_FAILED;
+    return;
+  }
+  closePetNameModal();
+  applyAvatar();
+  renderShop();
+  updatePreviewLabels();
+  if(notice) notice.textContent = `${getPetDisplayName(id)}: nombre actualizado.`;
 }
 
 // Un aura o un color con efecto se muestra como swatch; el resto, como miniatura de Mito.
@@ -204,7 +281,7 @@ function handlePurchase(btn){
   updatePreviewLabels();
   if(notice) notice.textContent = shopping
     ? `${item.name}: comprado y equipado. Ya está en tu armario.`
-    : `${item.name}: equipado.`;
+    : `${displayName(cat, item, true)}: equipado.`;
   if(hadFocus && notice){
     notice.tabIndex = -1;
     notice.focus({ preventScroll:true });
@@ -214,8 +291,25 @@ function handlePurchase(btn){
 
 export function init(){
   delegate('click', e=>{
+    const rename = e.target.closest('[data-rename-pet]');
+    if(rename){ showPetNameModal(rename); return; }
+    const save = e.target.closest('[data-save-pet-name]');
+    if(save){ e.preventDefault(); savePetName(save.dataset.savePetName, save.closest('form')?.querySelector('input[name="petName"]')?.value); return; }
+    const clear = e.target.closest('[data-clear-pet-name]');
+    if(clear){ savePetName(clear.dataset.clearPetName, ''); return; }
+    if(e.target.closest('[data-close-pet-modal]') || e.target.classList.contains('pet-modal-backdrop')){ closePetNameModal(); return; }
     const btn = e.target.closest('[data-buy], [data-equip]');
     if(btn) handlePurchase(btn);
+  });
+  delegate('submit', e=>{
+    const save = e.target.querySelector('[data-save-pet-name]');
+    if(save){ e.preventDefault(); savePetName(save.dataset.savePetName, e.target.querySelector('input[name="petName"]')?.value); }
+  });
+  delegate('keydown', e=>{
+    if(e.key === 'Escape' && document.querySelector('.pet-modal-backdrop')){
+      e.preventDefault();
+      closePetNameModal();
+    }
   });
 
   // El saldo decide qué se puede comprar, así que la tienda reacciona a los chispas.
