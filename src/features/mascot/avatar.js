@@ -5,16 +5,14 @@ import { setAura } from './auras.js';
 import { skinParts } from '../../content/art/skins.js';
 import { HALLOWEEN_DEFS, HALLOWEEN_AFTER, HALLOWEEN_PETS } from '../../content/art/halloween.js';
 import { SECRET_PETS } from '../../content/art/secrets.js';
+import { PET_KEEP } from '../../content/petColors.js';
+import { recolorPet } from './petRecolor.js';
 
 const NS = 'http://www.w3.org/2000/svg';
 const AURA_HTML = '<div class="a-glow"></div><div class="a-neb"></div><div class="a-gal"></div><div class="a-rays"></div><div class="a-ring"></div><div class="a-parts"></div>';
 let uid = 0;
 const avatarSegments = SEGS.flatMap(segment=>[segment, ...(HALLOWEEN_AFTER[segment[0]] || [])]);
-const PET_COLOR_URLS = new Set(['gYel','gPk','gBat','gBlue','gPurple','gPink','gGold','gDark']);
-const PET_FACE_COLORS = new Set([
-  '#000', '#fff', '#ffffff', '#2b2140', '#6a56a8', '#ff8fc0', '#ff7fb2',
-  '#ff8a3d', '#d9601c', '#e8f6ff', '#eaf7ff', '#8cc4f0',
-]);
+const ALL_DEFS = DEFS + HALLOWEEN_DEFS;
 
 // defs compartidos (gradientes, patrones, clipPaths) una sola vez
 if(!document.getElementById('mitoDefs')){
@@ -31,26 +29,12 @@ export function mascotMarkup(keys, id, fx = ''){
   const g = GBODY.replace('id="gBody"', `id="gBody-${id}"`);
   return (`<defs>${g}${sk.defs}</defs>${PRE}<g class="rig">${inner}</g>`).split('url(#gBody)').join(`url(#gBody-${id})`);
 }
-function petColorStyle(colorId){
-  const color = colorId ? findItem('color', colorId) : null;
-  return color && color.defaults
-    ? `--pet-body:${color.defaults.body};--pet-stroke:${color.defaults.stroke};--pet-hi:${color.defaults.highlight}`
-    : '';
-}
-
-function petColorDefs(id){
-  return `<defs><radialGradient id="petBody-${id}" cx=".35" cy=".3" r=".85"><stop offset="0" stop-color="var(--pet-hi)"/><stop offset=".58" stop-color="var(--pet-body)"/><stop offset="1" stop-color="var(--pet-stroke)"/></radialGradient></defs>`;
-}
-
-function recolorPetArt(markup, id){
-  return markup
-    .replace(/url\(#([^)]+)\)/g, (match, name)=> PET_COLOR_URLS.has(name) ? `url(#petBody-${id})` : match)
-    .replace(/(fill|stroke)="(#[0-9a-fA-F]{3,6})"/g, (match, attr, color)=> PET_FACE_COLORS.has(color.toLowerCase()) ? match : `${attr}="var(--pet-${attr === 'stroke' ? 'stroke' : 'body'})"`);
-}
-
+// Mascota compañera: su dibujo base, o recoloreado si le elegiste un color en el armario.
 const petMarkup = (k, colorId = '', id = 'pet') => {
   const art = PETS[k] || HALLOWEEN_PETS[k] || SECRET_PETS[k] || '';
-  return colorId ? PET_BASE + petColorDefs(id) + recolorPetArt(art, id) : PET_BASE + art;
+  const color = colorId ? findItem('color', colorId) : null;
+  if(!art || !color || !color.defaults) return PET_BASE + art;
+  return PET_BASE + recolorPet(art, { body: color.defaults.body, defs: ALL_DEFS, id, keep: PET_KEEP[k] });
 };
 
 // Sombreros que tapan la cabeza: Mito se queda sin antenas para que no asomen por encima.
@@ -64,7 +48,7 @@ export function itemThumb(catId, item){
   if(catId === 'pet'){
     const colorId = getPetLook(item.id);
     const pid = 'pth' + (++uid);
-    return `<svg class="th" viewBox="0 0 80 80" style="${petColorStyle(colorId)}">${petMarkup(item.k, colorId, pid)}</svg>`;
+    return `<svg class="th" viewBox="0 0 80 80">${petMarkup(item.k, colorId, pid)}</svg>`;
   }
   const hatClass = (item.k === 'pumpkinhat' ? ' has-tall pumpkin-hat' : '') + (NO_ANT.includes(item.k) ? ' no-ant' : '');
   return `<svg class="th${hatClass}" viewBox="0 0 150 150" style="${st}">${mascotMarkup([item.k], 'th' + (++uid))}</svg>`;
@@ -106,7 +90,6 @@ function applyTo(el, eq){
     if(pet) pet.remove();
     pet = document.createElementNS(NS, 'svg');
     pet.setAttribute('class', 'pet'); pet.setAttribute('viewBox', '0 0 80 80'); pet.dataset.k = pk; pet.dataset.look = petLook;
-    pet.setAttribute('style', petColorStyle(petLook));
     pet.innerHTML = petMarkup(pk, petLook, `p${id}`);
     el.appendChild(pet);
   }

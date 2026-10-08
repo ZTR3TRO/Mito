@@ -228,7 +228,8 @@ test('el armario permite cambiar el color de la mascota sin recolorear la cara',
 
   assert.equal(store.getPetLook('p-chick'), 'c-sky');
   const pet = document.querySelector('#mascotWardrobe svg.pet');
-  assert.ok(pet.innerHTML.includes('var(--pet-body)'), 'la mascota debería usar variables de color');
+  assert.ok(!pet.innerHTML.includes('var(--pet-'), 'el recolor va horneado en el SVG, sin variables CSS sueltas');
+  assert.ok(!pet.innerHTML.includes('#ffd44d') && !pet.innerHTML.includes('#d99512'), 'el amarillo original (cuerpo y contorno) ya no debería quedar');
   assert.ok(pet.innerHTML.includes('fill="#2b2140"'), 'ojos y boca deberían conservar su color base');
   assert.ok(pet.innerHTML.includes('fill="#fff"'), 'brillos de la cara deberían conservarse');
 
