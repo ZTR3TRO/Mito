@@ -5,6 +5,7 @@ export const PET_WEAPONS = {
     id: 'picotazo-pollito',
     table: 'picotazoPollito',
     name: 'Picotazo veloz',
+    description: 'Ataques cortos y rápidos cerca de Mito.',
     role: 'rapido',
     maxLevel: 8,
     fire(stats, api){
@@ -15,6 +16,7 @@ export const PET_WEAPONS = {
     id: 'onda-tortuguita',
     table: 'ondaTortuguita',
     name: 'Onda de caparazón',
+    description: 'Empuja enemigos y protege por momentos.',
     role: 'defensa',
     maxLevel: 8,
     fire(stats, api){
@@ -25,6 +27,7 @@ export const PET_WEAPONS = {
     id: 'chispa-zorrito',
     table: 'chispaZorrito',
     name: 'Chispa perseguidora',
+    description: 'Proyectiles que persiguen objetivos lejanos.',
     role: 'persecucion',
     maxLevel: 8,
     fire(stats, api){
@@ -47,5 +50,5 @@ export function petWeaponStats(petId, level, balance = SURVIVOR_BALANCE){
   const weapon = PET_WEAPONS[petId];
   const table = weapon ? balance.weapons?.petWeapons?.[weapon.table] || SURVIVOR_BALANCE.weapons.petWeapons[weapon.table] : null;
   if(!table) return null;
-  return { ...table[clampLevel(level)] };
+  return table[clampLevel(level)];
 }

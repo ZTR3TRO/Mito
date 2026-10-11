@@ -11,7 +11,7 @@ import { on } from './core/bus.js';
 import { byId } from './core/dom.js';
 
 import { applyAvatar } from './features/mascot/avatar.js';
-import { getHistory, getTheme, addChispas, getChispas } from './state/store.js';
+import { getHistory, getTheme } from './state/store.js';
 
 import { goTo, isVisible, initNavButtons, initNavLinks } from './features/nav/router.js';
 import { initTheme, applyTheme } from './features/theme/index.js';
@@ -117,7 +117,7 @@ function wire(){
   on('state:imported', refreshAll);
   on('state:reset', ()=>{
     refreshAll();
-    say('Listo, todo desde cero. ¡A empezar de nuevo, Zare! 🧼');
+    say('Listo, todo desde cero. ¡A empezar de nuevo, Zare!');
   });
 }
 
@@ -187,7 +187,7 @@ function celebrateSecrets(){
   setTimeout(()=> setFace(hero, 'happy'), 1400);
   const r = hero.getBoundingClientRect();
   burstConfetti(r.left + r.width/2, r.top, 70);
-  sayHero('¡Bzzz! Mira lo que encontraste 🐝');
+  sayHero('¡Bzzz! Mira lo que encontraste.');
 }
 
 // Recompensa del egg de ronda perfecta: la celebración ocurre sobre Mito en la pantalla de resultado.
@@ -200,7 +200,7 @@ function celebratePerfectEgg(){
   playState(mascot, 'excited');
   const r = mascot.getBoundingClientRect();
   burstConfetti(r.left + r.width/2, r.top, 90);
-  sayHero('¡Glub glub! Tienes un ajolote 🌸');
+  sayHero('¡Glub glub! Tienes un ajolote.');
 }
 
 // Solo en producción. import.meta.env no existe fuera de Vite (p. ej. en tests),
@@ -213,14 +213,5 @@ function registerServiceWorker(){
     });
   }
 }
-
-// Atajo para la consola: window.addChispas(n) suma chispas desde fuera.
-window.addChispas = (n)=>{
-  addChispas(n);
-  renderShop();
-  updateBalance();
-  updatePreviewLabels();
-  return getChispas();
-};
 
 boot();

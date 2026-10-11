@@ -1,8 +1,11 @@
 // Balance centralizado de Mito Survivor.
 
 export const SURVIVOR_BALANCE = {
-  worldWidth: 960,
-  worldHeight: 540,
+  world: {
+    height: 960,
+    minWidth: 440,
+    maxWidth: 720,
+  },
   match: {
     duration: 300,
   },
@@ -10,14 +13,14 @@ export const SURVIVOR_BALANCE = {
     maxLife: 100,
     speed: 230,
     radius: 32,
-    invulnerableTime: 0.85,
+    invulnerableTime: 1.25,
   },
   enemy: {
     radius: 16,
-    speed: 78,
-    damage: 18,
-    life: 18,
-    maxCount: 82,
+    speed: 60,
+    damage: 10,
+    life: 16,
+    maxCount: 28,
   },
   xp: {
     gemValue: 5,
@@ -188,9 +191,10 @@ export const SURVIVOR_BALANCE = {
     },
   },
   waves: {
-    firstDelay: 0,
-    interval: 1.35,
-    baseCount: 4,
+    firstDelay: 6,
+    graceTime: 6,
+    interval: 1.8,
+    baseCount: 2,
     growthEvery: 30,
     growthAmount: 1,
     spawnPadding: 34,
@@ -211,6 +215,15 @@ export const SURVIVOR_BALANCE = {
   render: {
     gridSize: 48,
     enemySize: 22,
-    playerDomSize: 94,
+    playerDomSize: 72,
   },
 };
+
+export function computeWorld(cssWidth, cssHeight, balance = SURVIVOR_BALANCE){
+  const cfg = balance.world || SURVIVOR_BALANCE.world;
+  const height = cfg.height;
+  const scale = Math.max(1, Number(cssHeight) || height) / height;
+  const rawWidth = (Math.max(1, Number(cssWidth) || cfg.maxWidth * scale)) / scale;
+  const width = Math.max(cfg.minWidth, Math.min(cfg.maxWidth, rawWidth));
+  return { width, height, scale };
+}

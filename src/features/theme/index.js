@@ -4,8 +4,8 @@ import { byId } from '../../core/dom.js';
 import { getTheme, setTheme } from '../../state/store.js';
 
 const LABELS = {
-  dark:  { emoji:'☀️', label:'Modo claro' },
-  light: { emoji:'🌙', label:'Modo oscuro' },
+  dark:  { icon:'Claro', label:'Modo claro' },
+  light: { icon:'Oscuro', label:'Modo oscuro' },
 };
 
 export function applyTheme(t){
@@ -16,9 +16,9 @@ export function applyTheme(t){
   const isDark = t === 'dark';
   const labels = isDark ? LABELS.dark : LABELS.light;
   btn.setAttribute('aria-pressed', isDark ? 'true' : 'false');
-  const emoji = btn.querySelector('.tt-emoji');
+  const icon = btn.querySelector('.tt-emoji');
   const label = btn.querySelector('.tt-label');
-  if(emoji) emoji.textContent = labels.emoji;
+  if(icon) icon.textContent = labels.icon;
   if(label) label.textContent = labels.label;
 }
 

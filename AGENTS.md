@@ -64,3 +64,14 @@ Lee `src/README.md` antes de tocar nada. Resumen:
 - Cambios pequeños y revisables. No toques archivos ajenos a la fase, salvo los mínimos para cablear.
 - Después de cada fase: `npm test` y `npm run build` deben pasar. Agrega pruebas para la lógica pura.
 - Si algo del plan choca con una regla de arquitectura, detente y explica el conflicto en vez de saltarte la regla.
+
+## Mito Survivor en teléfono (decisiones cerradas)
+
+- El uso principal es en teléfono, en vertical. Se diseña primero para 360 a 430 px de ancho y después se adapta a pantallas grandes.
+- La partida se juega en pantalla completa: la arena ocupa todo el alto visible (`100dvh`) y oculta la barra superior y la barra inferior de navegación mientras dura la partida.
+- La arena es vertical y no se distorsiona nunca: la escala es la misma en X y en Y. El mundo lógico mide 960 de alto y su ancho sale de la proporción real de la pantalla, limitado entre 440 y 720.
+- En pantallas anchas la arena es una columna vertical centrada, con un máximo de 520 px de ancho.
+- La web no puede forzar la orientación en una pestaña normal. Por eso: se diseña para vertical, se intenta bloquear con la API cuando el navegador lo permite, y si el teléfono está en horizontal durante la partida se pausa y se pide girarlo.
+- La interfaz táctil usa zonas de toque de al menos 48 px, textos de al menos 14 px y respeta las áreas seguras (`env(safe-area-inset-*)`).
+- Nada de contenido que quede recortado: toda tarjeta o panel debe poder desplazarse por dentro y sus botones principales deben verse siempre.
+- Sin emojis. Textos en español con acentos correctos.

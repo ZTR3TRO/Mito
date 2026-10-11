@@ -101,8 +101,45 @@ sesion son logica pura.
   lee teclado y arrastre tactil para producir el vector de movimiento.
 - `questions.js` toma `activeCourse().questions`, prepara opciones con las
   mismas reglas que el quiz y no repite preguntas hasta agotar el banco.
-- `balance.js` centraliza todos los numeros: XP por nivel, ritmo de oleadas,
-  limites de entidades, vida, armas, poderes, recompensas y boss.
+- `balance.js` centraliza todos los números: XP por nivel, ritmo de oleadas,
+  límites de entidades, vida, armas, poderes, recompensas y boss.
+
+Pantalla y arena:
+
+- Survivor se diseña primero para teléfono en vertical. Durante la partida la
+  arena entra en modo de pantalla completa, ocupa `100dvh` y oculta la cabecera
+  y la navegación inferior de la app.
+- El mundo lógico mide 960 de alto. El ancho se calcula desde la proporción real
+  de pantalla con escala uniforme, limitado entre `world.minWidth` y
+  `world.maxWidth` en `balance.js`. En pantallas anchas la arena queda centrada
+  como una columna vertical, sin estirar X e Y por separado.
+- En navegadores normales no se puede forzar siempre la orientación. La feature
+  intenta bloquear en vertical con `screen.orientation.lock()` cuando el navegador
+  lo permite; si el teléfono táctil está en horizontal, pausa y pide girarlo.
+- Las tarjetas y preguntas viven dentro de un overlay desplazable. Los botones de
+  accion deben mantener al menos 48 px de alto y respetar `env(safe-area-inset-*)`.
+
+Rendimiento:
+
+- `engine.js` no toca DOM ni preguntas. El bucle principal reutiliza el snapshot
+  de frame y los vectores internos; no debe clonar arrays ni crear entidades por
+  frame.
+- Enemigos, gemas y proyectiles usan pools. Si subes límites, ajusta también el
+  tamaño de los pools en `balance.js` y revisa la prueba de rendimiento.
+- `tests/survivor.test.js` mide una carga alta con `performance.now()` y exige un
+  coste medio inferior a 10 ms por frame.
+
+Como ajustar `balance.js`:
+
+- Cambia duración, recompensa, vida, límites, oleadas, armas y boss solo en
+  `features/survivor/balance.js`.
+- Mantén `world.height` en 960 salvo que también revises `computeWorld()` y las
+  pruebas de escala.
+- Si aumentas `enemy.maxCount`, revisa `xp.maxGems` y
+  `weapons.projectilePoolSize` para evitar que el juego se quede sin entidades
+  antes del boss.
+- Los niveles de armas y poderes van del 1 al 8. La Chispa de Mito nunca debe
+  bajar de nivel 1.
 
 Flujo de partida:
 

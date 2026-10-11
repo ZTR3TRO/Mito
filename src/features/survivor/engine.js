@@ -1,4 +1,4 @@
-import { SURVIVOR_BALANCE } from './balance.js';
+import { computeWorld, SURVIVOR_BALANCE } from './balance.js';
 import { PET_WEAPONS, petWeaponStats } from './pets.js';
 import { xpToNext } from './session.js';
 import { CHISPA_MITO_ID, nearestEnemy, protectedWeaponLevel, weaponStats } from './weapons.js';
@@ -10,67 +10,61 @@ function clamp(value, min, max){
   return Math.max(min, Math.min(max, value));
 }
 
-function distance(a, b){
-  return Math.hypot(a.x - b.x, a.y - b.y);
+function distanceSquared(a, b){
+  const dx = a.x - b.x;
+  const dy = a.y - b.y;
+  return dx * dx + dy * dy;
 }
 
-function normalize(input){
+function normalizeInto(input, output){
   const x = Number(input?.x) || 0;
   const y = Number(input?.y) || 0;
   const len = Math.hypot(x, y);
-  if(!len) return { x:0, y:0 };
-  return { x:x / len, y:y / len };
+  if(!len){
+    output.x = 0;
+    output.y = 0;
+    return output;
+  }
+  output.x = x / len;
+  output.y = y / len;
+  return output;
 }
 
-function spawnPoint(balance, random){
-  const edge = Math.floor(random() * 4);
-  const pad = balance.waves.spawnPadding;
-  if(edge === 0) return { x:random() * balance.worldWidth, y:-pad };
-  if(edge === 1) return { x:balance.worldWidth + pad, y:random() * balance.worldHeight };
-  if(edge === 2) return { x:random() * balance.worldWidth, y:balance.worldHeight + pad };
-  return { x:-pad, y:random() * balance.worldHeight };
-}
-
-function cloneEnemy(enemy){
-  return { ...enemy };
-}
-
-function cloneProjectile(projectile){
+function normalizeWorld(world, balance){
+  const cfg = balance.world || SURVIVOR_BALANCE.world;
+  const fallback = computeWorld(cfg.maxWidth, cfg.height, balance);
   return {
-    x: projectile.x,
-    y: projectile.y,
-    vx: projectile.vx,
-    vy: projectile.vy,
-    damage: projectile.damage,
-    life: projectile.life,
-    hitsLeft: projectile.hitsLeft,
-    explosionRadius: projectile.explosionRadius,
-    weaponId: projectile.weaponId,
+    width: Math.max(cfg.minWidth, Math.min(cfg.maxWidth, Number(world?.width) || fallback.width)),
+    height: cfg.height,
+    scale: Number(world?.scale) || fallback.scale,
   };
 }
 
-function cloneGem(gem){
-  return { ...gem };
+function spawnPoint(balance, world, random, output){
+  const edge = Math.floor(random() * 4);
+  const radius = balance.enemy.radius;
+  const x = radius + random() * Math.max(1, world.width - radius * 2);
+  const y = radius + random() * Math.max(1, world.height - radius * 2);
+  output.x = edge === 1 ? world.width - radius : edge === 3 ? radius : x;
+  output.y = edge === 0 ? radius : edge === 2 ? world.height - radius : y;
+  return output;
 }
 
-function cloneBoss(boss){
-  return { ...boss };
-}
-
-function rotate(vector, angle){
+function rotateInto(x, y, angle, output){
   const cos = Math.cos(angle);
   const sin = Math.sin(angle);
-  return {
-    x: vector.x * cos - vector.y * sin,
-    y: vector.x * sin + vector.y * cos,
-  };
+  output.x = x * cos - y * sin;
+  output.y = x * sin + y * cos;
+  return output;
 }
 
-function directionTo(origin, target){
+function directionToInto(origin, target, output){
   const dx = target.x - origin.x;
   const dy = target.y - origin.y;
   const len = Math.hypot(dx, dy) || 1;
-  return { x:dx / len, y:dy / len };
+  output.x = dx / len;
+  output.y = dy / len;
+  return output;
 }
 
 export function createEngine(options = {}){
@@ -84,30 +78,85 @@ export function createEngine(options = {}){
   const onGameWon = options.onGameWon || (()=>{});
   const initialPetWeapon = options.petWeapon && PET_WEAPONS[options.petWeapon.petId] ? { ...options.petWeapon } : null;
 
+  let world = normalizeWorld(options.world, balance);
   let player, enemies, enemyPool, projectiles, gems, gemPool, boss, running, paused, frameId, lastTime, elapsed, nextWave, nextBossWave, nextId, deadSent, levelSent, bossShieldSent, gameWonSent, level, xp, nextXp, lastLevelQuestionAt, weaponLevels, weaponCooldowns, activePetWeapon;
+  const inputVector = { x:0, y:0 };
+  const directionVector = { x:0, y:0 };
+  const rotatedVector = { x:0, y:0 };
+  const spawnVector = { x:0, y:0 };
+  const state = {
+    time: 0,
+    running: false,
+    paused: false,
+    player: null,
+    enemies: null,
+    projectiles: null,
+    gems: null,
+    boss: null,
+    level: 1,
+    xp: 0,
+    xpToNext: 1,
+    petWeapon: null,
+    world: null,
+  };
 
   function snapshot(){
+    state.time = elapsed;
+    state.running = running;
+    state.paused = paused;
+    state.player = player;
+    state.enemies = enemies;
+    state.projectiles = projectiles;
+    state.gems = gems;
+    state.boss = boss;
+    state.level = level;
+    state.xp = xp;
+    state.xpToNext = nextXp;
+    state.petWeapon = activePetWeapon;
+    state.world = world;
+    return state;
+  }
+
+  function snapshotCopy(){
+    const current = snapshot();
     return {
-      time: elapsed,
-      running,
-      paused,
-      player: { ...player },
-      enemies: enemies.map(cloneEnemy),
-      projectiles: projectiles.filter(projectile => projectile.active).map(cloneProjectile),
-      gems: gems.map(cloneGem),
-      boss: cloneBoss(boss),
-      level,
-      xp,
-      xpToNext: nextXp,
-      petWeapon: activePetWeapon ? { ...activePetWeapon } : null,
-      world: { width:balance.worldWidth, height:balance.worldHeight },
+      ...current,
+      player:{ ...current.player },
+      enemies:current.enemies.map(enemy => ({ ...enemy })),
+      projectiles:current.projectiles.filter(projectile => projectile.active).map(projectile => ({
+        x:projectile.x,
+        y:projectile.y,
+        vx:projectile.vx,
+        vy:projectile.vy,
+        damage:projectile.damage,
+        life:projectile.life,
+        hitsLeft:projectile.hitsLeft,
+        explosionRadius:projectile.explosionRadius,
+        weaponId:projectile.weaponId,
+      })),
+      gems:current.gems.map(gem => ({ ...gem })),
+      boss:{ ...current.boss },
+      petWeapon:current.petWeapon ? { ...current.petWeapon } : null,
+      world:{ ...current.world },
     };
+  }
+
+  function maxEnemyCount(){
+    const cfg = balance.world || SURVIVOR_BALANCE.world;
+    const baseArea = cfg.maxWidth * cfg.height;
+    const area = world.width * world.height;
+    return Math.max(1, Math.round(balance.enemy.maxCount * area / baseArea));
+  }
+
+  function clampToWorld(entity, radius = 0){
+    entity.x = clamp(entity.x, radius, world.width - radius);
+    entity.y = clamp(entity.y, radius, world.height - radius);
   }
 
   function reset(){
     player = {
-      x: balance.worldWidth / 2,
-      y: balance.worldHeight / 2,
+      x: world.width / 2,
+      y: world.height / 2,
       life: balance.player.maxLife,
       invulnerable: 0,
     };
@@ -117,7 +166,7 @@ export function createEngine(options = {}){
     gemPool = [];
     boss = {
       active: false,
-      x: balance.worldWidth / 2,
+      x: world.width / 2,
       y: -80,
       life: balance.boss?.life || SURVIVOR_BALANCE.boss.life,
       maxLife: balance.boss?.life || SURVIVOR_BALANCE.boss.life,
@@ -149,7 +198,7 @@ export function createEngine(options = {}){
     frameId = 0;
     lastTime = 0;
     elapsed = 0;
-    nextWave = balance.waves.firstDelay;
+    nextWave = balance.waves.graceTime ?? balance.waves.firstDelay;
     nextBossWave = Infinity;
     nextId = 1;
     deadSent = false;
@@ -182,7 +231,7 @@ export function createEngine(options = {}){
   }
 
   function spawnWave(){
-    const available = Math.max(0, balance.enemy.maxCount - enemies.length);
+    const available = Math.max(0, maxEnemyCount() - enemies.length);
     const count = Math.min(available, waveSize());
     for(let i=0; i<count; i++){
       spawnEnemy();
@@ -190,7 +239,7 @@ export function createEngine(options = {}){
   }
 
   function spawnEnemy(){
-    const point = spawnPoint(balance, random);
+    const point = spawnPoint(balance, world, random, spawnVector);
     const enemy = enemyPool.pop() || { id:0, life:0, x:0, y:0, blocked:0 };
     enemy.id = nextId++;
     enemy.life = balance.enemy.life || SURVIVOR_BALANCE.enemy.life;
@@ -206,7 +255,7 @@ export function createEngine(options = {}){
     boss = {
       ...boss,
       active: true,
-      x: balance.worldWidth / 2,
+      x: world.width / 2,
       y: Math.max(cfg.radius, 72),
       life: cfg.life,
       maxLife: cfg.life,
@@ -223,7 +272,7 @@ export function createEngine(options = {}){
 
   function spawnBossWave(){
     const cfg = bossBalance();
-    const available = Math.max(0, balance.enemy.maxCount - enemies.length);
+    const available = Math.max(0, maxEnemyCount() - enemies.length);
     const count = Math.min(available, cfg.baseWaveCount + boss.pressure * cfg.pressureWaveBonus);
     for(let i=0; i<count; i++){
       spawnEnemy();
@@ -250,24 +299,27 @@ export function createEngine(options = {}){
   }
 
   function projectileSlot(){
-    return projectiles.find(projectile => !projectile.active);
+    for(const projectile of projectiles){
+      if(!projectile.active) return projectile;
+    }
+    return null;
   }
 
-  function launchProjectile(stats, direction, extra = {}){
+  function launchProjectile(stats, dirX, dirY, weaponId = CHISPA_MITO_ID, life = 0, targetId = 0, turn = 0){
     const slot = projectileSlot();
     if(!slot) return;
     slot.active = true;
     slot.x = player.x;
     slot.y = player.y;
-    slot.vx = direction.x * stats.speed;
-    slot.vy = direction.y * stats.speed;
+    slot.vx = dirX * stats.speed;
+    slot.vy = dirY * stats.speed;
     slot.damage = stats.damage;
-    slot.life = extra.life || balance.weapons?.projectileLife || SURVIVOR_BALANCE.weapons.projectileLife;
+    slot.life = life || balance.weapons?.projectileLife || SURVIVOR_BALANCE.weapons.projectileLife;
     slot.hitsLeft = stats.pierce + 1;
     slot.explosionRadius = stats.explosionRadius;
-    slot.weaponId = extra.weaponId || CHISPA_MITO_ID;
-    slot.targetId = extra.targetId || 0;
-    slot.turn = extra.turn || 0;
+    slot.weaponId = weaponId;
+    slot.targetId = targetId;
+    slot.turn = turn;
     slot.hitIds.length = 0;
   }
 
@@ -275,21 +327,25 @@ export function createEngine(options = {}){
     const target = nearestCombatTarget(player);
     if(!target) return;
     const stats = weaponStats(CHISPA_MITO_ID, weaponLevels[CHISPA_MITO_ID], balance);
-    const direction = directionTo(player, target);
+    const direction = directionToInto(player, target, directionVector);
     const spread = stats.projectiles === 1 ? 0 : 0.18;
     const start = -spread * (stats.projectiles - 1) / 2;
-    for(let i=0; i<stats.projectiles; i++) launchProjectile(stats, rotate(direction, start + spread * i));
+    for(let i=0; i<stats.projectiles; i++){
+      const rotated = rotateInto(direction.x, direction.y, start + spread * i, rotatedVector);
+      launchProjectile(stats, rotated.x, rotated.y);
+    }
   }
 
   function fireShortProjectiles(stats){
     const target = nearestCombatTarget(player);
     if(!target) return;
-    const direction = directionTo(player, target);
+    const direction = directionToInto(player, target, directionVector);
     const spread = stats.projectiles === 1 ? 0 : stats.spread;
     const start = -spread * (stats.projectiles - 1) / 2;
     const life = stats.range / stats.speed;
     for(let i=0; i<stats.projectiles; i++){
-      launchProjectile(stats, rotate(direction, start + spread * i), { life, weaponId:activePetWeapon.id });
+      const rotated = rotateInto(direction.x, direction.y, start + spread * i, rotatedVector);
+      launchProjectile(stats, rotated.x, rotated.y, activePetWeapon.id, life);
     }
   }
 
@@ -297,11 +353,12 @@ export function createEngine(options = {}){
     const target = nearestCombatTarget(player);
     if(!target) return;
     const total = stats.projectiles * stats.burst;
-    const direction = directionTo(player, target);
+    const direction = directionToInto(player, target, directionVector);
     const spread = total === 1 ? 0 : 0.2;
     const start = -spread * (total - 1) / 2;
     for(let i=0; i<total; i++){
-      launchProjectile(stats, rotate(direction, start + spread * i), { weaponId:activePetWeapon.id, targetId:target === boss ? 'boss' : target.id, turn:stats.turn });
+      const rotated = rotateInto(direction.x, direction.y, start + spread * i, rotatedVector);
+      launchProjectile(stats, rotated.x, rotated.y, activePetWeapon.id, 0, target === boss ? 'boss' : target.id, stats.turn);
     }
   }
 
@@ -309,14 +366,15 @@ export function createEngine(options = {}){
     if(stats.shieldTime > 0) player.invulnerable = Math.max(player.invulnerable, stats.shieldTime);
     for(let pulse=0; pulse<stats.pulses; pulse++){
       for(const enemy of enemies){
-        if(enemy.life <= 0 || distance(player, enemy) > stats.radius) continue;
+        if(enemy.life <= 0 || distanceSquared(player, enemy) > stats.radius * stats.radius) continue;
         damageEnemy(enemy, stats.damage);
-        const dir = directionTo(player, enemy);
-        enemy.x = clamp(enemy.x + dir.x * stats.knockback, -balance.waves.spawnPadding, balance.worldWidth + balance.waves.spawnPadding);
-        enemy.y = clamp(enemy.y + dir.y * stats.knockback, -balance.waves.spawnPadding, balance.worldHeight + balance.waves.spawnPadding);
+        const dir = directionToInto(player, enemy, directionVector);
+        enemy.x = clamp(enemy.x + dir.x * stats.knockback, balance.enemy.radius, world.width - balance.enemy.radius);
+        enemy.y = clamp(enemy.y + dir.y * stats.knockback, balance.enemy.radius, world.height - balance.enemy.radius);
         if(stats.weakBlock && enemy.life <= (balance.enemy.life || SURVIVOR_BALANCE.enemy.life)) enemy.blocked = Math.max(enemy.blocked || 0, 0.45);
       }
-      if(boss.active && boss.life > 0 && distance(player, boss) <= stats.radius + (bossBalance().radius || SURVIVOR_BALANCE.boss.radius)){
+      const radius = stats.radius + (bossBalance().radius || SURVIVOR_BALANCE.boss.radius);
+      if(boss.active && boss.life > 0 && distanceSquared(player, boss) <= radius * radius){
         damageBoss(stats.damage);
       }
     }
@@ -400,9 +458,10 @@ export function createEngine(options = {}){
     if(projectile.explosionRadius <= 0) return;
     for(const enemy of enemies){
       if(enemy === directHit || enemy.life <= 0) continue;
-      if(distance(projectile, enemy) <= projectile.explosionRadius) damageEnemy(enemy, projectile.damage);
+      if(distanceSquared(projectile, enemy) <= projectile.explosionRadius * projectile.explosionRadius) damageEnemy(enemy, projectile.damage);
     }
-    if(boss.active && boss !== directHit && boss.life > 0 && distance(projectile, boss) <= projectile.explosionRadius + (bossBalance().radius || SURVIVOR_BALANCE.boss.radius)){
+    const radius = projectile.explosionRadius + (bossBalance().radius || SURVIVOR_BALANCE.boss.radius);
+    if(boss.active && boss !== directHit && boss.life > 0 && distanceSquared(projectile, boss) <= radius * radius){
       damageBoss(projectile.damage);
     }
   }
@@ -412,7 +471,7 @@ export function createEngine(options = {}){
     if(enemy.life <= 0 || projectile.hitIds.includes(hitId)) return false;
     const targetRadius = enemy === boss ? (bossBalance().radius || SURVIVOR_BALANCE.boss.radius) : balance.enemy.radius;
     const radius = (balance.weapons?.projectileRadius || SURVIVOR_BALANCE.weapons.projectileRadius) + targetRadius;
-    return distance(projectile, enemy) <= radius;
+    return distanceSquared(projectile, enemy) <= radius * radius;
   }
 
   function updateProjectiles(step){
@@ -421,7 +480,7 @@ export function createEngine(options = {}){
       if(projectile.turn > 0){
         const target = targetById(projectile.targetId) || nearestCombatTarget(projectile);
         if(target){
-          const dir = directionTo(projectile, target);
+          const dir = directionToInto(projectile, target, directionVector);
           const speed = Math.hypot(projectile.vx, projectile.vy) || 1;
           const amount = Math.min(1, projectile.turn * step);
           projectile.vx = projectile.vx * (1 - amount) + dir.x * speed * amount;
@@ -463,7 +522,7 @@ export function createEngine(options = {}){
     let write = 0;
     for(let read=0; read<gems.length; read++){
       const gem = gems[read];
-      if(distance(player, gem) <= radius){
+      if(distanceSquared(player, gem) <= radius * radius){
         xp += gem.value;
         gemPool.push(gem);
       } else {
@@ -484,8 +543,18 @@ export function createEngine(options = {}){
 
   function applyDamage(){
     if(player.invulnerable > 0) return;
-    const bossHit = boss.active && boss.life > 0 && distance(player, boss) <= balance.player.radius + (bossBalance().radius || SURVIVOR_BALANCE.boss.radius);
-    const hit = bossHit || enemies.some(enemy => distance(player, enemy) <= balance.player.radius + balance.enemy.radius);
+    const bossRadius = balance.player.radius + (bossBalance().radius || SURVIVOR_BALANCE.boss.radius);
+    const enemyRadius = balance.player.radius + balance.enemy.radius;
+    const bossHit = boss.active && boss.life > 0 && distanceSquared(player, boss) <= bossRadius * bossRadius;
+    let hit = bossHit;
+    if(!hit){
+      for(const enemy of enemies){
+        if(distanceSquared(player, enemy) <= enemyRadius * enemyRadius){
+          hit = true;
+          break;
+        }
+      }
+    }
     if(!hit) return;
     player.life = Math.max(0, player.life - (bossHit ? bossBalance().damage : balance.enemy.damage));
     player.invulnerable = balance.player.invulnerableTime;
@@ -508,8 +577,8 @@ export function createEngine(options = {}){
       const len = Math.hypot(dx, dy) || 1;
       boss.x += dx / len * cfg.speed * step;
       boss.y += dy / len * cfg.speed * step;
-      boss.x = clamp(boss.x, cfg.radius, balance.worldWidth - cfg.radius);
-      boss.y = clamp(boss.y, cfg.radius, balance.worldHeight - cfg.radius);
+      boss.x = clamp(boss.x, cfg.radius, world.width - cfg.radius);
+      boss.y = clamp(boss.y, cfg.radius, world.height - cfg.radius);
     }
 
     if(elapsed >= nextBossWave){
@@ -532,9 +601,9 @@ export function createEngine(options = {}){
     if(!boss.active && elapsed >= matchDuration()) startBoss();
     if(player.invulnerable > 0) player.invulnerable = Math.max(0, player.invulnerable - step);
 
-    const dir = normalize(getInput());
-    player.x = clamp(player.x + dir.x * balance.player.speed * step, balance.player.radius, balance.worldWidth - balance.player.radius);
-    player.y = clamp(player.y + dir.y * balance.player.speed * step, balance.player.radius, balance.worldHeight - balance.player.radius);
+    const dir = normalizeInto(getInput(), inputVector);
+    player.x = clamp(player.x + dir.x * balance.player.speed * step, balance.player.radius, world.width - balance.player.radius);
+    player.y = clamp(player.y + dir.y * balance.player.speed * step, balance.player.radius, world.height - balance.player.radius);
 
     while(!boss.active && elapsed >= nextWave){
       spawnWave();
@@ -575,8 +644,8 @@ export function createEngine(options = {}){
   }
 
   function render(ctx){
-    const w = balance.worldWidth;
-    const h = balance.worldHeight;
+    const w = world.width;
+    const h = world.height;
     ctx.clearRect(0, 0, w, h);
     ctx.fillStyle = '#fff7fb';
     ctx.fillRect(0, 0, w, h);
@@ -672,8 +741,8 @@ export function createEngine(options = {}){
       const dy = enemy.y - player.y;
       const len = Math.hypot(dx, dy) || 1;
       if(len >= safeRadius) continue;
-      enemy.x = clamp(player.x + dx / len * safeRadius, -balance.waves.spawnPadding, balance.worldWidth + balance.waves.spawnPadding);
-      enemy.y = clamp(player.y + dy / len * safeRadius, -balance.waves.spawnPadding, balance.worldHeight + balance.waves.spawnPadding);
+      enemy.x = clamp(player.x + dx / len * safeRadius, balance.enemy.radius, world.width - balance.enemy.radius);
+      enemy.y = clamp(player.y + dy / len * safeRadius, balance.enemy.radius, world.height - balance.enemy.radius);
       enemy.blocked = Math.max(enemy.blocked || 0, 0.4);
     }
   }
@@ -690,7 +759,7 @@ export function createEngine(options = {}){
   }
 
   function breakBossShield(){
-    if(!boss.active || boss.shields <= 0) return snapshot();
+    if(!boss.active || boss.shields <= 0) return snapshotCopy();
     const cfg = bossBalance();
     boss.shields = Math.max(0, boss.shields - 1);
     boss.vulnerable = boss.shields <= 0;
@@ -698,7 +767,7 @@ export function createEngine(options = {}){
     boss.questionPending = false;
     boss.nextQuestionAt = elapsed + cfg.shieldQuestionInterval;
     bossShieldSent = false;
-    return snapshot();
+    return snapshotCopy();
   }
 
   function pressureBoss(){
@@ -751,7 +820,16 @@ export function createEngine(options = {}){
     return snapshot();
   }
 
+  function setWorld(nextWorld){
+    world = normalizeWorld(nextWorld, balance);
+    clampToWorld(player, balance.player.radius);
+    for(const enemy of enemies) clampToWorld(enemy, balance.enemy.radius);
+    for(const gem of gems) clampToWorld(gem, 0);
+    if(boss.active) clampToWorld(boss, bossBalance().radius || SURVIVOR_BALANCE.boss.radius);
+    return snapshot();
+  }
+
   reset();
 
-  return { start, pause, resume, stop, update, render, snapshot, setWeaponLevel, levelUpWeapon, revive, breakBossShield, pressureBoss };
+  return { start, pause, resume, stop, update, render, snapshot, setWorld, setWeaponLevel, levelUpWeapon, revive, breakBossShield, pressureBoss };
 }

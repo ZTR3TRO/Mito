@@ -395,11 +395,11 @@ test('un tema corrupto en localStorage no rompe la interfaz', ()=>{
   applyTheme('dark');
   assert.equal(document.documentElement.dataset.theme, 'dark');
   assert.equal(document.getElementById('themeToggle').getAttribute('aria-pressed'), 'true');
-  assert.equal(document.querySelector('#themeToggle .tt-emoji').textContent, '☀️');
+  assert.equal(document.querySelector('#themeToggle .tt-emoji').textContent, 'Claro');
 
   applyTheme('light');
   assert.equal(document.getElementById('themeToggle').getAttribute('aria-pressed'), 'false');
-  assert.equal(document.querySelector('#themeToggle .tt-emoji').textContent, '🌙');
+  assert.equal(document.querySelector('#themeToggle .tt-emoji').textContent, 'Oscuro');
 });
 
 test('importar un respaldo repinta todo y respeta el tema', ()=>{

@@ -2,6 +2,14 @@ import { SURVIVOR_BALANCE } from './balance.js';
 
 export const CHISPA_MITO_ID = 'chispa-mito';
 
+export const SURVIVOR_WEAPONS = {
+  [CHISPA_MITO_ID]: {
+    id: CHISPA_MITO_ID,
+    name: 'Chispa de Mito',
+    description: 'Más daño y disparos para despejar enemigos.',
+  },
+};
+
 function clampLevel(level){
   return Math.max(1, Math.min(8, Math.round(Number(level) || 1)));
 }
@@ -14,7 +22,7 @@ function tableFor(id, balance = SURVIVOR_BALANCE){
 export function weaponStats(id, level, balance = SURVIVOR_BALANCE){
   const table = tableFor(id, balance);
   if(!table) return null;
-  return { ...table[clampLevel(level)] };
+  return table[clampLevel(level)];
 }
 
 export function nearestEnemy(origin, enemies){

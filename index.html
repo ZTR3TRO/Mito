@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Mito · Ecosistema de estudio</title>
 <meta name="description" content="Apuntes, puntos clave y quiz arcade para repasar tus materias con Mito. Gana chispas y personaliza tu mascota.">
 <meta name="theme-color" content="#ff5da2">
@@ -57,18 +57,18 @@
       </button>
     </div>
 
-    <button class="theme-toggle" id="themeToggle" aria-pressed="false"><span class="tt-emoji">🌙</span><span class="tt-label">Modo oscuro</span></button>
+    <button class="theme-toggle" id="themeToggle" aria-pressed="false"><span class="tt-emoji">Oscuro</span><span class="tt-label">Modo oscuro</span></button>
 
     <div class="balance-chip">
-      <span class="bc-emoji">⚡</span><span id="sideSparks">0</span><span class="bc-label">chispas</span>
+      <span class="bc-emoji">Chispas</span><span id="sideSparks">0</span><span class="bc-label">chispas</span>
     </div>
 
     <div class="streak-chip" id="sideStreakWrap">
-      <span class="sc-flame">🔥</span><span id="sideStreak">0</span><span class="sc-label" id="sideStreakDays">juega hoy para encender la racha</span>
+      <span class="sc-flame">Racha</span><span id="sideStreak">0</span><span class="sc-label" id="sideStreakDays">juega hoy para encender la racha</span>
     </div>
 
     <div class="mascot-side">
-      <div class="bubble" id="sideBubble">¡Hola, Zare! Soy Mito 👋 ¿Lista para estudiar?</div>
+      <div class="bubble" id="sideBubble">¡Hola, Zare! Soy Mito. ¿Lista para estudiar?</div>
       <div class="mascot small face-normal" id="mascotSide">
         <svg class="mito" viewBox="0 0 150 150"></svg>
       </div>
@@ -84,7 +84,7 @@
 
     <!-- Selector de materia -->
     <div class="course-bar">
-      <span class="course-bar-label">📚 Materia</span>
+      <span class="course-bar-label">Materia</span>
       <div class="course-tabs" id="courseTabs"></div>
     </div>
 
@@ -98,12 +98,12 @@
             <h1>¡Hola, Zare! Soy Mito.<br>Vamos a dominar <span class="accent" id="heroCourse">el ATP</span> jugando.</h1>
             <p>Apuntes completos, puntos clave y un quiz arcade con vidas, racha y confeti. Gana chispas y personalízame a tu gusto. Todo en un solo lugar para que repases tus materias.</p>
             <div class="hero-actions">
-              <button class="btn btn-primary" data-nav="quiz">🎮 Jugar el quiz</button>
-              <button class="btn btn-ghost" data-nav="apuntes">📖 Ver apuntes</button>
+              <button class="btn btn-primary" data-nav="quiz">Jugar el quiz</button>
+              <button class="btn btn-ghost" data-nav="apuntes">Ver apuntes</button>
             </div>
           </div>
           <div class="mascot-hero-wrap">
-            <div class="speech" id="heroSpeech">¡Hola, Zare! ¿Lista para estudiar? 📚</div>
+            <div class="speech" id="heroSpeech">¡Hola, Zare! ¿Lista para estudiar?</div>
             <div class="mascot face-happy state-idle" id="mascotHero">
               <svg class="mito" viewBox="0 0 150 150"></svg>
             </div>
@@ -150,7 +150,7 @@
       <div id="notesHost"></div>
 
       <div class="cheat-sheet" id="cheatSheet">
-        <h4>⚡ Chuleta de datos rápidos</h4>
+        <h4>Chuleta de datos rápidos</h4>
         <div class="cheat-grid" id="cheatGrid"></div>
       </div>
     </section>
@@ -258,10 +258,10 @@
           </div>
         </div>
         <div class="survivor-hud">
-          <div><span>Vida</span><b id="survivorLife">100/100</b></div>
-          <div class="survivor-xp"><span>XP</span><b id="survivorXp">0/30</b><i><em id="survivorXpFill"></em></i></div>
-          <div><span>Tiempo</span><b id="survivorTime">0:00</b></div>
-          <div><span>Enemigos</span><b id="survivorEnemies">0</b></div>
+          <div class="survivor-life"><i><em id="survivorLifeFill"></em></i><b id="survivorLife">100/100</b></div>
+          <div class="survivor-xp"><i><em id="survivorXpFill"></em></i><b id="survivorXp">Nv. 1 · 0/30</b></div>
+          <div class="survivor-time"><span>Tiempo</span><b id="survivorTime">0:00</b></div>
+          <div class="survivor-enemies" hidden><span>Enemigos</span><b id="survivorEnemies">0</b></div>
         </div>
         <div class="survivor-overlay" id="survivorOverlay">
           <div class="survivor-card">
@@ -289,31 +289,31 @@
           <h2 class="page-title">Tu progreso</h2>
           <p class="page-sub">Tus temas débiles, tu historial de rondas y los fallos pendientes de repasar. Todo se guarda en este dispositivo.</p>
         </div>
-        <button class="btn btn-ghost" style="background:var(--mint-pale); color:var(--mint-deep); border-color:var(--mint);" data-action="goReview">🎯 Repasar fallos</button>
+        <button class="btn btn-ghost" style="background:var(--mint-pale); color:var(--mint-deep); border-color:var(--mint);" data-action="goReview">Repasar fallos</button>
       </div>
 
       <div class="stat-row" id="progressStats"></div>
 
       <div class="prog-section">
-        <h3 class="prog-title">📉 Tus temas débiles</h3>
+        <h3 class="prog-title">Tus temas débiles</h3>
         <div id="weakTopics"></div>
       </div>
 
       <div class="prog-section">
-        <h3 class="prog-title">🕒 Historial de rondas</h3>
+        <h3 class="prog-title">Historial de rondas</h3>
         <div id="historyList"></div>
       </div>
 
       <div class="prog-section">
-        <h3 class="prog-title">🎯 Fallos a repasar</h3>
+        <h3 class="prog-title">Fallos a repasar</h3>
         <div id="mistakesList"></div>
       </div>
       <div class="data-row">
         <div class="data-row-label">Tu progreso se guarda en este dispositivo.</div>
         <div class="data-row-btns">
-          <button class="btn-dev" data-progress="export">💾 Exportar progreso</button>
-          <button class="btn-dev" data-progress="import">📥 Importar progreso</button>
-          <button class="btn-dev danger" data-progress="reset">🗑️ Reiniciar todo</button>
+          <button class="btn-dev" data-progress="export">Exportar progreso</button>
+          <button class="btn-dev" data-progress="import">Importar progreso</button>
+          <button class="btn-dev danger" data-progress="reset">Reiniciar todo</button>
         </div>
       </div>
     </section>
@@ -327,7 +327,7 @@
         </div>
         <div class="shop-head-actions">
           <div class="balance-chip big">
-            <span class="bc-emoji">⚡</span><span id="sparkBalance">0</span><span class="bc-label">chispas</span>
+            <span class="bc-emoji">Chispas</span><span id="sparkBalance">0</span><span class="bc-label">chispas</span>
           </div>
           <button class="btn-mini equip-only" data-nav="wardrobe">Armario →</button>
         </div>

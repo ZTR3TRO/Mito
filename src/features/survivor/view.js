@@ -1,21 +1,46 @@
 import { byId, clear, el } from '../../core/dom.js';
-import { SURVIVOR_BALANCE } from './balance.js';
+import { computeWorld, SURVIVOR_BALANCE } from './balance.js';
 import { PET_WEAPONS } from './pets.js';
-import { effectiveStats, powerById } from './powers.js';
+import { powerById } from './powers.js';
 
 const keys = new Set();
 const touch = { active:false, id:null, startX:0, startY:0, x:0, y:0 };
+const keyInput = { x:0, y:0 };
+const touchInput = { x:0, y:0 };
+const combinedInput = { x:0, y:0 };
 
 let refs = null;
-let cssWidth = SURVIVOR_BALANCE.worldWidth;
-let cssHeight = SURVIVOR_BALANCE.worldHeight;
+let cssWidth = SURVIVOR_BALANCE.world.maxWidth;
+let cssHeight = SURVIVOR_BALANCE.world.height;
 let dpr = 1;
+let currentWorld = computeWorld(cssWidth, cssHeight);
+let offsetX = 0;
 let startHandler = null;
+let pauseHandler = null;
+let exitHandler = null;
+let orientationPauseHandler = null;
 let questionKeyHandler = null;
 let lastFocus = null;
 let keyboardActive = false;
 let keyboardListening = false;
 let lastHud = {};
+let playModeActive = false;
+let escapeHandler = null;
+let orientationQuery = null;
+let orientationHandler = null;
+let popstateHandler = null;
+let historyPushed = false;
+let viewListening = false;
+let listeningShell = null;
+
+function reducedMotion(){
+  return Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
+}
+
+function softVibrate(ms){
+  if(reducedMotion()) return;
+  globalThis.navigator?.vibrate?.(ms);
+}
 
 function formatTime(seconds){
   const total = Math.max(0, Math.floor(seconds));
@@ -25,26 +50,56 @@ function formatTime(seconds){
 }
 
 function keyVector(){
-  let x = 0, y = 0;
-  if(keys.has('ArrowLeft') || keys.has('KeyA')) x -= 1;
-  if(keys.has('ArrowRight') || keys.has('KeyD')) x += 1;
-  if(keys.has('ArrowUp') || keys.has('KeyW')) y -= 1;
-  if(keys.has('ArrowDown') || keys.has('KeyS')) y += 1;
-  return { x, y };
+  keyInput.x = 0;
+  keyInput.y = 0;
+  if(keys.has('ArrowLeft') || keys.has('KeyA')) keyInput.x -= 1;
+  if(keys.has('ArrowRight') || keys.has('KeyD')) keyInput.x += 1;
+  if(keys.has('ArrowUp') || keys.has('KeyW')) keyInput.y -= 1;
+  if(keys.has('ArrowDown') || keys.has('KeyS')) keyInput.y += 1;
+  return keyInput;
 }
 
 function touchVector(){
-  if(!touch.active) return { x:0, y:0 };
+  touchInput.x = 0;
+  touchInput.y = 0;
+  if(!touch.active) return touchInput;
   const dx = touch.x - touch.startX;
   const dy = touch.y - touch.startY;
   const len = Math.hypot(dx, dy);
-  if(len < 12) return { x:0, y:0 };
-  return { x:dx / len, y:dy / len };
+  if(len < 12) return touchInput;
+  touchInput.x = dx / len;
+  touchInput.y = dy / len;
+  return touchInput;
+}
+
+function isMovementBlockedTarget(target){
+  if(!(target instanceof HTMLElement)) return false;
+  return Boolean(target.closest('.survivor-overlay:not([hidden]), .survivor-controls, .survivor-build, button, a, input, textarea, select'));
+}
+
+function updateJoystick(){
+  if(!refs?.joystick) return;
+  refs.joystick.hidden = !touch.active;
+  if(!touch.active) return;
+  refs.joystick.style.left = `${touch.startX}px`;
+  refs.joystick.style.top = `${touch.startY}px`;
+  const dx = touch.x - touch.startX;
+  const dy = touch.y - touch.startY;
+  const len = Math.hypot(dx, dy);
+  const max = 44;
+  const scale = len > max ? max / len : 1;
+  if(refs.joystickKnob) refs.joystickKnob.style.transform = `translate(${dx * scale}px, ${dy * scale}px)`;
 }
 
 function pointerPos(event){
-  const rect = refs.shell.getBoundingClientRect?.() || { width:SURVIVOR_BALANCE.worldWidth, height:SURVIVOR_BALANCE.worldHeight };
+  const rect = refs.canvas?.getBoundingClientRect?.() || refs.shell.getBoundingClientRect?.() || { left:0, top:0, width:SURVIVOR_BALANCE.world.maxWidth, height:SURVIVOR_BALANCE.world.height };
   return { x:event.clientX - rect.left, y:event.clientY - rect.top };
+}
+
+function applyCanvasTransform(ctx){
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, Math.round(cssWidth * dpr), Math.round(cssHeight * dpr));
+  ctx.setTransform(dpr * currentWorld.scale, 0, 0, dpr * currentWorld.scale, offsetX * dpr, 0);
 }
 
 function onKeyDown(event){
@@ -75,15 +130,19 @@ function shouldHandleMovementKey(event){
 
 function onPointerDown(event){
   if(event.pointerType === 'mouse') return;
+  if(!keyboardActive || isMovementBlockedTarget(event.target)) return;
+  const pos = pointerPos(event);
+  const rect = refs.canvas?.getBoundingClientRect?.() || refs.shell.getBoundingClientRect?.();
+  if(rect && pos.y < rect.height * 0.5) return;
   event.preventDefault();
   refs.shell.setPointerCapture?.(event.pointerId);
-  const pos = pointerPos(event);
   touch.active = true;
   touch.id = event.pointerId;
   touch.startX = pos.x;
   touch.startY = pos.y;
   touch.x = pos.x;
   touch.y = pos.y;
+  updateJoystick();
 }
 
 function onPointerMove(event){
@@ -92,12 +151,46 @@ function onPointerMove(event){
   const pos = pointerPos(event);
   touch.x = pos.x;
   touch.y = pos.y;
+  updateJoystick();
 }
 
 function onPointerEnd(event){
   if(event.pointerId !== touch.id) return;
   touch.active = false;
   touch.id = null;
+  updateJoystick();
+}
+
+function iconButton(label, html){
+  return el('button', { class:'survivor-icon-btn', attrs:{ type:'button', 'aria-label':label }, html });
+}
+
+function pauseIcon(){
+  return '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M8 5v14M16 5v14"></path></svg>';
+}
+
+function exitIcon(){
+  return '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 5l14 14M19 5 5 19"></path></svg>';
+}
+
+function upgradeIcon(){
+  return '<svg viewBox="0 0 48 48" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="3"><path d="M24 5l5.2 12.6L42 19l-9.8 8.7L35 41l-11-7-11 7 2.8-13.3L6 19l12.8-1.4L24 5z"></path></svg>';
+}
+
+function buildIcon(){
+  return '<svg viewBox="0 0 48 48" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="3"><path d="M24 8v32M8 24h32"></path><circle cx="24" cy="24" r="14"></circle></svg>';
+}
+
+function phoneTurnIcon(){
+  return el('div', { class:'survivor-phone-turn', attrs:{ 'aria-hidden':'true' }, html:`
+    <svg viewBox="0 0 96 96" fill="none" stroke="currentColor" stroke-width="4">
+      <rect x="30" y="12" width="36" height="64" rx="8"></rect>
+      <path d="M43 68h10"></path>
+      <path d="M18 46c-6 8-6 20 1 28 6 7 16 9 24 5"></path>
+      <path d="M78 50c6-8 6-20-1-28-6-7-16-9-24-5"></path>
+      <path d="M20 74l-1-18 17 3"></path>
+      <path d="M76 22l1 18-17-3"></path>
+    </svg>` });
 }
 
 function ensureRefs(){
@@ -106,7 +199,9 @@ function ensureRefs(){
     shell: byId('survivorShell'),
     canvas: byId('survivorCanvas'),
     mito: byId('survivorMito'),
+    hud: byId('survivorShell')?.querySelector('.survivor-hud'),
     hudLife: byId('survivorLife'),
+    hudLifeFill: byId('survivorLifeFill'),
     hudXp: byId('survivorXp'),
     hudXpFill: byId('survivorXpFill'),
     hudTime: byId('survivorTime'),
@@ -121,6 +216,9 @@ function ensureRefs(){
     bossLife: byId('survivorBossLife'),
     bossLifeFill: byId('survivorBossLifeFill'),
     bossShields: byId('survivorBossShields'),
+    controls: byId('survivorControls'),
+    joystick: byId('survivorJoystick'),
+    joystickKnob: byId('survivorJoystickKnob'),
   };
   refs.shell?.setAttribute('tabindex', '0');
   refs.canvas?.setAttribute('role', 'img');
@@ -139,6 +237,22 @@ function ensureRefs(){
       el('small', { children:[el('span', { text:'Escudos' }), refs.bossShields] }),
     ] });
     refs.shell.append(refs.bossHud);
+  }
+  if(!refs.controls && refs.shell){
+    const pauseButton = iconButton('Pausar partida', pauseIcon());
+    const exitButton = iconButton('Salir de la partida', exitIcon());
+    pauseButton.addEventListener('click', ()=>pauseHandler?.());
+    exitButton.addEventListener('click', ()=>exitHandler?.());
+    refs.controls = el('div', { class:'survivor-controls', attrs:{ id:'survivorControls' }, children:[pauseButton, exitButton] });
+    (refs.hud || refs.shell).append(refs.controls);
+  }
+  if(refs.controls && refs.hud && refs.controls.parentElement !== refs.hud){
+    refs.hud.append(refs.controls);
+  }
+  if(!refs.joystick && refs.shell){
+    refs.joystickKnob = el('span', { attrs:{ id:'survivorJoystickKnob' } });
+    refs.joystick = el('div', { class:'survivor-joystick', attrs:{ id:'survivorJoystick', hidden:'', 'aria-hidden':'true' }, children:[refs.joystickKnob] });
+    refs.shell.append(refs.joystick);
   }
   return refs;
 }
@@ -166,6 +280,7 @@ export function cleanupInput(){
   keys.clear();
   touch.active = false;
   touch.id = null;
+  updateJoystick();
 }
 
 export function startGameInput(){
@@ -197,6 +312,25 @@ function prepareOverlay({ gameover = false } = {}){
     refs.overlay.setAttribute('aria-labelledby', 'survivorOverlayTitle');
     refs.overlay.setAttribute('aria-describedby', 'survivorOverlayText');
   }
+  if(refs.card){
+    refs.card.setAttribute('role', 'dialog');
+    refs.card.setAttribute('aria-modal', 'true');
+    refs.card.setAttribute('aria-labelledby', 'survivorOverlayTitle');
+  }
+}
+
+function overlayActions(buttons){
+  return el('div', { class:'survivor-actions', children:buttons });
+}
+
+function fillOverlay({ icon, title, body, actions, gameover = false }){
+  prepareOverlay({ gameover });
+  clear(refs.card);
+  const titleNode = el('h3', { text:title, attrs:{ id:'survivorOverlayTitle' } });
+  const bodyNode = el('div', { class:'survivor-card-body', attrs:{ id:'survivorOverlayText' }, children:body });
+  refs.card.append(icon || markNode(), titleNode, bodyNode, overlayActions(actions));
+  refs.overlay?.setAttribute('aria-describedby', 'survivorOverlayText');
+  return { titleNode, bodyNode };
 }
 
 function restoreFocus(){
@@ -207,47 +341,158 @@ function restoreFocus(){
 function showBasicOverlay({ title, text, buttonText, onClick, gameover = false }){
   ensureRefs();
   cleanupQuestionKeys();
-  prepareOverlay({ gameover });
-  clear(refs.card);
-  refs.overlayTitle = el('h3', { text:title, attrs:{ id:'survivorOverlayTitle' } });
-  refs.overlayText = el('p', { text, attrs:{ id:'survivorOverlayText' } });
   refs.overlayButton = el('button', { class:'btn btn-primary', text:buttonText, attrs:{ id:'survivorStart', type:'button' } });
   refs.overlayButton.addEventListener('click', onClick || startHandler);
-  refs.card.append(markNode(), refs.overlayTitle, refs.overlayText, el('div', { class:'survivor-actions', children:[refs.overlayButton] }));
+  fillOverlay({ title, body:[el('p', { text })], actions:[refs.overlayButton], gameover });
   if(isVisible()) refs.overlayButton.focus();
 }
 
-export function initView({ onStart }){
+export function initView({ onStart, onPause, onExit, onOrientationPause }){
   ensureRefs();
   startHandler = onStart;
-  refs.overlayButton?.addEventListener('click', onStart);
+  pauseHandler = onPause;
+  exitHandler = onExit;
+  orientationPauseHandler = onOrientationPause;
+  if(viewListening && listeningShell === refs.shell) return;
+  refs.overlayButton?.addEventListener('click', ()=>startHandler?.());
   refs.shell?.addEventListener('pointerdown', onPointerDown);
   refs.shell?.addEventListener('pointermove', onPointerMove);
   refs.shell?.addEventListener('pointerup', onPointerEnd);
   refs.shell?.addEventListener('pointercancel', onPointerEnd);
+  viewListening = true;
+  listeningShell = refs.shell;
+}
+
+export function shouldPauseForLandscape({ width, height, pointerCoarse }){
+  return Boolean(pointerCoarse) && Number(width) > Number(height);
+}
+
+function touchLandscapeMatches(){
+  if(typeof window === 'undefined') return false;
+  if(window.matchMedia){
+    return Boolean(window.matchMedia('(orientation: landscape) and (pointer: coarse)').matches);
+  }
+  return shouldPauseForLandscape({ width:window.innerWidth, height:window.innerHeight, pointerCoarse:false });
+}
+
+function cleanupPlayModeListeners(){
+  if(escapeHandler){
+    window.removeEventListener('keydown', escapeHandler);
+    escapeHandler = null;
+  }
+  if(orientationQuery && orientationHandler){
+    orientationQuery.removeEventListener?.('change', orientationHandler);
+    orientationQuery.removeListener?.(orientationHandler);
+  }
+  orientationQuery = null;
+  orientationHandler = null;
+  if(popstateHandler){
+    window.removeEventListener('popstate', popstateHandler);
+    popstateHandler = null;
+  }
+}
+
+function tryLockPortrait(){
+  try{
+    const lock = screen.orientation?.lock?.('portrait');
+    lock?.catch?.(()=>{});
+  }
+  catch{}
+}
+
+export function enterPlayMode(){
+  ensureRefs();
+  playModeActive = true;
+  document.body.classList.add('survivor-playing');
+  refs.shell?.classList.add('is-fullscreen');
+
+  try{
+    const fullscreen = refs.shell?.requestFullscreen?.({ navigationUI:'hide' });
+    fullscreen?.then?.(tryLockPortrait).catch?.(()=>{});
+  }
+  catch{}
+
+  cleanupPlayModeListeners();
+  escapeHandler = event=>{
+    if(!playModeActive || !isVisible() || event.key !== 'Escape' || isTextInput(event.target)) return;
+    event.preventDefault();
+    pauseHandler?.();
+  };
+  window.addEventListener('keydown', escapeHandler);
+
+  if(window.matchMedia){
+    orientationQuery = window.matchMedia('(orientation: landscape) and (pointer: coarse)');
+    orientationHandler = event=>{
+      if(playModeActive && event.matches) orientationPauseHandler?.();
+    };
+    orientationQuery.addEventListener?.('change', orientationHandler);
+    orientationQuery.addListener?.(orientationHandler);
+  }
+
+  popstateHandler = ()=>{
+    if(!playModeActive) return;
+    pauseHandler?.();
+    try{ history.pushState({ survivor:true }, ''); }
+    catch{}
+  };
+  window.addEventListener('popstate', popstateHandler);
+  try{
+    history.pushState({ survivor:true }, '');
+    historyPushed = true;
+  }
+  catch{
+    historyPushed = false;
+  }
+}
+
+export function exitPlayMode(){
+  ensureRefs();
+  if(!playModeActive && !document.body.classList.contains('survivor-playing') && !refs.shell?.classList.contains('is-fullscreen')) return;
+  playModeActive = false;
+  document.body.classList.remove('survivor-playing');
+  refs.shell?.classList.remove('is-fullscreen');
+  cleanupPlayModeListeners();
+  try{ screen.orientation?.unlock?.(); }
+  catch{}
+  try{
+    if(document.fullscreenElement) document.exitFullscreen?.();
+  }
+  catch{}
+  if(historyPushed){
+    historyPushed = false;
+    try{ history.back(); }
+    catch{}
+  }
+}
+
+export function isTouchLandscape(){
+  return touchLandscapeMatches();
 }
 
 export function getInput(){
   const k = keyVector();
   const t = touchVector();
-  return { x:k.x + t.x, y:k.y + t.y };
+  combinedInput.x = k.x + t.x;
+  combinedInput.y = k.y + t.y;
+  return combinedInput;
 }
 
 export function resizeCanvas(){
   ensureRefs();
   if(!refs.canvas || !refs.shell) return null;
-  const rect = refs.shell.getBoundingClientRect();
-  cssWidth = Math.max(1, rect.width || SURVIVOR_BALANCE.worldWidth);
-  cssHeight = Math.max(1, rect.height || SURVIVOR_BALANCE.worldHeight);
+  const rect = refs.canvas.getBoundingClientRect();
+  cssWidth = Math.max(1, rect.width || SURVIVOR_BALANCE.world.maxWidth);
+  cssHeight = Math.max(1, rect.height || SURVIVOR_BALANCE.world.height);
+  currentWorld = computeWorld(cssWidth, cssHeight);
+  offsetX = Math.max(0, (cssWidth - currentWorld.width * currentWorld.scale) / 2);
   dpr = Math.max(1, Math.min(globalThis.devicePixelRatio || 1, 2));
   refs.canvas.width = Math.round(cssWidth * dpr);
   refs.canvas.height = Math.round(cssHeight * dpr);
   if(!refs.canvas.getContext) return null;
   const ctx = refs.canvas.getContext('2d');
   if(!ctx) return null;
-  ctx.setTransform(dpr * cssWidth / SURVIVOR_BALANCE.worldWidth, 0, 0, dpr * cssHeight / SURVIVOR_BALANCE.worldHeight, 0, 0);
-  ctx.clearRect(0, 0, SURVIVOR_BALANCE.worldWidth, SURVIVOR_BALANCE.worldHeight);
-  return ctx;
+  applyCanvasTransform(ctx);
+  return { ctx, world:currentWorld };
 }
 
 export function getCanvasContext(){
@@ -255,16 +500,19 @@ export function getCanvasContext(){
   if(!refs.canvas || !refs.canvas.getContext) return null;
   const ctx = refs.canvas.getContext('2d');
   if(!ctx) return null;
-  ctx.setTransform(dpr * cssWidth / SURVIVOR_BALANCE.worldWidth, 0, 0, dpr * cssHeight / SURVIVOR_BALANCE.worldHeight, 0, 0);
+  applyCanvasTransform(ctx);
   return ctx;
 }
 
 export function syncMito(snapshot){
   ensureRefs();
   if(!refs.mito || !snapshot) return;
-  const size = SURVIVOR_BALANCE.render.playerDomSize;
-  const x = snapshot.player.x / snapshot.world.width * cssWidth - size / 2;
-  const y = snapshot.player.y / snapshot.world.height * cssHeight - size / 2;
+  const scale = snapshot.world.scale || currentWorld.scale;
+  const size = SURVIVOR_BALANCE.render.playerDomSize * scale;
+  const x = offsetX + snapshot.player.x * scale - size / 2;
+  const y = snapshot.player.y * scale - size / 2;
+  refs.mito.style.width = `${size}px`;
+  refs.mito.style.height = `${size}px`;
   refs.mito.style.transform = `translate(${x}px, ${y}px)`;
   refs.mito.classList.toggle('survivor-hit', snapshot.player.invulnerable > 0);
 }
@@ -272,18 +520,26 @@ export function syncMito(snapshot){
 export function renderHud(snapshot){
   ensureRefs();
   if(!snapshot) return;
-  const life = `${Math.max(0, Math.round(snapshot.player.life))}/${SURVIVOR_BALANCE.player.maxLife}`;
+  const lifeValue = Math.max(0, Math.round(snapshot.player.life));
+  const maxLife = Math.max(1, Math.round(snapshot.player.maxLife || SURVIVOR_BALANCE.player.maxLife));
+  const life = `${lifeValue}/${maxLife}`;
+  const lifeWidth = `${Math.max(0, Math.min(100, lifeValue / maxLife * 100))}%`;
   const nextXp = snapshot.xpToNext || 1;
   const currentXp = Math.max(0, Math.floor(snapshot.xp || 0));
-  const xp = `${currentXp}/${nextXp}`;
+  const level = Math.max(1, Math.round(snapshot.level || 1));
+  const xp = `Nv. ${level} · ${currentXp}/${nextXp}`;
   const xpWidth = `${Math.max(0, Math.min(100, currentXp / nextXp * 100))}%`;
   const time = formatTime(snapshot.time);
   const enemies = String(snapshot.enemies.length);
-  if(lastHud.life !== life){ refs.hudLife.textContent = life; lastHud.life = life; }
-  if(lastHud.xp !== xp){ refs.hudXp.textContent = xp; lastHud.xp = xp; }
-  if(lastHud.xpWidth !== xpWidth){ refs.hudXpFill.style.width = xpWidth; lastHud.xpWidth = xpWidth; }
-  if(lastHud.time !== time){ refs.hudTime.textContent = time; lastHud.time = time; }
-  if(lastHud.enemies !== enemies){ refs.hudEnemies.textContent = enemies; lastHud.enemies = enemies; }
+  if(lastHud.lifeValue != null && lifeValue < lastHud.lifeValue) softVibrate(30);
+  if(refs.hudLife && lastHud.life !== life){ refs.hudLife.textContent = life; lastHud.life = life; }
+  if(refs.hudLifeFill && lastHud.lifeWidth !== lifeWidth){ refs.hudLifeFill.style.width = lifeWidth; lastHud.lifeWidth = lifeWidth; }
+  refs.shell?.classList.toggle('is-low-life', lifeValue / maxLife < 0.3);
+  lastHud.lifeValue = lifeValue;
+  if(refs.hudXp && lastHud.xp !== xp){ refs.hudXp.textContent = xp; lastHud.xp = xp; }
+  if(refs.hudXpFill && lastHud.xpWidth !== xpWidth){ refs.hudXpFill.style.width = xpWidth; lastHud.xpWidth = xpWidth; }
+  if(refs.hudTime && lastHud.time !== time){ refs.hudTime.textContent = time; lastHud.time = time; }
+  if(refs.hudEnemies && lastHud.enemies !== enemies){ refs.hudEnemies.textContent = enemies; lastHud.enemies = enemies; }
   if(refs.bossHud){
     const boss = snapshot.boss;
     const active = Boolean(boss?.active);
@@ -305,25 +561,23 @@ export function renderBuild(session){
   ensureRefs();
   if(!refs.build || !session) return;
   const powers = Object.entries(session.powers || {}).filter(([, level])=>level > 0);
-  const stats = effectiveStats(session);
   const items = [
-    el('li', { children:[el('span', { text:'Chispa de Mito' }), el('b', { text:`Nv. ${session.chispaLevel || 1}` })] }),
+    el('li', { attrs:{ title:'Chispa de Mito' }, children:[el('span', { html:buildIcon() }), el('b', { text:String(session.chispaLevel || 1) })] }),
   ];
   if(session.petWeapon){
     const pet = PET_WEAPONS[session.petWeapon.petId];
     const level = Math.max(0, Math.round(Number(session.petWeapon.level) || 0));
-    items.push(el('li', { children:[el('span', { text:pet?.name || 'Arma de mascota' }), el('b', { text:level > 0 ? `Nv. ${level}` : 'Sin arma' })] }));
+    items.push(el('li', { attrs:{ title:pet?.name || 'Arma de mascota' }, children:[el('span', { html:buildIcon() }), el('b', { text:String(level || 0) })] }));
   }
   for(const [id, level] of powers){
     const power = powerById(id);
-    items.push(el('li', { children:[el('span', { text:power?.name || id }), el('b', { text:`Nv. ${level}` })] }));
+    items.push(el('li', { attrs:{ title:power?.name || id }, children:[el('span', { html:buildIcon() }), el('b', { text:String(level) })] }));
   }
 
   clear(refs.build);
   refs.build.append(
     el('strong', { text:'Build' }),
-    el('ul', { children:items }),
-    el('p', { text:`Vida ${stats.maxLife} · Velocidad ${stats.playerSpeed} · Imán ${stats.pickupRadius}` })
+    el('ul', { children:items })
   );
 }
 
@@ -335,11 +589,12 @@ export function showIntro(){
     text:'Muévete con WASD, flechas o arrastrando el dedo. Recoge gemas, sube de nivel y responde preguntas de la materia activa.',
     buttonText:'Iniciar partida',
   });
-  refs.hudLife.textContent = `${SURVIVOR_BALANCE.player.maxLife}/${SURVIVOR_BALANCE.player.maxLife}`;
-  refs.hudXp.textContent = `0/${SURVIVOR_BALANCE.xp.baseToNext}`;
-  refs.hudXpFill.style.width = '0%';
-  refs.hudTime.textContent = '0:00';
-  refs.hudEnemies.textContent = '0';
+  if(refs.hudLife) refs.hudLife.textContent = `${SURVIVOR_BALANCE.player.maxLife}/${SURVIVOR_BALANCE.player.maxLife}`;
+  if(refs.hudLifeFill) refs.hudLifeFill.style.width = '100%';
+  if(refs.hudXp) refs.hudXp.textContent = `Nv. 1 · 0/${SURVIVOR_BALANCE.xp.baseToNext}`;
+  if(refs.hudXpFill) refs.hudXpFill.style.width = '0%';
+  if(refs.hudTime) refs.hudTime.textContent = '0:00';
+  if(refs.hudEnemies) refs.hudEnemies.textContent = '0';
   lastHud = {};
   if(refs.bossHud) refs.bossHud.hidden = true;
   refs.mito.style.transform = 'translate(-9999px, -9999px)';
@@ -350,6 +605,37 @@ export function showPlay(){
   cleanupQuestionKeys();
   if(refs.overlay) refs.overlay.hidden = true;
   restoreFocus();
+}
+
+export function showPauseMenu({ onContinue, onExit }){
+  ensureRefs();
+  cleanupQuestionKeys();
+  const continueButton = el('button', { class:'btn btn-primary', text:'Continuar', attrs:{ type:'button' } });
+  const exitButton = el('button', { class:'btn btn-ghost', text:'Salir', attrs:{ type:'button' } });
+  continueButton.addEventListener('click', onContinue);
+  exitButton.addEventListener('click', onExit);
+  fillOverlay({ title:'Pausa', body:[el('p', { text:'La partida queda detenida hasta que decidas continuar.' })], actions:[continueButton, exitButton] });
+  if(isVisible()) continueButton.focus();
+}
+
+export function showExitConfirm({ onCancel, onConfirm }){
+  ensureRefs();
+  cleanupQuestionKeys();
+  const cancelButton = el('button', { class:'btn btn-primary', text:'Continuar', attrs:{ type:'button' } });
+  const confirmButton = el('button', { class:'btn btn-ghost', text:'Salir', attrs:{ type:'button' } });
+  cancelButton.addEventListener('click', onCancel);
+  confirmButton.addEventListener('click', onConfirm);
+  fillOverlay({ title:'Salir de la partida', body:[el('p', { text:'Perderás esta partida.' })], actions:[cancelButton, confirmButton] });
+  if(isVisible()) cancelButton.focus();
+}
+
+export function showLandscapePause({ onContinue }){
+  ensureRefs();
+  cleanupQuestionKeys();
+  const continueButton = el('button', { class:'btn btn-primary', text:'Continuar', attrs:{ type:'button' } });
+  continueButton.addEventListener('click', onContinue);
+  fillOverlay({ icon:phoneTurnIcon(), title:'Gira el teléfono', body:[el('p', { text:'Gira el teléfono a vertical para jugar' })], actions:[continueButton] });
+  if(isVisible()) continueButton.focus();
 }
 
 export function showNoQuestions(courseLabel){
@@ -364,10 +650,7 @@ export function showNoQuestions(courseLabel){
 export function showQuestion(item, { onAnswer, onContinue, titleText = 'Pregunta de nivel', progressText = '' }){
   ensureRefs();
   cleanupQuestionKeys();
-  prepareOverlay();
-  clear(refs.card);
-  const title = el('h3', { text:titleText, attrs:{ id:'survivorOverlayTitle' } });
-  const text = el('p', { text:item.q, attrs:{ id:'survivorOverlayText' } });
+  const text = el('p', { class:'survivor-question-text', text:item.q });
   const result = el('div', { class:'survivor-result', attrs:{ 'aria-live':'assertive', role:'status' } });
   const options = el('div', { class:'survivor-question-options' });
   const continueButton = el('button', { class:'btn btn-primary', text:'Continuar', attrs:{ type:'button', hidden:'' } });
@@ -390,6 +673,7 @@ export function showQuestion(item, { onAnswer, onContinue, titleText = 'Pregunta
     });
     const outcome = onAnswer(idx);
     if(outcome.correct){
+      softVibrate(12);
       result.textContent = outcome.resultText || 'Correcto. Elige una mejora para tu build.';
       if(outcome.continueText){
         continueButton.textContent = outcome.continueText;
@@ -431,26 +715,23 @@ export function showQuestion(item, { onAnswer, onContinue, titleText = 'Pregunta
   };
   window.addEventListener('keydown', questionKeyHandler);
 
-  const children = [markNode(), title];
-  if(progressText) children.push(el('p', { class:'survivor-progress', text:progressText }));
-  children.push(text, options, result, el('div', { class:'survivor-actions', children:[continueButton] }));
-  refs.card.append(...children);
+  const body = [];
+  if(progressText) body.push(el('p', { class:'survivor-progress', text:progressText }));
+  body.push(text, options, result);
+  fillOverlay({ title:titleText, body, actions:[continueButton] });
   if(isVisible()) buttons[0]?.focus();
 }
 
 export function showUpgradeOptions(session, { onSelect, onReroll }){
   ensureRefs();
   cleanupQuestionKeys();
-  prepareOverlay();
-  clear(refs.card);
-
-  const title = el('h3', { text:'Elige una mejora', attrs:{ id:'survivorOverlayTitle' } });
-  const text = el('p', { text:'Selecciona una carta para cambiar la build de esta partida.', attrs:{ id:'survivorOverlayText' } });
   const options = el('div', { class:'survivor-upgrades' });
   const cards = (session.upgradeOptions || []).map(option=>{
     const button = el('button', { class:'survivor-upgrade', attrs:{ type:'button' }, children:[
+      el('span', { class:'survivor-upgrade-icon', html:upgradeIcon() }),
       el('strong', { text:option.name }),
       el('span', { text:`Nivel ${option.currentLevel} a ${option.nextLevel}` }),
+      el('small', { text:option.description || 'Mejora tu build para esta partida.' }),
     ] });
     button.addEventListener('click', ()=>onSelect(option.id));
     options.append(button);
@@ -462,8 +743,8 @@ export function showUpgradeOptions(session, { onSelect, onReroll }){
   }
 
   const reroll = el('button', {
-    class:'btn btn-ghost',
-    text:`Cambiar opciones (${session.rerolls || 0})`,
+    class:'btn btn-ghost survivor-reroll',
+    text:`Cambiar opciones: ${session.rerolls || 0}`,
     attrs:{ type:'button' },
   });
   reroll.disabled = !session.rerolls;
@@ -472,7 +753,7 @@ export function showUpgradeOptions(session, { onSelect, onReroll }){
   continueButton.hidden = cards.length > 0;
   continueButton.addEventListener('click', ()=>onSelect(null));
 
-  refs.card.append(markNode(), title, text, options, el('div', { class:'survivor-actions', children:[reroll, continueButton] }));
+  fillOverlay({ title:'Elige una mejora', body:[el('p', { text:'Selecciona una carta para cambiar la build de esta partida.' }), options], actions:[reroll, continueButton] });
   if(isVisible()) cards[0]?.focus();
 }
 
@@ -480,12 +761,11 @@ export function showSummary(summary){
   ensureRefs();
   const totalAnswers = Math.max(0, (summary.correctAnswers || 0) + (summary.wrongAnswers || 0));
   const precision = totalAnswers ? Math.round((summary.correctAnswers || 0) / totalAnswers * 100) : 0;
-  showBasicOverlay({
-    title:'Resumen final',
-    text:`Sobreviviste ${formatTime(summary.time)} y ganaste ${summary.awardedChispas} chispas.${summary.bossDefeated ? ' Derrotaste al boss final.' : ''}`,
-    buttonText:'Jugar otra vez',
-    gameover:true,
-  });
+  cleanupQuestionKeys();
+  const replayButton = el('button', { class:'btn btn-primary', text:'Jugar otra vez', attrs:{ type:'button' } });
+  const exitButton = el('button', { class:'btn btn-ghost', text:'Salir', attrs:{ type:'button' } });
+  replayButton.addEventListener('click', ()=>startHandler?.());
+  exitButton.addEventListener('click', ()=>exitHandler?.());
   const list = el('div', { class:'survivor-summary', children:[
     el('div', { children:[el('span', { text:'Tiempo' }), el('b', { text:formatTime(summary.time) })] }),
     el('div', { children:[el('span', { text:'Nivel' }), el('b', { text:String(summary.level) })] }),
@@ -496,5 +776,11 @@ export function showSummary(summary){
     el('div', { children:[el('span', { text:'Chispas' }), el('b', { text:String(summary.awardedChispas) })] }),
     el('div', { children:[el('span', { text:'Boss derrotado' }), el('b', { text:summary.bossDefeated ? 'Sí' : 'No' })] }),
   ] });
-  refs.card.insertBefore(list, refs.card.querySelector('.survivor-actions'));
+  fillOverlay({
+    title:'Resumen final',
+    body:[el('p', { text:`Sobreviviste ${formatTime(summary.time)} y ganaste ${summary.awardedChispas} chispas.${summary.bossDefeated ? ' Derrotaste al boss final.' : ''}` }), list],
+    actions:[replayButton, exitButton],
+    gameover:true,
+  });
+  if(isVisible()) replayButton.focus();
 }

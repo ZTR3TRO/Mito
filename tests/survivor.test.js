@@ -3,17 +3,17 @@ import assert from 'node:assert/strict';
 import { parseHTML } from 'linkedom';
 
 import { createEngine } from '../src/features/survivor/engine.js';
+import { computeWorld, SURVIVOR_BALANCE } from '../src/features/survivor/balance.js';
 import { createPetWeapon, PET_WEAPONS, petWeaponStats } from '../src/features/survivor/pets.js';
 import { effectiveStats, SURVIVOR_POWERS } from '../src/features/survivor/powers.js';
 import { activeCourse } from '../src/features/course/course.js';
 import { nextSurvivorQuestion, resetQuestionDeck } from '../src/features/survivor/questions.js';
 import { applyPenalty, buildUpgradeOptions, completeRevive, endSession, finalChispas, getSession, pauseSession, recordBossAnswer, recordReviveAnswer, recordSurvivorAnswer, resetSession, resumeSession, spendReroll, startReviveChallenge, startSession, updateSessionFromEngine, xpToNext } from '../src/features/survivor/session.js';
-import { getInput, initView, renderHud, showIntro, showQuestion, startGameInput, stopGameInput } from '../src/features/survivor/view.js';
+import { enterPlayMode, exitPlayMode, getInput, initView, renderHud, shouldPauseForLandscape, showIntro, showQuestion, startGameInput, stopGameInput } from '../src/features/survivor/view.js';
 import { CHISPA_MITO_ID, nearestEnemy, weaponStats } from '../src/features/survivor/weapons.js';
 
 const baseBalance = {
-  worldWidth: 100,
-  worldHeight: 100,
+  world: { height:100, minWidth:100, maxWidth:100 },
   player: { maxLife:100, speed:40, radius:10, invulnerableTime:0.5 },
   enemy: { radius:8, speed:20, damage:25, maxCount:20 },
   waves: { firstDelay:0, interval:1, baseCount:2, growthEvery:30, growthAmount:1, spawnPadding:6 },
@@ -69,6 +69,22 @@ function keyboardEvent(window, code){
   return event;
 }
 
+function keyEvent(window, key){
+  const event = new window.Event('keydown', { bubbles:true, cancelable:true });
+  Object.defineProperty(event, 'key', { value:key });
+  return event;
+}
+
+function pointerEvent(window, type, { target, pointerId = 1, pointerType = 'touch', clientX = 0, clientY = 0 } = {}){
+  const event = new window.Event(type, { bubbles:true, cancelable:true });
+  Object.defineProperty(event, 'pointerId', { value:pointerId });
+  Object.defineProperty(event, 'pointerType', { value:pointerType });
+  Object.defineProperty(event, 'clientX', { value:clientX });
+  Object.defineProperty(event, 'clientY', { value:clientY });
+  target.dispatchEvent(event);
+  return event;
+}
+
 test('survivor session: inicia, pausa, reanuda y termina', ()=>{
   resetSession();
   assert.equal(getSession().status, 'intro');
@@ -92,6 +108,84 @@ test('survivor session: inicia, pausa, reanuda y termina', ()=>{
   endSession('dead');
   assert.equal(getSession().status, 'gameover');
   assert.equal(getSession().life, 0);
+});
+
+test('survivor balance: computeWorld mantiene escala uniforme', ()=>{
+  const cases = [
+    [390, 844, 443.602, 960, 0.879],
+    [360, 640, 540, 960, 0.667],
+    [430, 932, 442.918, 960, 0.971],
+    [1280, 720, 720, 960, 0.75],
+    [768, 1024, 720, 960, 1.067],
+  ];
+
+  for(const [cssWidth, cssHeight, width, height, scale] of cases){
+    const world = computeWorld(cssWidth, cssHeight);
+    assert.equal(Number(world.width.toFixed(3)), width);
+    assert.equal(world.height, height);
+    assert.equal(Number(world.scale.toFixed(3)), scale);
+  }
+});
+
+test('survivor view: detecta horizontal solo en pantalla táctil', ()=>{
+  assert.equal(shouldPauseForLandscape({ width:844, height:390, pointerCoarse:true }), true);
+  assert.equal(shouldPauseForLandscape({ width:390, height:844, pointerCoarse:true }), false);
+  assert.equal(shouldPauseForLandscape({ width:1280, height:720, pointerCoarse:false }), false);
+});
+
+test('survivor view: modo partida agrega y quita clases y listeners', ()=>{
+  const window = setupSurvivorDom(true);
+  const counts = new Map();
+  const mediaCounts = new Map();
+  const added = [];
+  const removed = [];
+  const mediaQuery = {
+    matches:false,
+    addEventListener(type){ mediaCounts.set(type, (mediaCounts.get(type) || 0) + 1); },
+    removeEventListener(type){ mediaCounts.set(type, (mediaCounts.get(type) || 0) - 1); },
+  };
+  window.matchMedia = () => mediaQuery;
+  const originalAdd = window.addEventListener.bind(window);
+  const originalRemove = window.removeEventListener.bind(window);
+  window.addEventListener = (type, fn, options)=>{
+    added.push(type);
+    counts.set(type, (counts.get(type) || 0) + 1);
+    originalAdd(type, fn, options);
+  };
+  window.removeEventListener = (type, fn, options)=>{
+    removed.push(type);
+    counts.set(type, (counts.get(type) || 0) - 1);
+    originalRemove(type, fn, options);
+  };
+
+  enterPlayMode();
+  assert.equal(document.body.classList.contains('survivor-playing'), true);
+  assert.equal(document.querySelector('#survivorShell').classList.contains('is-fullscreen'), true);
+  assert.equal(added.includes('keydown'), true);
+  assert.equal(added.includes('popstate'), true);
+
+  exitPlayMode();
+  assert.equal(document.body.classList.contains('survivor-playing'), false);
+  assert.equal(document.querySelector('#survivorShell').classList.contains('is-fullscreen'), false);
+  assert.equal(counts.get('keydown'), 0);
+  assert.equal(counts.get('popstate'), 0);
+  assert.equal(mediaCounts.get('change'), 0);
+  assert.equal(removed.includes('keydown'), true);
+  assert.equal(removed.includes('popstate'), true);
+});
+
+test('survivor view: Escape pide pausa durante partida', ()=>{
+  const window = setupSurvivorDom(true);
+  let paused = 0;
+  initView({ onStart(){}, onPause(){ paused++; } });
+
+  enterPlayMode();
+  const event = keyEvent(window, 'Escape');
+  window.dispatchEvent(event);
+
+  assert.equal(paused, 1);
+  assert.equal(event.defaultPrevented, true);
+  exitPlayMode();
 });
 
 test('survivor questions: no repite hasta agotar y reinicia el ciclo', ()=>{
@@ -174,7 +268,29 @@ test('survivor view: la introducción usa el XP real del balance', ()=>{
   setupSurvivorDom(true);
   showIntro();
 
-  assert.equal(document.querySelector('#survivorXp').textContent, '0/30');
+  assert.equal(document.querySelector('#survivorXp').textContent, 'Nv. 1 · 0/30');
+});
+
+test('survivor view: el joystick no se activa desde overlays', ()=>{
+  const window = setupSurvivorDom(true);
+  const shell = document.querySelector('#survivorShell');
+  const canvas = document.querySelector('#survivorCanvas');
+  shell.getBoundingClientRect = () => ({ left:0, top:0, width:390, height:844 });
+  canvas.getBoundingClientRect = () => ({ left:0, top:0, width:390, height:844 });
+  startGameInput();
+
+  const blocked = pointerEvent(window, 'pointerdown', { target:document.querySelector('#survivorStart'), clientX:200, clientY:700 });
+  assert.equal(blocked.defaultPrevented, false);
+  assert.deepEqual(getInput(), { x:0, y:0 });
+
+  document.querySelector('#survivorOverlay').hidden = true;
+  const active = pointerEvent(window, 'pointerdown', { target:shell, clientX:200, clientY:700 });
+  assert.equal(active.defaultPrevented, true);
+  pointerEvent(window, 'pointermove', { target:shell, clientX:240, clientY:700 });
+  assert.deepEqual(getInput(), { x:1, y:0 });
+  pointerEvent(window, 'pointerup', { target:shell, clientX:240, clientY:700 });
+
+  stopGameInput();
 });
 
 test('survivor view: un fallo de revivida puede mostrar explicación antes del resumen', ()=>{
@@ -291,6 +407,7 @@ test('survivor upgrades: incluye armas y como maximo tres candidatos', ()=>{
   assert.equal(new Set(options.map(option => option.id)).size, 3);
   assert.equal(options[0].id, CHISPA_MITO_ID);
   assert.equal(options[1].id, 'picotazo-pollito');
+  assert.equal(options.every(option => typeof option.description === 'string' && option.description.length > 0), true);
 });
 
 test('survivor session: cada tres aciertos da reroll y no pasa de tres', ()=>{
@@ -482,8 +599,93 @@ test('survivor engine: spawnea oleadas en los bordes', ()=>{
   const snapshot = engine.update(0);
 
   assert.equal(snapshot.enemies.length, 2);
-  assert.equal(snapshot.enemies[0].y, -baseBalance.waves.spawnPadding);
-  assert.equal(snapshot.enemies[1].x, baseBalance.worldWidth + baseBalance.waves.spawnPadding);
+  assert.equal(snapshot.enemies[0].y, baseBalance.enemy.radius);
+  assert.equal(snapshot.enemies[1].y, baseBalance.world.height - baseBalance.enemy.radius);
+  for(const enemy of snapshot.enemies){
+    assert.ok(enemy.x >= baseBalance.enemy.radius && enemy.x <= snapshot.world.width - baseBalance.enemy.radius);
+    assert.ok(enemy.y >= baseBalance.enemy.radius && enemy.y <= snapshot.world.height - baseBalance.enemy.radius);
+  }
+  engine.stop();
+});
+
+test('survivor engine: funciona sin DOM con mundos distintos y redimensionado', ()=>{
+  noRaf();
+  const engine = createEngine({
+    balance: baseBalance,
+    world: { width:100, height:100, scale:1 },
+    random: randomSequence([0, 0.2, 0.4, 0.25, 0.8, 0.6]),
+  });
+
+  engine.start();
+  engine.update(0);
+  const resized = engine.setWorld({ width:100, height:100, scale:2 });
+
+  assert.equal(resized.world.width, 100);
+  assert.equal(resized.world.height, 100);
+  assert.equal(resized.world.scale, 2);
+  assert.ok(resized.player.x >= baseBalance.player.radius && resized.player.x <= resized.world.width - baseBalance.player.radius);
+  assert.ok(resized.enemies.every(enemy => enemy.x >= baseBalance.enemy.radius && enemy.x <= resized.world.width - baseBalance.enemy.radius));
+  engine.stop();
+});
+
+test('survivor engine: ningún enemigo aparece fuera del mundo', ()=>{
+  noRaf();
+  const world = computeWorld(390, 844);
+  const engine = createEngine({
+    world,
+    random: randomSequence([0, 0, 0, 0.25, 1, 1, 0.5, 0.4, 0.6, 0.75, 0.2, 0.8]),
+  });
+
+  engine.start();
+  let snapshot = engine.snapshot();
+  for(let i=0; i<Math.ceil(SURVIVOR_BALANCE.waves.graceTime / 0.05) + 1; i++){
+    snapshot = engine.update(0.05);
+  }
+
+  assert.ok(snapshot.enemies.length > 0);
+  for(const enemy of snapshot.enemies){
+    assert.ok(enemy.x >= SURVIVOR_BALANCE.enemy.radius && enemy.x <= snapshot.world.width - SURVIVOR_BALANCE.enemy.radius);
+    assert.ok(enemy.y >= SURVIVOR_BALANCE.enemy.radius && enemy.y <= snapshot.world.height - SURVIVOR_BALANCE.enemy.radius);
+  }
+  engine.stop();
+});
+
+test('survivor engine: balance inicial permite huir al menos 45 segundos', ()=>{
+  noRaf();
+  let engine;
+  let deadAt = null;
+  const world = computeWorld(390, 844);
+  engine = createEngine({
+    world,
+    random: randomSequence([0, 0.1, 0.2, 0.25, 0.8, 0.3, 0.5, 0.7, 0.4, 0.75, 0.9, 0.6]),
+    getInput:()=>{
+      const snapshot = engine.snapshot();
+      let nearest = null;
+      let best = Infinity;
+      for(const enemy of snapshot.enemies){
+        const dx = enemy.x - snapshot.player.x;
+        const dy = enemy.y - snapshot.player.y;
+        const d = dx * dx + dy * dy;
+        if(d < best){
+          best = d;
+          nearest = enemy;
+        }
+      }
+      if(!nearest) return { x:0, y:0 };
+      return { x:snapshot.player.x - nearest.x, y:snapshot.player.y - nearest.y };
+    },
+    onPlayerDead:snapshot=>{ deadAt = snapshot.time; },
+    onLevelUp:()=>{ engine.resume(); },
+  });
+
+  engine.start();
+  let snapshot = engine.snapshot();
+  for(let i=0; i<1200 && snapshot.running && !snapshot.paused; i++){
+    snapshot = engine.update(0.05);
+  }
+
+  assert.ok(deadAt === null || deadAt >= 45, `Mito murió demasiado pronto en ${deadAt}s`);
+  assert.ok(snapshot.time >= 45);
   engine.stop();
 });
 
@@ -499,7 +701,7 @@ test('survivor engine: los enemigos persiguen a Mito', ()=>{
   const enemy = snapshot.enemies[0];
 
   assert.ok(enemy.x > -baseBalance.waves.spawnPadding, 'el enemigo de la izquierda debe avanzar hacia el centro');
-  assert.equal(enemy.y, 50);
+  assert.ok(enemy.y < 71, 'el enemigo debe avanzar hacia el centro vertical');
   engine.stop();
 });
 
@@ -708,6 +910,39 @@ test('survivor engine: Mito dispara igual con y sin mascota', ()=>{
   withPet.stop();
 });
 
+test('survivor engine: carga máxima mantiene el frame bajo 10 ms', ()=>{
+  noRaf();
+  const balance = {
+    ...SURVIVOR_BALANCE,
+    world: { height:960, minWidth:520, maxWidth:520 },
+    enemy: { ...SURVIVOR_BALANCE.enemy, maxCount:60, speed:0, life:9999 },
+    waves: { ...SURVIVOR_BALANCE.waves, graceTime:0, firstDelay:0, interval:0.05, baseCount:60, growthEvery:999, growthAmount:0 },
+    weapons: { ...SURVIVOR_BALANCE.weapons, projectilePoolSize:180 },
+    boss: { ...SURVIVOR_BALANCE.boss, shields:0, waveInterval:999 },
+    match: { duration:999 },
+  };
+  const engine = createEngine({
+    balance,
+    petWeapon:createPetWeapon('p-fox'),
+    random:randomSequence([0, 0.1, 0.2, 0.25, 0.8, 0.3, 0.5, 0.7, 0.4, 0.75, 0.9, 0.6]),
+  });
+
+  engine.start();
+  engine.setWeaponLevel(CHISPA_MITO_ID, 8);
+  engine.setWeaponLevel('chispa-zorrito', 8);
+  let snapshot = engine.update(0);
+  for(let i=0; i<260; i++) snapshot = engine.update(0.05);
+  assert.equal(snapshot.enemies.length, 60);
+
+  const frames = 180;
+  const started = performance.now();
+  for(let i=0; i<frames; i++) engine.update(0.016);
+  const average = (performance.now() - started) / frames;
+
+  assert.ok(average < 10, `frame promedio ${average.toFixed(3)} ms`);
+  engine.stop();
+});
+
 test('survivor engine: la mascota equipada cambia el ataque secundario', ()=>{
   noRaf();
   const chick = createEngine({
@@ -755,7 +990,7 @@ test('survivor engine: la perforación permite golpear un enemigo extra', ()=>{
   };
   const engine = createEngine({
     balance,
-    random: randomSequence([0.75, 0.5, 0.75, 0.5]),
+    random: randomSequence([0.75, 0.5, 0.5]),
   });
 
   engine.start();

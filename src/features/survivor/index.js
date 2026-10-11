@@ -6,12 +6,21 @@ import { createEngine } from './engine.js';
 import { createPetWeapon } from './pets.js';
 import { hasQuestionBank, nextSurvivorQuestion, resetQuestionDeck } from './questions.js';
 import { applySurvivorUpgrade, completeRevive, endSession, getSession, pauseSession, prepareUpgradeOptions, recordBossAnswer, recordLevelUp, recordReviveAnswer, recordSurvivorAnswer, resetSession, resumeSession, spendReroll, startReviveChallenge, startSession, updateSessionFromEngine } from './session.js';
-import { getCanvasContext, getInput, initView, renderBuild, renderHud, resizeCanvas, showNoQuestions, showQuestion, showSummary, showIntro, showPlay, showUpgradeOptions, startGameInput, stopGameInput, syncMito } from './view.js';
+import { enterPlayMode, exitPlayMode, getCanvasContext, getInput, initView, isTouchLandscape, renderBuild, renderHud, resizeCanvas, showExitConfirm, showLandscapePause, showNoQuestions, showPauseMenu, showQuestion, showSummary, showIntro, showPlay, showUpgradeOptions, startGameInput, stopGameInput, syncMito } from './view.js';
 import { CHISPA_MITO_ID } from './weapons.js';
 
 let engine = null;
 let resizeHandler = null;
 let pausedByVisibility = false;
+let initialized = false;
+
+function pauseGame(){
+  const status = getSession().status;
+  if(status === 'running'){
+    pauseSession();
+    engine?.pause();
+  }
+}
 
 function stopEngine(){
   engine?.stop();
@@ -33,9 +42,47 @@ function applyEngineLevels(current){
 }
 
 function resumeGame(){
+  if(isTouchLandscape()){
+    pauseForLandscape();
+    return;
+  }
   resumeSession();
   showPlay();
   engine?.resume();
+}
+
+function showExitDialog(){
+  pauseGame();
+  showExitConfirm({
+    onCancel:resumeGame,
+    onConfirm:discardGame,
+  });
+}
+
+function showPauseDialog(){
+  const status = getSession().status;
+  if(status === 'intro' || status === 'gameover') return;
+  pauseGame();
+  showPauseMenu({
+    onContinue:resumeGame,
+    onExit:showExitDialog,
+  });
+}
+
+function pauseForLandscape(){
+  const status = getSession().status;
+  if(status === 'intro' || status === 'gameover') return;
+  pauseGame();
+  showLandscapePause({ onContinue:resumeGame });
+}
+
+function discardGame(){
+  stopEngine();
+  exitPlayMode();
+  const current = resetSession();
+  resizeCanvas();
+  showIntro();
+  renderBuild(current);
 }
 
 function finishGame(reason, snapshot){
@@ -44,6 +91,7 @@ function finishGame(reason, snapshot){
   addChispas(summary.awardedChispas);
   draw(snapshot);
   stopEngine();
+  exitPlayMode();
   showSummary(summary);
 }
 
@@ -185,6 +233,7 @@ function startGame(){
     return;
   }
   stopEngine();
+  enterPlayMode();
   resetQuestionDeck();
   const petWeapon = createPetWeapon(getEquipped().pet);
   const current = startSession(petWeapon);
@@ -193,7 +242,9 @@ function startGame(){
   renderBuild(current);
   applyAvatar();
 
+  const canvasState = resizeCanvas();
   engine = createEngine({
+    world: canvasState?.world,
     getInput,
     petWeapon,
     onFrame: draw,
@@ -203,12 +254,13 @@ function startGame(){
     onGameWon:snapshot=>finishGame('won', snapshot),
   });
 
-  resizeCanvas();
   draw(engine.start());
+  if(isTouchLandscape()) pauseForLandscape();
 }
 
 export function renderIntro(){
   stopEngine();
+  exitPlayMode();
   const current = resetSession();
   resizeCanvas();
   showIntro();
@@ -216,12 +268,14 @@ export function renderIntro(){
 }
 
 export function init(){
-  initView({ onStart:startGame });
+  if(initialized) return;
+  initialized = true;
+  initView({ onStart:startGame, onPause:showPauseDialog, onExit:showExitDialog, onOrientationPause:pauseForLandscape });
   resizeHandler = ()=>{
-    const ctx = resizeCanvas();
-    if(ctx && engine){
-      engine.render(ctx);
-      const snapshot = engine.snapshot();
+    const canvasState = resizeCanvas();
+    if(canvasState?.ctx && engine){
+      const snapshot = engine.setWorld(canvasState.world);
+      engine.render(canvasState.ctx);
       syncMito(snapshot);
       renderHud(snapshot);
     }

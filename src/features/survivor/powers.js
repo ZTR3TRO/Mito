@@ -1,16 +1,16 @@
 import { SURVIVOR_BALANCE } from './balance.js';
 
 export const SURVIVOR_POWERS = [
-  { id:'iman-gemas', table:'imanGemas', name:'Imán de gemas' },
-  { id:'atp-turbo', table:'atpTurbo', name:'ATP Turbo' },
-  { id:'mitocampo', table:'mitocampo', name:'Mitocampo' },
-  { id:'chispa-doble', table:'chispaDoble', name:'Chispa doble' },
-  { id:'catalizador', table:'catalizador', name:'Catalizador' },
-  { id:'membrana-protectora', table:'membranaProtectora', name:'Membrana protectora' },
-  { id:'reparacion-celular', table:'reparacionCelular', name:'Reparación celular' },
-  { id:'congelacion', table:'congelacion', name:'Congelación' },
-  { id:'critico', table:'critico', name:'Crítico' },
-  { id:'area-ampliada', table:'areaAmpliada', name:'Área ampliada' },
+  { id:'iman-gemas', table:'imanGemas', name:'Imán de gemas', description:'Más alcance para recoger gemas.' },
+  { id:'atp-turbo', table:'atpTurbo', name:'ATP Turbo', description:'Mito se mueve más rápido.' },
+  { id:'mitocampo', table:'mitocampo', name:'Mitocampo', description:'Un campo cercano daña enemigos.' },
+  { id:'chispa-doble', table:'chispaDoble', name:'Chispa doble', description:'Añade proyectiles a tus ataques.' },
+  { id:'catalizador', table:'catalizador', name:'Catalizador', description:'Reduce el tiempo entre ataques.' },
+  { id:'membrana-protectora', table:'membranaProtectora', name:'Membrana protectora', description:'Aumenta la vida máxima.' },
+  { id:'reparacion-celular', table:'reparacionCelular', name:'Reparación celular', description:'Recuperas vida poco a poco.' },
+  { id:'congelacion', table:'congelacion', name:'Congelación', description:'Los enemigos avanzan más lento.' },
+  { id:'critico', table:'critico', name:'Crítico', description:'Algunos impactos hacen más daño.' },
+  { id:'area-ampliada', table:'areaAmpliada', name:'Área ampliada', description:'Aumenta el tamaño de efectos y pulsos.' },
 ];
 
 function clampLevel(level){
@@ -27,7 +27,7 @@ export function powerStats(id, level, balance = SURVIVOR_BALANCE){
   const table = balance.powers?.[power.table] || SURVIVOR_BALANCE.powers[power.table];
   const safeLevel = clampLevel(level);
   if(!safeLevel || !table?.[safeLevel]) return null;
-  return { ...table[safeLevel] };
+  return table[safeLevel];
 }
 
 export function effectiveStats(session, balance = SURVIVOR_BALANCE){

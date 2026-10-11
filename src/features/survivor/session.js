@@ -1,7 +1,7 @@
 import { SURVIVOR_BALANCE } from './balance.js';
 import { PET_WEAPONS } from './pets.js';
 import { SURVIVOR_POWERS, powerById } from './powers.js';
-import { CHISPA_MITO_ID } from './weapons.js';
+import { CHISPA_MITO_ID, SURVIVOR_WEAPONS } from './weapons.js';
 
 const initial = () => ({
   status: 'intro',
@@ -160,21 +160,22 @@ export function buildUpgradeOptions(currentSession, rng = Math.random){
   const candidates = [];
   const chispaLevel = Math.max(1, Math.min(8, Math.round(Number(currentSession?.chispaLevel) || 1)));
   if(chispaLevel < 8){
-    candidates.push({ type:'weapon', id:CHISPA_MITO_ID, name:'Chispa de Mito', currentLevel:chispaLevel, nextLevel:chispaLevel + 1 });
+    const weapon = SURVIVOR_WEAPONS[CHISPA_MITO_ID];
+    candidates.push({ type:'weapon', id:CHISPA_MITO_ID, name:weapon.name, description:weapon.description, currentLevel:chispaLevel, nextLevel:chispaLevel + 1 });
   }
 
   const petWeapon = currentSession?.petWeapon;
   const petLevel = Math.max(0, Math.min(8, Math.round(Number(petWeapon?.level) || 0)));
   if(petWeapon && petLevel < 8){
     const petDefinition = PET_WEAPONS[petWeapon.petId];
-    candidates.push({ type:'pet', id:petWeapon.id, name:petDefinition?.name || 'Arma de mascota', currentLevel:petLevel, nextLevel:petLevel + 1 });
+    candidates.push({ type:'pet', id:petWeapon.id, name:petDefinition?.name || 'Arma de mascota', description:petDefinition?.description || 'Mejora el arma de tu mascota.', currentLevel:petLevel, nextLevel:petLevel + 1 });
   }
 
   const powers = currentSession?.powers || {};
   for(const power of SURVIVOR_POWERS){
     const level = Math.max(0, Math.min(8, Math.round(Number(powers[power.id]) || 0)));
     if(level >= 8) continue;
-    candidates.push({ type:'power', id:power.id, name:power.name, currentLevel:level, nextLevel:level + 1 });
+    candidates.push({ type:'power', id:power.id, name:power.name, description:power.description, currentLevel:level, nextLevel:level + 1 });
   }
 
   return shuffleCandidates(candidates, rng);
