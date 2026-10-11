@@ -39,6 +39,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 2 7l10 5 10-5-10-5Z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
         Jugar quiz
       </button>
+      <button class="navbtn" data-view="survivor">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18"/><path d="M3 12h18"/><circle cx="12" cy="12" r="7"/><path d="M16.5 7.5 19 5M7.5 16.5 5 19M7.5 7.5 5 5M16.5 16.5 19 19"/></svg>
+        Mito Survivor
+      </button>
       <button class="navbtn" data-view="progreso">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>
         Progreso
@@ -234,6 +238,47 @@
           </div>
         </div>
 
+      </div>
+    </section>
+
+    <!-- ---------- MITO SURVIVOR ---------- -->
+    <section class="view" id="view-survivor">
+      <div class="page-head">
+        <div>
+          <h2 class="page-title">Mito Survivor</h2>
+          <p class="page-sub">Un minijuego de supervivencia para repasar la materia activa con ataques automáticos y preguntas en momentos clave.</p>
+        </div>
+      </div>
+
+      <div class="survivor-shell" id="survivorShell">
+        <canvas id="survivorCanvas" aria-label="Arena de Mito Survivor"></canvas>
+        <div class="survivor-mito-layer" aria-hidden="true">
+          <div class="mascot face-normal state-idle" id="survivorMito">
+            <svg class="mito" viewBox="0 0 150 150"></svg>
+          </div>
+        </div>
+        <div class="survivor-hud" aria-live="polite">
+          <div><span>Vida</span><b id="survivorLife">100/100</b></div>
+          <div class="survivor-xp"><span>XP</span><b id="survivorXp">0/20</b><i><em id="survivorXpFill"></em></i></div>
+          <div><span>Tiempo</span><b id="survivorTime">0:00</b></div>
+          <div><span>Enemigos</span><b id="survivorEnemies">0</b></div>
+        </div>
+        <div class="survivor-overlay" id="survivorOverlay">
+          <div class="survivor-card">
+            <div class="survivor-mark" aria-hidden="true">
+              <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="4">
+                <circle cx="32" cy="32" r="21"/>
+                <path d="M32 9v46M9 32h46"/>
+                <path d="M44 20l8-8M20 44l-8 8M20 20l-8-8M44 44l8 8"/>
+              </svg>
+            </div>
+            <h3 id="survivorOverlayTitle">Mito Survivor</h3>
+            <p id="survivorOverlayText">Muévete con WASD, flechas o arrastrando el dedo. Sobrevive hasta donde puedas.</p>
+            <div class="survivor-actions">
+              <button class="btn btn-primary" id="survivorStart" data-survivor="start">Iniciar partida</button>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 

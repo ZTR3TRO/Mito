@@ -5,7 +5,7 @@
 // añadir sin tocar los demás.
 //
 // Orden de arranque: 0) núcleo  1) tema  2) navegación  3) materia  4) quiz
-// 5) tienda  6) progreso  7) mascot  8) easter egg  9) service worker
+// 5) survivor  6) tienda  7) progreso  8) mascot  9) easter egg  10) service worker
 
 import { on } from './core/bus.js';
 import { byId } from './core/dom.js';
@@ -23,6 +23,8 @@ import { renderHome } from './features/course/home.js';
 
 import { init as initQuiz, renderReviewCard, resetQuiz } from './features/quiz/index.js';
 import { renderQuizCounts, renderStreak } from './features/quiz/counts.js';
+
+import { init as initSurvivor, renderIntro as renderSurvivorIntro } from './features/survivor/index.js';
 
 import { init as initShop, renderShop, updateBalance, updatePreviewLabels } from './features/shop/index.js';
 import { init as initSeason, checkSeason } from './features/shop/season.js';
@@ -62,6 +64,7 @@ function refreshAll(){
   renderSidebarStats();
   renderReviewCard();
   renderProgress();
+  renderSurvivorIntro();
 }
 
 // Easter egg de ronda perfecta: se crea en boot() y lo arma/apaga el evento quiz:finished.
@@ -129,6 +132,7 @@ function boot(){
   initCourseTabs();
   initNotes();
   initQuiz();
+  initSurvivor();
   initShop();
   initSeason();
   initBackup();
@@ -144,6 +148,7 @@ function boot(){
   renderStreak();
   renderSidebarStats();
   renderProgress();
+  renderSurvivorIntro();
 
   say(getHistory().length === 0 ? `${greeting()} ${firstRoundMessage()}` : greeting());
   sayHero(idleMessage(activeCourse().id, ''));

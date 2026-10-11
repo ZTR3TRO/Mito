@@ -37,6 +37,7 @@ src/
     course/            materia activa y sus vistas: course, home, keys, notes
     quiz/              ronda, sesión, reparto y fallos: index, session,
                        view, review, counts
+    survivor/          minijuego Mito Survivor: entrada y orquestación por fases
     shop/              tienda y tienda de temporada: index, season
     progress/          vista de progreso y copia de seguridad: view, backup
     mascot/            la mascota entera: avatar, auras, face, effects, speech
@@ -79,3 +80,47 @@ un fichero suelto, un ciclo o un export muerto rompen `npm test`:
 | Cambiar lo que dice la mascota | `content/messages.js` |
 | Cambiar cómo se cobra o se guarda | `state/economy.js`, `state/inventory.js` |
 | Añadir una vista nueva | carpeta en `features/`, un `init()` y un caso en `nav/router.js` |
+| Cambiar Mito Survivor | `features/survivor/` |
+
+## Mito Survivor
+
+`features/survivor/` es un minijuego de supervivencia conectado a la materia
+activa. La feature sigue la misma separacion de capas que el resto de `src/`:
+solo `index.js` y `view.js` tocan DOM o eventos de navegador; el motor y la
+sesion son logica pura.
+
+- `index.js` orquesta la partida: crea el motor, registra respuestas con el
+  store, entrega chispas al terminar y detiene el loop al salir de la vista,
+  cambiar materia, importar progreso o reiniciar progreso.
+- `engine.js` actualiza canvas, movimiento, oleadas, proyectiles, gemas y boss.
+  No conoce preguntas ni DOM. Usa limites de entidades y pools internos para
+  evitar crear objetos durante el loop principal.
+- `session.js` guarda el estado logico de una partida: vida, nivel, XP,
+  respuestas, rachas, rerolls, build, boss y recompensa final.
+- `view.js` pinta HUD, overlays, preguntas, mejoras y resumen final. Tambien
+  lee teclado y arrastre tactil para producir el vector de movimiento.
+- `questions.js` toma `activeCourse().questions`, prepara opciones con las
+  mismas reglas que el quiz y no repite preguntas hasta agotar el banco.
+- `balance.js` centraliza todos los numeros: XP por nivel, ritmo de oleadas,
+  limites de entidades, vida, armas, poderes, recompensas y boss.
+
+Flujo de partida:
+
+1. `renderIntro()` resetea sesion, canvas y HUD.
+2. `startGame()` valida que haya preguntas, crea arma de mascota segun el
+   armario y arranca `createEngine()`.
+3. El motor emite eventos de nivel, muerte, escudos del boss y victoria.
+4. El orquestador pausa el motor, muestra pregunta y registra `recordAnswer()`.
+5. Al terminar, `endSession()` calcula resumen y `addChispas()` entrega la
+   recompensa.
+
+Reglas importantes:
+
+- Las preguntas solo aparecen al subir de nivel, revivir o romper escudos.
+- La Chispa de Mito nunca baja de nivel 1.
+- Las preguntas de revivida y boss cuentan para precision y resumen, pero no
+  dan mejoras ni rerolls.
+- El avatar de Mito se muestra como `.mascot` encima del canvas; no se dibuja
+  dentro del canvas.
+- Los estilos nuevos usan prefijo `.survivor-` y deben respetar tema claro,
+  tema oscuro, foco visible, tactil y `prefers-reduced-motion`.

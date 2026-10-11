@@ -26,6 +26,12 @@ export function keepsOptionOrder(opts){
   return opts.some(o=>/^\s*[A-D]\s*(y|e|,)\s*[A-D]\s*$|anteriores/i.test(o));
 }
 
+export function prepareQuestionOptions(base){
+  const keepOrder = keepsOptionOrder(base.opts) || isNumericSeries(base.opts);
+  const order = keepOrder ? base.opts.map((_, i)=>i) : shuffle(base.opts.map((_, i)=>i));
+  return { ...base, opts: order.map(i=>base.opts[i]), correct: order.indexOf(base.correct) };
+}
+
 export function dayStr(d = new Date()){
   const y = d.getFullYear();
   const m = String(d.getMonth()+1).padStart(2,'0');

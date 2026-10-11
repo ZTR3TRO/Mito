@@ -1,7 +1,7 @@
 // Estado de una ronda en curso. Aísla los datos del quiz del DOM para que la
 // lógica sea comprobable y la vista solo pinte.
 
-import { shuffle, isNumericSeries, keepsOptionOrder } from '../../core/utils.js';
+import { shuffle, prepareQuestionOptions } from '../../core/utils.js';
 import { activeCourse } from '../course/course.js';
 import { buildReviewPool } from './review.js';
 import { recordAnswer } from '../../state/store.js';
@@ -70,9 +70,7 @@ function readSetup(){
 // Baraja las opciones para que la correcta no siempre caiga en B/C, salvo cuando
 // el orden importa (opciones tipo "A y B" o series numéricas).
 export function prepareQuestion(base){
-  const keepOrder = keepsOptionOrder(base.opts) || isNumericSeries(base.opts);
-  const order = keepOrder ? base.opts.map((_, i)=>i) : shuffle(base.opts.map((_, i)=>i));
-  const item = { ...base, opts: order.map(i=>base.opts[i]), correct: order.indexOf(base.correct) };
+  const item = prepareQuestionOptions(base);
   session.questions[session.index] = item;
   return item;
 }

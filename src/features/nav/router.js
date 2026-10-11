@@ -9,11 +9,13 @@ export function isVisible(view){
 }
 
 export function goTo(view){
+  const target = byId('view-' + view);
+  if(!target) return;
   // applyAvatar() y checkSeason() los ejecuta quien registra el listener:
   // la navegación no debe conocer al avatar ni a la tienda.
   emit('nav:before', view);
   $$('.view').forEach(v=>v.classList.remove('active'));
-  byId('view-' + view)?.classList.add('active');
+  target.classList.add('active');
   $$('.navbtn').forEach(b=>b.classList.toggle('active', b.dataset.view === view));
   emit('nav:after', view);
   window.scrollTo({ top:0, behavior:'smooth' });

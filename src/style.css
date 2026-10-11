@@ -58,6 +58,12 @@
 [data-theme="dark"] .mode-card.selected{ background:var(--pink-light); }
 [data-theme="dark"] .btn-mint{ color:#fff; }
 [data-theme="dark"] .data-row{ background:var(--card); }
+[data-theme="dark"] .survivor-shell{ background:linear-gradient(150deg,#181322,#1f2630 55%,#2c1930); }
+[data-theme="dark"] .survivor-hud div, [data-theme="dark"] .survivor-boss-hud, [data-theme="dark"] .survivor-build{ background:rgba(28,22,38,.88); border-color:rgba(255,255,255,.18); }
+[data-theme="dark"] .survivor-overlay{ background:linear-gradient(180deg,rgba(18,14,25,.72),rgba(28,18,34,.9)); }
+[data-theme="dark"] .survivor-card{ background:linear-gradient(150deg,var(--card),var(--mint-pale) 55%,var(--pink-pale)); }
+[data-theme="dark"] .survivor-option{ background:#241c30; }
+[data-theme="dark"] .survivor-option.is-wrong{ background:#3a1f29; border-color:#ff8a8a; }
 *{box-sizing:border-box;}
 html,body{margin:0;padding:0;}
 body{
@@ -372,6 +378,107 @@ main{ padding:38px 46px 90px; max-width:1000px; }
 .mode-card .mc-n{ font-size:24px; font-weight:800; color:var(--ink); font-family:var(--font-display);}
 .mode-card .mc-l{ font-size:12px; color:var(--ink-faint); margin-top:2px; font-weight:700; }
 
+/* ---------- MITO SURVIVOR ---------- */
+.survivor-shell{
+  position:relative; max-width:960px; aspect-ratio:16 / 9; margin:0 auto;
+  overflow:hidden; border:3px solid var(--line); border-radius:28px;
+  background:linear-gradient(150deg,#fff,var(--mint-pale) 55%,var(--pink-pale));
+  box-shadow:var(--shadow-soft); touch-action:none; user-select:none;
+}
+.survivor-shell:focus{ outline:none; }
+#survivorCanvas{ position:absolute; inset:0; width:100%; height:100%; display:block; }
+.survivor-mito-layer{ position:absolute; inset:0; pointer-events:none; z-index:3; }
+.survivor-mito-layer .mascot{
+  position:absolute; left:0; top:0; width:94px; height:94px;
+  animation:none; will-change:transform; transform:translate(-9999px,-9999px);
+}
+.survivor-mito-layer .mascot.survivor-hit{ filter:drop-shadow(0 0 12px rgba(255,93,162,.8)); opacity:.72; }
+.survivor-hud{
+  position:absolute; left:16px; right:16px; top:14px; z-index:4;
+  display:flex; gap:10px; flex-wrap:wrap; justify-content:space-between; pointer-events:none;
+}
+.survivor-hud div{
+  min-width:118px; padding:9px 12px; border:2px solid rgba(255,255,255,.82); border-radius:16px;
+  background:rgba(255,255,255,.78); box-shadow:0 10px 24px -18px rgba(51,39,74,.55);
+  backdrop-filter:blur(8px);
+}
+.survivor-hud span{ display:block; font-size:11px; color:var(--ink-faint); font-weight:800; text-transform:uppercase; letter-spacing:.04em; }
+.survivor-hud b{ display:block; color:var(--ink); font-size:18px; font-family:var(--font-display); line-height:1.1; }
+.survivor-xp i{ display:block; width:110px; height:7px; margin-top:6px; border-radius:99px; overflow:hidden; background:var(--line); }
+.survivor-xp em{ display:block; height:100%; width:0%; border-radius:99px; background:linear-gradient(90deg,var(--mint),var(--pink)); }
+.survivor-boss-hud{
+  position:absolute; left:50%; top:76px; z-index:4; width:min(420px,calc(100% - 32px));
+  transform:translateX(-50%); padding:10px 14px; border:2px solid rgba(255,255,255,.82); border-radius:18px;
+  background:rgba(255,255,255,.82); box-shadow:0 10px 24px -18px rgba(51,39,74,.55);
+  backdrop-filter:blur(8px); pointer-events:none; text-align:center;
+}
+.survivor-boss-hud[hidden]{ display:none; }
+.survivor-boss-hud > span{ display:block; font-size:11px; color:var(--ink-faint); font-weight:900; text-transform:uppercase; letter-spacing:.08em; }
+.survivor-boss-hud b{ color:var(--ink); font-size:18px; font-family:var(--font-display); line-height:1.1; }
+.survivor-boss-hud i{ display:block; height:8px; margin:7px 0; border-radius:99px; overflow:hidden; background:var(--line); }
+.survivor-boss-hud em{ display:block; height:100%; width:0%; border-radius:99px; background:linear-gradient(90deg,#7f2d54,var(--pink)); }
+.survivor-boss-hud small{ display:flex; justify-content:center; gap:8px; align-items:center; color:var(--ink-faint); font-weight:900; }
+.survivor-boss-hud small span{ text-transform:uppercase; letter-spacing:.04em; }
+.survivor-overlay{
+  position:absolute; inset:0; z-index:5; display:grid; place-items:center; padding:22px;
+  background:linear-gradient(180deg,rgba(255,255,255,.68),rgba(255,241,248,.86));
+  backdrop-filter:blur(4px);
+}
+.survivor-overlay[hidden]{ display:none; }
+.survivor-card{
+  background:linear-gradient(150deg,#fff,var(--mint-pale) 55%,var(--pink-pale));
+  border:3px solid var(--line); border-radius:28px; padding:42px 38px;
+  text-align:center; box-shadow:var(--shadow-soft); max-width:560px;
+}
+.survivor-mark{
+  width:86px; height:86px; margin:0 auto 18px; display:grid; place-items:center;
+  border-radius:28px; color:var(--pink-deep);
+  background:linear-gradient(135deg,var(--pink-light),var(--mint-light));
+  box-shadow:var(--shadow-pink);
+}
+.survivor-mark svg{ width:48px; height:48px; }
+.survivor-card h3{ margin:0 0 10px; font-size:28px; font-weight:800; color:var(--ink); }
+.survivor-card p{
+  max-width:56ch; margin:0 auto; color:var(--ink-dim);
+  font-size:15px; line-height:1.65; font-weight:700;
+}
+.survivor-progress{ font-weight:900; color:var(--pink-deep) !important; }
+.survivor-actions{ display:flex; justify-content:center; gap:10px; flex-wrap:wrap; margin-top:26px; }
+.survivor-actions .btn{ min-height:48px; padding-inline:22px; }
+.survivor-build{
+  position:absolute; right:16px; bottom:14px; z-index:4; width:min(260px,calc(100% - 32px));
+  padding:12px 14px; border:2px solid rgba(255,255,255,.82); border-radius:18px;
+  background:rgba(255,255,255,.8); box-shadow:0 10px 24px -18px rgba(51,39,74,.55);
+  color:var(--ink); backdrop-filter:blur(8px); pointer-events:none;
+}
+.survivor-build strong{ display:block; margin-bottom:6px; font-family:var(--font-display); font-size:18px; }
+.survivor-build ul{ display:grid; gap:4px; margin:0; padding:0; list-style:none; }
+.survivor-build li{ display:flex; justify-content:space-between; gap:10px; font-size:12px; font-weight:800; }
+.survivor-build span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--ink-dim); }
+.survivor-build b{ color:var(--pink-deep); white-space:nowrap; }
+.survivor-build p{ margin:8px 0 0; font-size:11px; font-weight:800; color:var(--ink-faint); }
+.survivor-question-options{ display:grid; gap:10px; margin-top:20px; text-align:left; }
+.survivor-option{
+  width:100%; min-height:48px; padding:13px 14px; border:2px solid var(--line); border-radius:16px;
+  background:#fff; color:var(--ink); font-weight:800; text-align:left; cursor:pointer;
+}
+.survivor-option:hover, .survivor-option:focus{ border-color:var(--pink); outline:none; box-shadow:var(--shadow-pink); }
+.survivor-option:focus-visible, .survivor-upgrade:focus-visible{ outline:3px solid var(--lilac); outline-offset:3px; }
+.survivor-upgrades{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin-top:20px; text-align:left; }
+.survivor-upgrade{
+  min-height:118px; padding:16px; border:2px solid var(--line); border-radius:20px;
+  background:linear-gradient(160deg,#fff,var(--mint-light)); color:var(--ink); cursor:pointer;
+  box-shadow:0 10px 24px -20px rgba(51,39,74,.55); text-align:left;
+}
+.survivor-upgrade:hover, .survivor-upgrade:focus{ border-color:var(--pink); outline:none; box-shadow:var(--shadow-pink); }
+.survivor-upgrade strong{ display:block; font-family:var(--font-display); font-size:19px; line-height:1.1; }
+.survivor-upgrade span{ display:block; margin-top:12px; color:var(--pink-deep); font-weight:900; }
+.survivor-option.is-correct{ border-color:var(--mint); background:var(--mint-light); }
+.survivor-option.is-wrong{ border-color:#ff6b6b; background:#fff1f1; }
+.survivor-result{ min-height:24px; margin-top:14px; color:var(--ink); font-weight:800; }
+.survivor-summary{ display:grid; gap:8px; margin:18px auto 0; max-width:360px; text-align:left; color:var(--ink-dim); font-weight:800; }
+.survivor-summary div{ display:flex; justify-content:space-between; gap:16px; padding:8px 0; border-bottom:1px solid var(--line); }
+
 /* ================= MASCOT ================= */
 .mascot{ position:relative; width:150px; height:150px; animation: float 3.4s ease-in-out infinite; }
 .mascot.small{ width:64px; height:64px; }
@@ -413,6 +520,8 @@ main{ padding:38px 46px 90px; max-width:1000px; }
 @media (prefers-reduced-motion: reduce){
   *{ animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
   .mascot{ animation: none !important; }
+  .survivor-mito-layer .mascot.survivor-hit{ filter:none; opacity:1; }
+  .survivor-mark{ box-shadow:none; }
 }
 
 /* ================= RESPONSIVE ================= */
@@ -426,7 +535,7 @@ main{ padding:38px 46px 90px; max-width:1000px; }
   /* La barra lateral se convierte en una franja superior delgada
      (solo racha + tema) y la navegación principal pasa a una
      barra inferior fija (ver .navgroup más abajo). Así nunca se
-     recorta: siempre reparte el mismo ancho entre 6 botones. */
+     recorta: siempre reparte el mismo ancho entre los botones. */
   .sidebar{
     position:sticky; top:0; z-index:25; height:auto; width:100%;
     flex-direction:row; align-items:center; justify-content:flex-end; flex-wrap:nowrap;
@@ -469,6 +578,15 @@ main{ padding:38px 46px 90px; max-width:1000px; }
   .page-head{ flex-wrap:wrap; gap:14px; }
   .page-title{ font-size:27px; }
   .quiz-intro, .quiz-result{ padding:36px 22px; }
+  .survivor-card{ padding:34px 22px; }
+  .survivor-shell{ width:100%; min-height:58vh; aspect-ratio:auto; }
+  .survivor-hud{ left:10px; right:10px; top:10px; gap:7px; }
+  .survivor-hud div{ min-width:86px; padding:7px 9px; border-radius:13px; }
+  .survivor-hud b{ font-size:15px; }
+  .survivor-boss-hud{ top:92px; }
+  .survivor-upgrades{ grid-template-columns:1fr; }
+  .survivor-build{ left:12px; right:12px; bottom:10px; width:auto; padding:10px 12px; }
+  .survivor-build p{ display:none; }
   .quiz-card{ padding:22px 18px 18px; }
   .quiz-top{ flex-wrap:wrap; gap:10px; }
   .quiz-meta{ flex-wrap:wrap; gap:12px; }
@@ -506,6 +624,14 @@ main{ padding:38px 46px 90px; max-width:1000px; }
   .hero-actions .btn{ flex:1 1 auto; justify-content:center; }
   .q-text{ font-size:16.5px; }
   .opt{ padding:12px 12px; font-size:13.5px; }
+  .survivor-overlay{ padding:14px; align-items:start; overflow:auto; }
+  .survivor-card{ width:100%; box-sizing:border-box; padding:24px 16px; margin:10px 0; }
+  .survivor-mark{ width:64px; height:64px; border-radius:20px; margin-bottom:12px; }
+  .survivor-mark svg{ width:38px; height:38px; }
+  .survivor-card h3{ font-size:23px; }
+  .survivor-card p{ font-size:14px; }
+  .survivor-option, .survivor-actions .btn{ min-height:52px; }
+  .survivor-summary{ max-width:none; }
   .acc-head h4{ font-size:15px; }
   .data-row-btns .btn-dev{ flex:1 1 44%; justify-content:center; }
   .navbtn{ padding:7px 1px; border-radius:9px; }
