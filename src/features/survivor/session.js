@@ -45,10 +45,24 @@ export function xpToNext(level, balance = SURVIVOR_BALANCE){
 export function finalChispas(result, balance = SURVIVOR_BALANCE){
   const rewards = balance.rewards || SURVIVOR_BALANCE.rewards;
   const revived = Boolean(result.reviveUsed || result.revived);
-  return rewards.base
-    + Math.max(0, result.correctAnswers || 0) * rewards.correctAnswer
-    + (revived ? 0 : rewards.noRevive)
+  const time = Math.max(0, Number(result.time) || 0);
+  const correctAnswers = Math.max(0, result.correctAnswers || 0);
+  const answered = correctAnswers + Math.max(0, result.wrongAnswers || 0);
+  const reachedBoss = Boolean(result.bossDefeated || result.bossActive || (result.bossMaxLife && result.bossLife > 0) || time >= (balance.match?.duration ?? SURVIVOR_BALANCE.match.duration));
+  const minSeconds = rewards.minSecondsForAny ?? SURVIVOR_BALANCE.rewards.minSecondsForAny;
+  if(time < minSeconds && answered <= 0) return 0;
+  const baseEvery = Math.max(1, rewards.baseEverySeconds ?? SURVIVOR_BALANCE.rewards.baseEverySeconds);
+  const baseSteps = Math.floor(time / baseEvery);
+  const base = Math.min(rewards.baseMax ?? SURVIVOR_BALANCE.rewards.baseMax, baseSteps * rewards.base);
+  const noRevive = !revived && (result.bossDefeated || reachedBoss) ? rewards.noRevive : 0;
+  const total = base
+    + correctAnswers * rewards.correctAnswer
+    + noRevive
     + (result.bossDefeated ? rewards.bossDefeated : 0);
+  const max = result.bossDefeated || reachedBoss
+    ? (rewards.maxWithBoss ?? SURVIVOR_BALANCE.rewards.maxWithBoss)
+    : (rewards.maxWithoutBoss ?? SURVIVOR_BALANCE.rewards.maxWithoutBoss);
+  return Math.min(max, total);
 }
 
 function cloneOption(option){
@@ -83,13 +97,17 @@ function powerLevel(value){
 
 function penaltyCandidates(currentSession){
   const candidates = [];
+  const chispaLevel = Math.max(1, powerLevel(currentSession?.chispaLevel || 1));
+  if(chispaLevel > 1){
+    candidates.push({ type:'weapon', id:CHISPA_MITO_ID, name:'Chispa de Mito', level:chispaLevel, order:0 });
+  }
   const petLevel = powerLevel(currentSession?.petWeapon?.level);
   if(currentSession?.petWeapon && petLevel > 0){
     const petDefinition = PET_WEAPONS[currentSession.petWeapon.petId];
-    candidates.push({ type:'pet', id:currentSession.petWeapon.id, name:petDefinition?.name || 'Arma de mascota', level:petLevel, order:0 });
+    candidates.push({ type:'pet', id:currentSession.petWeapon.id, name:petDefinition?.name || 'Arma de mascota', level:petLevel, order:1 });
   }
 
-  let order = 1;
+  let order = 2;
   for(const [id, value] of Object.entries(currentSession?.powers || {})){
     const level = powerLevel(value);
     const power = powerById(id);
@@ -112,6 +130,13 @@ function applyOnePenalty(currentSession){
     return {
       session:{ ...currentSession, petWeapon:{ ...currentSession.petWeapon, level:nextLevel } },
       change,
+    };
+  }
+
+  if(target.type === 'weapon'){
+    return {
+      session:{ ...currentSession, chispaLevel:Math.max(1, nextLevel) },
+      change:{ ...change, to:Math.max(1, nextLevel) },
     };
   }
 

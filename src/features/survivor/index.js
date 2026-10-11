@@ -6,16 +6,17 @@ import { createEngine } from './engine.js';
 import { createPetWeapon } from './pets.js';
 import { hasQuestionBank, nextSurvivorQuestion, resetQuestionDeck } from './questions.js';
 import { applySurvivorUpgrade, completeRevive, endSession, getSession, pauseSession, prepareUpgradeOptions, recordBossAnswer, recordLevelUp, recordReviveAnswer, recordSurvivorAnswer, resetSession, resumeSession, spendReroll, startReviveChallenge, startSession, updateSessionFromEngine } from './session.js';
-import { cleanupInput, getCanvasContext, getInput, initView, renderBuild, renderHud, resizeCanvas, showNoQuestions, showQuestion, showSummary, showIntro, showPlay, showUpgradeOptions, syncMito } from './view.js';
+import { getCanvasContext, getInput, initView, renderBuild, renderHud, resizeCanvas, showNoQuestions, showQuestion, showSummary, showIntro, showPlay, showUpgradeOptions, startGameInput, stopGameInput, syncMito } from './view.js';
 import { CHISPA_MITO_ID } from './weapons.js';
 
 let engine = null;
 let resizeHandler = null;
+let pausedByVisibility = false;
 
 function stopEngine(){
   engine?.stop();
   engine = null;
-  cleanupInput();
+  stopGameInput();
 }
 
 function draw(snapshot){
@@ -23,7 +24,7 @@ function draw(snapshot){
   if(ctx && engine) engine.render(ctx);
   syncMito(snapshot);
   renderHud(snapshot);
-  renderBuild(updateSessionFromEngine(snapshot));
+  updateSessionFromEngine(snapshot);
 }
 
 function applyEngineLevels(current){
@@ -130,6 +131,7 @@ function askReviveQuestion(snapshot){
     return;
   }
 
+  let failedRevive = false;
   showQuestion(item, {
     titleText:'Reto de revivida',
     progressText:`Pregunta ${Math.min(3, current.reviveProgress + 1)} de 3`,
@@ -138,18 +140,23 @@ function askReviveQuestion(snapshot){
       recordAnswer(activeCourse().id, item.q, correct);
       const next = recordReviveAnswer(correct);
       if(!correct){
-        finishGame('dead', snapshot);
-        return { correct, exp:item.exp, penalties:[] };
+        failedRevive = true;
+        return { correct, exp:item.exp, penalties:[], continueText:'Ver resumen' };
       }
       if(next.reviveProgress >= 3){
         const revived = engine?.revive(Math.ceil(next.maxLife * 0.5)) || snapshot;
-        completeRevive(revived);
+        const revivedSession = completeRevive(revived);
+        renderBuild(revivedSession);
         draw(revived);
         return { correct, exp:item.exp, resultText:'Correcto. Revives con media vida y la misma build.', continueText:'Volver a la partida' };
       }
       return { correct, exp:item.exp, resultText:'Correcto. Sigue el repaso para revivir.', continueText:'Siguiente pregunta' };
     },
     onContinue:()=>{
+      if(failedRevive){
+        finishGame('dead', snapshot);
+        return;
+      }
       const next = getSession();
       if(next.reviveProgress >= 3){
         resumeGame();
@@ -182,6 +189,7 @@ function startGame(){
   const petWeapon = createPetWeapon(getEquipped().pet);
   const current = startSession(petWeapon);
   showPlay();
+  startGameInput();
   renderBuild(current);
   applyAvatar();
 
@@ -219,11 +227,25 @@ export function init(){
     }
   };
   window.addEventListener('resize', resizeHandler);
+  window.addEventListener('visibilitychange', ()=>{
+    if(document.hidden){
+      pausedByVisibility = getSession().status === 'running';
+      if(pausedByVisibility){
+        pauseSession();
+        engine?.pause();
+      }
+      return;
+    }
+    if(pausedByVisibility){
+      pausedByVisibility = false;
+      resumeSession();
+      engine?.resume();
+    }
+  });
 
   on('nav:after', view=>{
     if(view !== 'survivor'){
-      stopEngine();
-      pauseSession();
+      renderIntro();
     }
   });
 

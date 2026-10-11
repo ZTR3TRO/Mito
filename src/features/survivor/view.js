@@ -13,6 +13,9 @@ let dpr = 1;
 let startHandler = null;
 let questionKeyHandler = null;
 let lastFocus = null;
+let keyboardActive = false;
+let keyboardListening = false;
+let lastHud = {};
 
 function formatTime(seconds){
   const total = Math.max(0, Math.floor(seconds));
@@ -45,6 +48,7 @@ function pointerPos(event){
 }
 
 function onKeyDown(event){
+  if(!shouldHandleMovementKey(event)) return;
   if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','KeyA','KeyD','KeyW','KeyS'].includes(event.code)){
     keys.add(event.code);
     event.preventDefault();
@@ -52,7 +56,21 @@ function onKeyDown(event){
 }
 
 function onKeyUp(event){
+  if(!shouldHandleMovementKey(event)) return;
   keys.delete(event.code);
+  event.preventDefault();
+}
+
+function isTextInput(target){
+  if(typeof HTMLElement === 'undefined') return false;
+  if(!(target instanceof HTMLElement)) return false;
+  const tag = target.tagName.toLowerCase();
+  return tag === 'input' || tag === 'textarea' || tag === 'select' || target.isContentEditable;
+}
+
+function shouldHandleMovementKey(event){
+  if(!keyboardActive || !isVisible() || isTextInput(event.target)) return false;
+  return ['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','KeyA','KeyD','KeyW','KeyS'].includes(event.code);
 }
 
 function onPointerDown(event){
@@ -83,7 +101,7 @@ function onPointerEnd(event){
 }
 
 function ensureRefs(){
-  if(refs) return refs;
+  if(refs && refs.shell && document.contains(refs.shell)) return refs;
   refs = {
     shell: byId('survivorShell'),
     canvas: byId('survivorCanvas'),
@@ -107,7 +125,7 @@ function ensureRefs(){
   refs.shell?.setAttribute('tabindex', '0');
   refs.canvas?.setAttribute('role', 'img');
   if(!refs.build && refs.shell){
-    refs.build = el('div', { class:'survivor-build', attrs:{ id:'survivorBuild', 'aria-live':'polite' } });
+    refs.build = el('div', { class:'survivor-build', attrs:{ id:'survivorBuild' } });
     refs.shell.append(refs.build);
   }
   if(!refs.bossHud && refs.shell){
@@ -150,6 +168,24 @@ export function cleanupInput(){
   touch.id = null;
 }
 
+export function startGameInput(){
+  keyboardActive = true;
+  if(keyboardListening) return;
+  window.addEventListener('keydown', onKeyDown);
+  window.addEventListener('keyup', onKeyUp);
+  keyboardListening = true;
+}
+
+export function stopGameInput(){
+  keyboardActive = false;
+  if(keyboardListening){
+    window.removeEventListener('keydown', onKeyDown);
+    window.removeEventListener('keyup', onKeyUp);
+    keyboardListening = false;
+  }
+  cleanupInput();
+}
+
 function prepareOverlay({ gameover = false } = {}){
   ensureRefs();
   lastFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -185,8 +221,6 @@ export function initView({ onStart }){
   ensureRefs();
   startHandler = onStart;
   refs.overlayButton?.addEventListener('click', onStart);
-  window.addEventListener('keydown', onKeyDown);
-  window.addEventListener('keyup', onKeyUp);
   refs.shell?.addEventListener('pointerdown', onPointerDown);
   refs.shell?.addEventListener('pointermove', onPointerMove);
   refs.shell?.addEventListener('pointerup', onPointerEnd);
@@ -238,23 +272,31 @@ export function syncMito(snapshot){
 export function renderHud(snapshot){
   ensureRefs();
   if(!snapshot) return;
-  refs.hudLife.textContent = `${Math.max(0, Math.round(snapshot.player.life))}/${SURVIVOR_BALANCE.player.maxLife}`;
+  const life = `${Math.max(0, Math.round(snapshot.player.life))}/${SURVIVOR_BALANCE.player.maxLife}`;
   const nextXp = snapshot.xpToNext || 1;
   const currentXp = Math.max(0, Math.floor(snapshot.xp || 0));
-  refs.hudXp.textContent = `${currentXp}/${nextXp}`;
-  refs.hudXpFill.style.width = `${Math.max(0, Math.min(100, currentXp / nextXp * 100))}%`;
-  refs.hudTime.textContent = formatTime(snapshot.time);
-  refs.hudEnemies.textContent = String(snapshot.enemies.length);
+  const xp = `${currentXp}/${nextXp}`;
+  const xpWidth = `${Math.max(0, Math.min(100, currentXp / nextXp * 100))}%`;
+  const time = formatTime(snapshot.time);
+  const enemies = String(snapshot.enemies.length);
+  if(lastHud.life !== life){ refs.hudLife.textContent = life; lastHud.life = life; }
+  if(lastHud.xp !== xp){ refs.hudXp.textContent = xp; lastHud.xp = xp; }
+  if(lastHud.xpWidth !== xpWidth){ refs.hudXpFill.style.width = xpWidth; lastHud.xpWidth = xpWidth; }
+  if(lastHud.time !== time){ refs.hudTime.textContent = time; lastHud.time = time; }
+  if(lastHud.enemies !== enemies){ refs.hudEnemies.textContent = enemies; lastHud.enemies = enemies; }
   if(refs.bossHud){
     const boss = snapshot.boss;
     const active = Boolean(boss?.active);
-    refs.bossHud.hidden = !active;
+    if(lastHud.bossActive !== active){ refs.bossHud.hidden = !active; lastHud.bossActive = active; }
     if(active){
       const maxLife = Math.max(1, Math.round(boss.maxLife || 1));
       const life = Math.max(0, Math.round(boss.life || 0));
-      refs.bossLife.textContent = `${life}/${maxLife}`;
-      refs.bossLifeFill.style.width = `${Math.max(0, Math.min(100, life / maxLife * 100))}%`;
-      refs.bossShields.textContent = `${Math.max(0, boss.shields || 0)}/${Math.max(0, boss.maxShields || 0)}`;
+      const bossLife = `${life}/${maxLife}`;
+      const bossWidth = `${Math.max(0, Math.min(100, life / maxLife * 100))}%`;
+      const bossShields = `${Math.max(0, boss.shields || 0)}/${Math.max(0, boss.maxShields || 0)}`;
+      if(lastHud.bossLife !== bossLife){ refs.bossLife.textContent = bossLife; lastHud.bossLife = bossLife; }
+      if(lastHud.bossWidth !== bossWidth){ refs.bossLifeFill.style.width = bossWidth; lastHud.bossWidth = bossWidth; }
+      if(lastHud.bossShields !== bossShields){ refs.bossShields.textContent = bossShields; lastHud.bossShields = bossShields; }
     }
   }
 }
@@ -281,7 +323,7 @@ export function renderBuild(session){
   refs.build.append(
     el('strong', { text:'Build' }),
     el('ul', { children:items }),
-    el('p', { text:`Vida ${stats.maxLife} · Velocidad ${stats.playerSpeed} · Iman ${stats.pickupRadius}` })
+    el('p', { text:`Vida ${stats.maxLife} · Velocidad ${stats.playerSpeed} · Imán ${stats.pickupRadius}` })
   );
 }
 
@@ -298,6 +340,7 @@ export function showIntro(){
   refs.hudXpFill.style.width = '0%';
   refs.hudTime.textContent = '0:00';
   refs.hudEnemies.textContent = '0';
+  lastHud = {};
   if(refs.bossHud) refs.bossHud.hidden = true;
   refs.mito.style.transform = 'translate(-9999px, -9999px)';
 }
@@ -370,6 +413,7 @@ export function showQuestion(item, { onAnswer, onContinue, titleText = 'Pregunta
     else{
       result.append(el('p', { text:'No perdiste equipo porque no hay nada que degradar.' }));
     }
+    if(outcome.continueText) continueButton.textContent = outcome.continueText;
     continueButton.hidden = false;
     continueButton.focus();
   }
@@ -445,12 +489,12 @@ export function showSummary(summary){
   const list = el('div', { class:'survivor-summary', children:[
     el('div', { children:[el('span', { text:'Tiempo' }), el('b', { text:formatTime(summary.time) })] }),
     el('div', { children:[el('span', { text:'Nivel' }), el('b', { text:String(summary.level) })] }),
-    el('div', { children:[el('span', { text:'Precision' }), el('b', { text:`${precision}%` })] }),
-    el('div', { children:[el('span', { text:'Racha maxima' }), el('b', { text:String(summary.maxCorrectStreak || 0) })] }),
+    el('div', { children:[el('span', { text:'Precisión' }), el('b', { text:`${precision}%` })] }),
+    el('div', { children:[el('span', { text:'Racha máxima' }), el('b', { text:String(summary.maxCorrectStreak || 0) })] }),
     el('div', { children:[el('span', { text:'Correctas' }), el('b', { text:String(summary.correctAnswers) })] }),
     el('div', { children:[el('span', { text:'Fallos' }), el('b', { text:String(summary.wrongAnswers) })] }),
     el('div', { children:[el('span', { text:'Chispas' }), el('b', { text:String(summary.awardedChispas) })] }),
-    el('div', { children:[el('span', { text:'Boss derrotado' }), el('b', { text:summary.bossDefeated ? 'Si' : 'No' })] }),
+    el('div', { children:[el('span', { text:'Boss derrotado' }), el('b', { text:summary.bossDefeated ? 'Sí' : 'No' })] }),
   ] });
   refs.card.insertBefore(list, refs.card.querySelector('.survivor-actions'));
 }

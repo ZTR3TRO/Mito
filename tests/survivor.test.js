@@ -1,12 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { parseHTML } from 'linkedom';
 
 import { createEngine } from '../src/features/survivor/engine.js';
-import { createPetWeapon, petWeaponStats } from '../src/features/survivor/pets.js';
+import { createPetWeapon, PET_WEAPONS, petWeaponStats } from '../src/features/survivor/pets.js';
 import { effectiveStats, SURVIVOR_POWERS } from '../src/features/survivor/powers.js';
 import { activeCourse } from '../src/features/course/course.js';
 import { nextSurvivorQuestion, resetQuestionDeck } from '../src/features/survivor/questions.js';
 import { applyPenalty, buildUpgradeOptions, completeRevive, endSession, finalChispas, getSession, pauseSession, recordBossAnswer, recordReviveAnswer, recordSurvivorAnswer, resetSession, resumeSession, spendReroll, startReviveChallenge, startSession, updateSessionFromEngine, xpToNext } from '../src/features/survivor/session.js';
+import { getInput, initView, renderHud, showIntro, showQuestion, startGameInput, stopGameInput } from '../src/features/survivor/view.js';
 import { CHISPA_MITO_ID, nearestEnemy, weaponStats } from '../src/features/survivor/weapons.js';
 
 const baseBalance = {
@@ -30,6 +32,41 @@ function randomSequence(values){
 
 function survivorSnapshot(life = 0){
   return { time:12, level:2, xp:3, xpToNext:20, player:{ life } };
+}
+
+function setupSurvivorDom(active = true){
+  const { window } = parseHTML(`<!doctype html><html><body>
+    <section class="view ${active ? 'active' : ''}" id="view-survivor">
+      <input id="renamePet">
+      <div class="survivor-shell" id="survivorShell">
+        <canvas id="survivorCanvas"></canvas>
+        <div class="mascot" id="survivorMito"><svg class="mito"></svg></div>
+        <div class="survivor-hud">
+          <b id="survivorLife">100/100</b>
+          <b id="survivorXp">0/30</b>
+          <em id="survivorXpFill"></em>
+          <b id="survivorTime">0:00</b>
+          <b id="survivorEnemies">0</b>
+        </div>
+        <div class="survivor-overlay" id="survivorOverlay"><div class="survivor-card"><h3 id="survivorOverlayTitle"></h3><p id="survivorOverlayText"></p><button id="survivorStart" type="button"></button></div></div>
+        <div id="survivorBuild"></div>
+      </div>
+    </section>
+  </body></html>`);
+  globalThis.window = window;
+  globalThis.document = window.document;
+  globalThis.HTMLElement = window.HTMLElement;
+  globalThis.devicePixelRatio = 1;
+  window.HTMLCanvasElement.prototype.getContext = () => ({ setTransform(){}, clearRect(){} });
+  initView({ onStart(){} });
+  return window;
+}
+
+function keyboardEvent(window, code){
+  const event = new window.Event('keydown', { bubbles:true, cancelable:true });
+  Object.defineProperty(event, 'code', { value:code });
+  Object.defineProperty(event, 'key', { value:code });
+  return event;
 }
 
 test('survivor session: inicia, pausa, reanuda y termina', ()=>{
@@ -83,12 +120,89 @@ test('survivor session: xpToNext crece por nivel según balance', ()=>{
   assert.equal(xpToNext(5, balance), 40);
 });
 
-test('survivor session: calcula chispas finales', ()=>{
-  const balance = { rewards:{ base:20, correctAnswer:2, noRevive:15, bossDefeated:30 } };
+test('survivor session: calcula chispas finales con economía protegida', ()=>{
+  const balance = {
+    match:{ duration:300 },
+    rewards:{ base:8, baseEverySeconds:30, baseMax:40, correctAnswer:2, noRevive:15, bossDefeated:30, minSecondsForAny:20, maxWithoutBoss:80, maxWithBoss:110 },
+  };
 
-  assert.equal(finalChispas({ correctAnswers:4, revived:false, bossDefeated:false }, balance), 43);
-  assert.equal(finalChispas({ correctAnswers:4, revived:true, bossDefeated:true }, balance), 58);
-  assert.equal(finalChispas({ correctAnswers:4, reviveUsed:true, bossDefeated:true }, balance), 58);
+  assert.equal(finalChispas({ time:0, correctAnswers:0, wrongAnswers:0, revived:false, bossDefeated:false }, balance), 0);
+  assert.equal(finalChispas({ time:60, correctAnswers:2, wrongAnswers:1, revived:false, bossDefeated:false }, balance), 20);
+  assert.equal(finalChispas({ time:320, correctAnswers:99, wrongAnswers:0, revived:false, bossDefeated:true }, balance), 110);
+  assert.equal(finalChispas({ time:300, correctAnswers:99, wrongAnswers:0, revived:false, bossDefeated:false, bossActive:true }, balance), 110);
+});
+
+test('survivor view: el teclado solo mueve durante partida activa y fuera de inputs', ()=>{
+  const window = setupSurvivorDom(true);
+  startGameInput();
+
+  const input = document.querySelector('#renamePet');
+  const inputEvent = keyboardEvent(window, 'KeyA');
+  input.dispatchEvent(inputEvent);
+  assert.equal(inputEvent.defaultPrevented, false);
+
+  document.querySelector('#view-survivor').classList.remove('active');
+  const inactiveEvent = keyboardEvent(window, 'KeyA');
+  window.dispatchEvent(inactiveEvent);
+  assert.equal(inactiveEvent.defaultPrevented, false);
+  assert.deepEqual(getInput(), { x:0, y:0 });
+
+  document.querySelector('#view-survivor').classList.add('active');
+  const activeEvent = keyboardEvent(window, 'KeyA');
+  window.dispatchEvent(activeEvent);
+  assert.equal(activeEvent.defaultPrevented, true);
+  assert.deepEqual(getInput(), { x:-1, y:0 });
+
+  stopGameInput();
+});
+
+test('survivor view: el HUD solo escribe cuando cambian valores', ()=>{
+  setupSurvivorDom(true);
+  const snapshot = { player:{ life:100 }, xp:0, xpToNext:30, time:0, enemies:[], boss:{ active:false } };
+  renderHud(snapshot);
+  const life = document.querySelector('#survivorLife');
+  const before = life.textContent;
+
+  renderHud({ ...snapshot, player:{ life:100 } });
+  assert.equal(life.textContent, before);
+
+  renderHud({ ...snapshot, player:{ life:80 } });
+  assert.equal(life.textContent, '80/100');
+});
+
+test('survivor view: la introducción usa el XP real del balance', ()=>{
+  setupSurvivorDom(true);
+  showIntro();
+
+  assert.equal(document.querySelector('#survivorXp').textContent, '0/30');
+});
+
+test('survivor view: un fallo de revivida puede mostrar explicación antes del resumen', ()=>{
+  const window = setupSurvivorDom(true);
+  let continued = false;
+
+  showQuestion({ q:'Pregunta', opts:['A','B','C','D'], correct:1, exp:'Explicación visible.' }, {
+    onAnswer:()=>({ correct:false, exp:'Explicación visible.', penalties:[], continueText:'Ver resumen' }),
+    onContinue:()=>{ continued = true; },
+  });
+
+  document.querySelector('.survivor-option').click();
+  assert.equal(continued, false);
+  assert.match(document.querySelector('.survivor-result').textContent, /Explicación visible/);
+  assert.equal(document.querySelector('.survivor-actions .btn-primary').textContent, 'Ver resumen');
+
+  document.querySelector('.survivor-actions .btn-primary').click();
+  assert.equal(continued, true);
+  stopGameInput();
+  window.close?.();
+});
+
+test('survivor view: el HUD y la build no usan aria-live', ()=>{
+  setupSurvivorDom(true);
+  showIntro();
+
+  assert.equal(document.querySelector('.survivor-hud')?.hasAttribute('aria-live'), false);
+  assert.equal(document.querySelector('#survivorBuild')?.hasAttribute('aria-live'), false);
 });
 
 test('survivor revive: tres aciertos reviven sin tocar build ni rachas de build', ()=>{
@@ -241,7 +355,7 @@ test('survivor penalty: pierde un poder si estaba en nivel 1', ()=>{
     wrongStreak: 1,
   });
 
-  assert.deepEqual(result.changes, [{ type:'power', id:'iman-gemas', name:'Iman de gemas', from:1, to:0 }]);
+  assert.deepEqual(result.changes, [{ type:'power', id:'iman-gemas', name:'Imán de gemas', from:1, to:0 }]);
   assert.equal('iman-gemas' in result.session.powers, false);
   assert.equal(result.session.powers['atp-turbo'], 2);
 });
@@ -276,6 +390,32 @@ test('survivor penalty: protege la Chispa de Mito y conserva la mascota visual',
   assert.deepEqual(result.changes, [{ type:'pet', id:'picotazo-pollito', name:'Picotazo veloz', from:1, to:0 }]);
   assert.equal(result.session.chispaLevel, 1);
   assert.deepEqual(result.session.petWeapon, { id:'picotazo-pollito', petId:'p-chick', level:0 });
+});
+
+test('survivor penalty: la Chispa de Mito baja hasta nivel 1', ()=>{
+  const result = applyPenalty({
+    chispaLevel: 4,
+    petWeapon: null,
+    powers: {},
+    upgradeOptions: [],
+    wrongStreak: 1,
+  });
+
+  assert.deepEqual(result.changes, [{ type:'weapon', id:CHISPA_MITO_ID, name:'Chispa de Mito', from:4, to:3 }]);
+  assert.equal(result.session.chispaLevel, 3);
+});
+
+test('survivor penalty: la Chispa de Mito en nivel 1 no baja', ()=>{
+  const result = applyPenalty({
+    chispaLevel: 1,
+    petWeapon: null,
+    powers: {},
+    upgradeOptions: [],
+    wrongStreak: 1,
+  });
+
+  assert.deepEqual(result.changes, []);
+  assert.equal(result.session.chispaLevel, 1);
 });
 
 test('survivor penalty: sin equipo no penaliza la build', ()=>{
@@ -322,6 +462,15 @@ test('survivor powers: effectiveStats aplica cada poder', ()=>{
   assert.equal(stats.areaMultiplier, 1.08);
 });
 
+test('survivor textos visibles: poderes y mascota usan acentos', ()=>{
+  assert.equal(SURVIVOR_POWERS.find(power => power.id === 'iman-gemas').name, 'Imán de gemas');
+  assert.equal(SURVIVOR_POWERS.find(power => power.id === 'reparacion-celular').name, 'Reparación celular');
+  assert.equal(SURVIVOR_POWERS.find(power => power.id === 'congelacion').name, 'Congelación');
+  assert.equal(SURVIVOR_POWERS.find(power => power.id === 'critico').name, 'Crítico');
+  assert.equal(SURVIVOR_POWERS.find(power => power.id === 'area-ampliada').name, 'Área ampliada');
+  assert.equal(PET_WEAPONS['p-turtle'].name, 'Onda de caparazón');
+});
+
 test('survivor engine: spawnea oleadas en los bordes', ()=>{
   noRaf();
   const engine = createEngine({
@@ -351,6 +500,22 @@ test('survivor engine: los enemigos persiguen a Mito', ()=>{
 
   assert.ok(enemy.x > -baseBalance.waves.spawnPadding, 'el enemigo de la izquierda debe avanzar hacia el centro');
   assert.equal(enemy.y, 50);
+  engine.stop();
+});
+
+test('survivor engine: limita dt grandes al volver de pausa o pestaña oculta', ()=>{
+  noRaf();
+  const engine = createEngine({
+    balance: baseBalance,
+    getInput:()=>({ x:1, y:0 }),
+    random: randomSequence([0.75, 0.5]),
+  });
+
+  engine.start();
+  const snapshot = engine.update(10);
+
+  assert.equal(snapshot.time, 0.05);
+  assert.equal(snapshot.player.x, 52);
   engine.stop();
 });
 
@@ -752,5 +917,5 @@ test('survivor session: preguntas de boss cuentan sin tocar build y victoria da 
 
   const ended = endSession('won');
   assert.equal(ended.bossDefeated, true);
-  assert.equal(ended.awardedChispas, 67);
+  assert.equal(ended.awardedChispas, 47);
 });

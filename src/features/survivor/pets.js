@@ -14,7 +14,7 @@ export const PET_WEAPONS = {
   'p-turtle': {
     id: 'onda-tortuguita',
     table: 'ondaTortuguita',
-    name: 'Onda de caparazon',
+    name: 'Onda de caparazón',
     role: 'defensa',
     maxLevel: 8,
     fire(stats, api){

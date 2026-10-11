@@ -28,10 +28,15 @@ export const SURVIVOR_BALANCE = {
     maxGems: 90,
   },
   rewards: {
-    base: 20,
+    base: 8,
+    baseEverySeconds: 30,
+    baseMax: 40,
     correctAnswer: 2,
     noRevive: 15,
     bossDefeated: 30,
+    minSecondsForAny: 20,
+    maxWithoutBoss: 80,
+    maxWithBoss: 110,
   },
   powers: {
     imanGemas: {

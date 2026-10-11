@@ -1,16 +1,16 @@
 import { SURVIVOR_BALANCE } from './balance.js';
 
 export const SURVIVOR_POWERS = [
-  { id:'iman-gemas', table:'imanGemas', name:'Iman de gemas' },
+  { id:'iman-gemas', table:'imanGemas', name:'Imán de gemas' },
   { id:'atp-turbo', table:'atpTurbo', name:'ATP Turbo' },
   { id:'mitocampo', table:'mitocampo', name:'Mitocampo' },
   { id:'chispa-doble', table:'chispaDoble', name:'Chispa doble' },
   { id:'catalizador', table:'catalizador', name:'Catalizador' },
   { id:'membrana-protectora', table:'membranaProtectora', name:'Membrana protectora' },
-  { id:'reparacion-celular', table:'reparacionCelular', name:'Reparacion celular' },
-  { id:'congelacion', table:'congelacion', name:'Congelacion' },
-  { id:'critico', table:'critico', name:'Critico' },
-  { id:'area-ampliada', table:'areaAmpliada', name:'Area ampliada' },
+  { id:'reparacion-celular', table:'reparacionCelular', name:'Reparación celular' },
+  { id:'congelacion', table:'congelacion', name:'Congelación' },
+  { id:'critico', table:'critico', name:'Crítico' },
+  { id:'area-ampliada', table:'areaAmpliada', name:'Área ampliada' },
 ];
 
 function clampLevel(level){
