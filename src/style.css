@@ -899,23 +899,25 @@ svg.th *{animation:none!important}
 .skinfx .fx-sweep{ animation:fxSweep var(--d,5s) ease-in-out infinite; }
 .skinfx .fx-flow{ animation:fxFlow 7s linear infinite; }
 .skinfx .fx-twk{ transform-box:fill-box; transform-origin:center; animation:fxTwk var(--d,2.6s) ease-in-out infinite; animation-delay:var(--dl,0s); }
-.skinfx .fx-pulse{ animation:fxPulse 2.4s ease-in-out infinite; animation-delay:var(--dl,0s); }
-.skinfx .fx-ember{ animation:fxEmber 3.2s ease-in infinite; animation-delay:var(--dl,0s); }
-.skinfx .fx-rise{ transform-box:fill-box; transform-origin:center; animation:fxRise 5s ease-in-out infinite; animation-delay:var(--dl,0s); }
+.skinfx .fx-plate{ animation:fxPlate 7s ease-in-out infinite alternate; animation-delay:var(--dl,0s); }
+.skinfx .fx-bub{ opacity:0; transform-box:fill-box; transform-origin:center; animation:fxBub 7s ease-in-out infinite; animation-delay:var(--dl,0s); }
+.skinfx .fx-lpulse{ animation:fxLPulse 4.6s ease-in-out infinite; animation-delay:var(--dl,0s); }
+.skinfx .fx-ember2{ opacity:0; animation:fxEmber2 7s ease-out infinite; animation-delay:var(--dl,0s); }
 
 @keyframes fxSpin{ to{ transform:rotate(360deg); } }
 @keyframes fxSweep{ 0%{ transform:translateX(-30px); } 55%,100%{ transform:translateX(230px); } }
 @keyframes fxFlow{ from{ transform:translateX(0); } to{ transform:translateX(-150px); } }
 @keyframes fxTwk{ 0%,100%{ opacity:.1; transform:scale(.5); } 50%{ opacity:1; transform:scale(1.25); } }
-@keyframes fxPulse{ 0%,100%{ opacity:.45; } 50%{ opacity:1; } }
-@keyframes fxEmber{ 0%{ opacity:0; transform:translateY(0); } 20%{ opacity:1; } 100%{ opacity:0; transform:translateY(-46px); } }
-@keyframes fxRise{ 0%{ opacity:0; transform:translateY(16px) scale(.85); } 25%{ opacity:.95; } 100%{ opacity:0; transform:translateY(-34px) scale(1.15); } }
+@keyframes fxPlate{ from{ transform:translate(0,0); } to{ transform:translate(var(--dx,1px),var(--dy,1px)); } }
+@keyframes fxBub{ 0%{ opacity:0; transform:translateY(4px) scale(.4); } 12%{ opacity:1; } 62%{ opacity:1; transform:translateY(-16px) scale(1); } 72%{ opacity:.9; transform:translateY(-18px) scale(1.5); } 80%,100%{ opacity:0; transform:translateY(-18px) scale(2.2); } }
+@keyframes fxLPulse{ 0%,100%{ opacity:.55; } 50%{ opacity:1; } }
+@keyframes fxEmber2{ 0%{ opacity:0; transform:translateY(0); } 6%{ opacity:1; } 42%,100%{ opacity:0; transform:translateY(-42px); } }
 
 /* miniaturas animadas en la tienda */
 .swatch.sw-dark{ background:radial-gradient(circle at 25% 30%,#8b5cf6,transparent 45%),radial-gradient(circle at 75% 75%,#e879f9,transparent 45%),#0f0a24; background-size:220% 220%; animation:swDrift 5s ease-in-out infinite alternate; }
 .swatch.sw-gold{ background:linear-gradient(115deg,#c98a0a 15%,#fff2a8 42%,#ffc93c 55%,#c98a0a 85%); background-size:260% 100%; animation:swSlide 3s ease-in-out infinite alternate; }
 .swatch.sw-aurora{ background:linear-gradient(90deg,#5bffd0,#4cc9f0,#b388ff,#5bffd0); background-size:300% 100%; animation:swSlide 4s linear infinite alternate; }
-.swatch.sw-lava{ background:radial-gradient(circle at 50% 105%,#ffd27a,#ff6a00 30%,transparent 65%),linear-gradient(135deg,transparent 46%,#ff8a00 48%,#ffd27a 50%,transparent 53%),#2b0f0b; animation:swPulse 1.8s ease-in-out infinite; }
+.swatch.sw-lava{ background:radial-gradient(ellipse at 30% 24%,#3a2a2c 0 8%,transparent 9%),radial-gradient(circle at 50% 40%,#fff0a0,transparent 55%),linear-gradient(180deg,#ffd03a,#ff9a1f 38%,#f0541a 72%,#c41c0e); animation:swPulse 2.4s ease-in-out infinite; }
 .swatch.sw-prism{ background:conic-gradient(#ff7ad9,#5ce1ff,#ffe66d,#b8a0ff,#ff7ad9); animation:swHue 5s linear infinite; }
 @keyframes swDrift{ from{ background-position:0% 0%; } to{ background-position:100% 100%; } }
 @keyframes swSlide{ from{ background-position:0% 50%; } to{ background-position:100% 50%; } }
@@ -1210,3 +1212,6 @@ svg.th *{animation:none!important}
 .cp-dome{transform-origin:75px 70px;animation:cp-sway 4.2s ease-in-out infinite}
 @keyframes cp-sway{0%,100%{transform:rotate(-1.2deg)}50%{transform:rotate(1.6deg)}}
 @media (prefers-reduced-motion:reduce){.cp-dome{animation:none}}
+
+/* Lava: resplandor naranja alrededor del cuerpo (estático) */
+.mascot svg.mito[data-fx="lava"]{ filter:drop-shadow(0 0 8px rgba(255,120,20,.55)); }

@@ -22,7 +22,7 @@ export const WARDROBE = [
       { id:'c-cocoa', name:'Chocolate', icon:'🤎', cost:60, swatch:'#8a5a3b', defaults:{ body:'#8a5a3b', stroke:'#6b4127', highlight:'#b98a68' } },
       // Pieles animadas (fx = efecto definido en mitoSkins.js)
       { id:'c-aurora', name:'Aurora', icon:'🌌', cost:120, fx:'aurora', swatch:'#4cc9f0', defaults:{ body:'#34d6c0', stroke:'#0e8f9c', highlight:'#9dffe6' } },
-      { id:'c-lava', name:'Lava', icon:'🌋', cost:150, fx:'lava', swatch:'#ff6a00', defaults:{ body:'#2b0f0b', stroke:'#120504', highlight:'#7a2413' } },
+      { id:'c-lava', name:'Lava', icon:'🌋', cost:150, fx:'lava', swatch:'#ff8a1a', defaults:{ body:'#ff8a1a', stroke:'#b3200e', highlight:'#ffd44d' } },
       { id:'c-gold', name:'Oro líquido', icon:'🥇', cost:180, fx:'gold', swatch:'#ffc93c', defaults:{ body:'#ffc93c', stroke:'#c98a0a', highlight:'#fff3a6' } },
       { id:'c-prism', name:'Prisma', icon:'🔮', cost:200, fx:'prism', swatch:'#b8a0ff', defaults:{ body:'#d9ecff', stroke:'#8fa8ff', highlight:'#ffffff' } },
       { id:'c-dark', name:'Materia oscura', icon:'🕳️', cost:300, fx:'dark', swatch:'#1a1233', defaults:{ body:'#1a1233', stroke:'#0a0616', highlight:'#4a2b8c' } },

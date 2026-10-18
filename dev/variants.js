@@ -53,6 +53,7 @@ function paint(cellId, v, which, skinId){
   svg.innerHTML = html.slice(0, i) + part.front + html.slice(i);
 }
 
+
 export function renderVariants(root, q){
   document.head.insertAdjacentHTML('beforeend', `<style>${CSS}.big .mascot{width:230px;height:230px}.lbl{font-size:12px;font-weight:700;text-align:center;opacity:.7}.bigrow{display:flex;gap:18px;flex-wrap:wrap;margin:6px 0 14px}</style>`);
   document.body.insertAdjacentHTML('afterbegin', `<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>${DEFS}</defs></svg>`);

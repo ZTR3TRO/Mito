@@ -28,6 +28,53 @@ const spark = (x, y, s, c, dl) =>
 
 const orbit = (dur, inner) => `<g class="fx-spin" style="--d:${dur}s">${inner}</g>`;
 
+/* ---------- Lava: lava fundida con placas de roca enfriada ---------- */
+// Placa de roca enfriada: contorno rugoso y asimétrico (determinista), no un polígono regular
+const roughBlob = (cx, cy, rx, ry, rot, seed) => {
+  let q = seed; const rnd = () => (q = (q * 9301 + 49297) % 233280) / 233280;
+  const n = 24, c = Math.cos(rot), sn = Math.sin(rot), pts = [];
+  for(let i = 0; i < n; i++){
+    const a = i / n * Math.PI * 2, k = (.8 + rnd() * .4) * (1 + .16 * Math.sin(3 * a + seed));
+    const x = rx * k * Math.cos(a), y = ry * k * Math.sin(a);
+    pts.push(`${(cx + x * c - y * sn).toFixed(1)} ${(cy + x * sn + y * c).toFixed(1)}`);
+  }
+  return 'M' + pts.join('L') + 'Z';
+};
+// Burbujas (suben y revientan de vez en cuando) y brasas ocasionales
+const bubbles = pts => pts.map(([x, y, r], i) =>
+  `<g class="fx-bub" style="--dl:${[0, 2.6, 4.8][i % 3]}s"><circle cx="${x}" cy="${y}" r="${r}" fill="#ffb347" fill-opacity=".7" stroke="#ffe27a" stroke-width=".9"/><circle cx="${x - r * .35}" cy="${y - r * .35}" r="${r * .28}" fill="#fff3c0" opacity=".9"/></g>`).join('');
+const embersL = pts => pts.map(([x, y, r], i) => `<circle class="fx-ember2" style="--dl:${[0.8, 3.1, 5.2][i % 3]}s" cx="${x}" cy="${y}" r="${r}" fill="#ffb347"/>`).join('');
+
+// cfg: stops del degradado de lava, luz del núcleo, viñeta roja y bandas de flujo (sin contornos: todo es color).
+// Colores base de la piel en wardrobe.js (c-lava); el resplandor naranja exterior está en style.css ([data-fx="lava"]).
+const lavaSkin = cfg => ({
+  defs:
+    `<linearGradient id="fxl-${TOKEN}" gradientUnits="userSpaceOnUse" x1="0" y1="18" x2="0" y2="126">${cfg.stops.map((c, i) => `<stop offset="${[0, .35, .7, 1][i]}" stop-color="${c}"/>`).join('')}</linearGradient>` +
+    `<radialGradient id="fxcore-${TOKEN}" gradientUnits="userSpaceOnUse" cx="72" cy="66" r="58"><stop offset="0" stop-color="${cfg.core}" stop-opacity="${cfg.coreOp}"/><stop offset="1" stop-color="${cfg.core}" stop-opacity="0"/></radialGradient>` +
+    `<radialGradient id="fxvg-${TOKEN}" gradientUnits="userSpaceOnUse" cx="75" cy="62" r="84"><stop offset=".5" stop-color="${cfg.deep}" stop-opacity="0"/><stop offset="1" stop-color="${cfg.deep}" stop-opacity="${cfg.deepOp}"/></radialGradient>` +
+    `<radialGradient id="fxbl-${TOKEN}"><stop offset="0" stop-color="#fff0a0" stop-opacity="${cfg.lightOp}"/><stop offset="1" stop-color="#fff0a0" stop-opacity="0"/></radialGradient>` +
+    `<radialGradient id="fxbd-${TOKEN}"><stop offset="0" stop-color="${cfg.deep}" stop-opacity="${cfg.darkOp}"/><stop offset="1" stop-color="${cfg.deep}" stop-opacity="0"/></radialGradient>` +
+    `<linearGradient id="fxp-${TOKEN}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4c3a3c"/><stop offset="1" stop-color="#241a1c"/></linearGradient>` +
+    `<linearGradient id="fxsink-${TOKEN}" x1="0" y1="0" x2="0" y2="1"><stop offset=".35" stop-color="#ff7a1a" stop-opacity="0"/><stop offset="1" stop-color="#ff7a1a" stop-opacity=".9"/></linearGradient>`,
+  over:
+    `<rect x="0" y="0" width="150" height="150" fill="url(#fxl-${TOKEN})"/>` +
+    `<rect x="0" y="0" width="150" height="150" fill="url(#fxcore-${TOKEN})"/>` +
+    // bandas suaves de color más claro y más oscuro que giran despacio en sentidos opuestos (el "flujo" vive en el degradado)
+    `<g class="fx-spin" style="--d:28s"><ellipse cx="75" cy="36" rx="50" ry="12" transform="rotate(-16 75 36)" fill="url(#fxbl-${TOKEN})"/><ellipse cx="80" cy="110" rx="46" ry="11" transform="rotate(10 80 110)" fill="url(#fxbl-${TOKEN})"/><ellipse cx="30" cy="78" rx="22" ry="10" transform="rotate(70 30 78)" fill="url(#fxbl-${TOKEN})"/></g>` +
+    `<g class="fx-spin" style="--d:38s;animation-direction:reverse"><ellipse cx="78" cy="54" rx="52" ry="12" transform="rotate(14 78 54)" fill="url(#fxbd-${TOKEN})"/><ellipse cx="70" cy="122" rx="48" ry="12" transform="rotate(-8 70 122)" fill="url(#fxbd-${TOKEN})"/><ellipse cx="122" cy="82" rx="22" ry="10" transform="rotate(80 122 82)" fill="url(#fxbd-${TOKEN})"/></g>` +
+    `<rect x="0" y="0" width="150" height="150" fill="url(#fxvg-${TOKEN})"/>` +
+    // 3 placas de roca enfriada, medio hundidas: borde que brilla en naranja y lava subiendo por abajo
+    [[40, 46, 18, 11, -.35, 3], [108, 42, 14, 9, .45, 7], [93, 119, 11, 6.5, -.2, 11]].map(([cx, cy, rx, ry, rot, seed], i) => {
+      const d = roughBlob(cx, cy, rx, ry, rot, seed);
+      return `<g class="fx-plate" style="--dl:${i * 2.1}s;--dx:${i % 2 ? -1 : 1}px;--dy:${i % 2 ? .8 : -.8}px">` +
+        `<path class="fx-lpulse" style="--dl:${i * 1.3}s" d="${d}" fill="none" stroke="#ff8a1a" stroke-width="5" stroke-linejoin="round" opacity=".7"/>` +
+        `<path d="${d}" fill="url(#fxp-${TOKEN})" stroke="#ff9a2a" stroke-width="1.4" stroke-linejoin="round"/>` +
+        `<path d="${d}" fill="url(#fxsink-${TOKEN})"/></g>`;
+    }).join('') +
+    bubbles([[38, 108, 3], [64, 121, 2.6], [112, 98, 2.8]]) +
+    embersL([[50, 114, 1.3], [100, 112, 1.3], [78, 122, 1.2]]),
+});
+
 /* ---------- catálogo de pieles ---------- */
 const SKINS = {
   // Materia oscura: negro-violeta con nebulosa que gira, estrellas y un destello que cruza
@@ -66,46 +113,9 @@ const SKINS = {
       sweep(22, 6.5, 0.35),
   },
 
-  // Lava: costra de roca oscura agrietada; las grietas brillan y laten, se desvanecen hacia el centro
-  // (máscara) para que la cara quede limpia, y el magma asoma por el borde de abajo
-  lava: {
-    defs:
-      blob('a', '#ff8a00') + blob('b', '#ffd27a') + blob('c', '#ff4d00') +
-      `<radialGradient id="fxmg-${TOKEN}" gradientUnits="userSpaceOnUse" cx="75" cy="84" r="56"><stop offset=".42" stop-color="#000"/><stop offset="1" stop-color="#fff"/></radialGradient>` +
-      `<mask id="fxm-${TOKEN}"><rect x="0" y="0" width="150" height="150" fill="url(#fxmg-${TOKEN})"/></mask>`,
-    over:
-      // magma que asoma abajo
-      `<ellipse class="fx-pulse" cx="75" cy="128" rx="58" ry="26" fill="url(#fxb-c-${TOKEN})" style="--dl:0s"/>` +
-      `<g mask="url(#fxm-${TOKEN})">` +
-        // burbujas de magma que suben por los costados
-        `<circle class="fx-rise" cx="30" cy="96" r="15" fill="url(#fxb-a-${TOKEN})" style="--dl:0s"/>` +
-        `<circle class="fx-rise" cx="122" cy="92" r="15" fill="url(#fxb-c-${TOKEN})" style="--dl:1.7s"/>` +
-        `<circle class="fx-rise" cx="52" cy="118" r="14" fill="url(#fxb-b-${TOKEN})" style="--dl:3.2s"/>` +
-        // red de grietas
-        [
-          'M26 70L36 62L40 48L52 38L60 24',
-          'M124 70L114 60L112 46L100 36L92 22',
-          'M28 86L40 94L44 108L58 116L64 126',
-          'M122 88L110 96L106 110L92 118L86 126',
-          'M52 38L68 33L82 37L100 36',
-          'M36 62L48 60L52 50',
-          'M114 60L102 58L100 47',
-          'M40 48L28 44',
-          'M112 46L124 42',
-          'M44 108L32 112',
-          'M106 110L119 115',
-          'M48 60L44 76L38 82',
-          'M102 58L106 74L112 82',
-        ].map((d, i) =>
-          `<g class="fx-pulse" style="--dl:${(i % 5) * 0.5}s">` +
-          `<path d="${d}" fill="none" stroke="#ff5a00" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" opacity=".4"/>` +
-          `<path d="${d}" fill="none" stroke="#ffd27a" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></g>`
-        ).join('') +
-      `</g>` +
-      `<circle class="fx-ember" cx="58" cy="116" r="1.5" fill="#ffb347" style="--dl:0s"/>` +
-      `<circle class="fx-ember" cx="92" cy="118" r="1.3" fill="#ffd27a" style="--dl:1.2s"/>` +
-      `<circle class="fx-ember" cx="76" cy="120" r="1.4" fill="#ff8a00" style="--dl:2.1s"/>`,
-  },
+  // Lava: cuerpo de lava fundida (degradado con núcleo caliente y bordes rojos), bandas de flujo que giran despacio,
+  // 3 placas de roca enfriada medio hundidas, burbujas que revientan y brasas ocasionales
+  lava: lavaSkin({ stops: ['#ffd03a', '#ff9a1f', '#f0541a', '#c41c0e'], core: '#fff0a0', coreOp: .5, deep: '#9a1208', deepOp: .42, lightOp: .45, darkOp: .32 }),
 
   // Prisma: nácar con reflejos de arcoíris que giran
   prism: {
