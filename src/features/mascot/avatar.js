@@ -12,7 +12,13 @@ import { recolorPet } from './petRecolor.js';
 const NS = 'http://www.w3.org/2000/svg';
 const AURA_HTML = '<div class="a-glow"></div><div class="a-neb"></div><div class="a-gal"></div><div class="a-rays"></div><div class="a-ring"></div><div class="a-parts"></div>';
 let uid = 0;
-const avatarSegments = SEGS.flatMap(segment=>[segment, ...(HALLOWEEN_AFTER[segment[0]] || [])]);
+// Las piezas de Halloween van después del PRIMER segmento de su clave (una prenda puede tener varios: capa, audífonos…).
+const afterDone = new Set();
+const avatarSegments = SEGS.flatMap(segment=>{
+  const first = !afterDone.has(segment[0]);
+  afterDone.add(segment[0]);
+  return [segment, ...(first ? HALLOWEEN_AFTER[segment[0]] || [] : [])];
+});
 const ALL_DEFS = DEFS + HALLOWEEN_DEFS;
 
 // defs compartidos (gradientes, patrones, clipPaths) una sola vez

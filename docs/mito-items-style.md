@@ -12,22 +12,37 @@ círculo-ovalado `M75 18c-30 0-52 24-52 54 0 32 24 54 52 54s52-22 52-54c0-30-22-
 |---|---|
 | Relleno | Degradado de **2 tonos** (claro arriba-izquierda → oscuro abajo-derecha), como `gBody`. Nada de colores planos salvo detalles pequeños. |
 | Brillo | **Un** highlight por objeto: elipse/trazo blanco a ~.4–.6 de opacidad, arriba-izquierda (como el de Mito en `52,42`). |
-| Contorno | Grosor **2.4** (el del cuerpo), `stroke-linejoin="round"`, `stroke-linecap="round"`. Color: un tono **más oscuro del propio objeto**, no negro ni el `--stroke` de la piel. Detalles interiores: 1.2–2. |
+| Contorno | Grosor **2.4** (el del cuerpo de Mito en `base.js`), `stroke-linejoin="round"`, `stroke-linecap="round"`. Color: un tono **oscuro del propio color del objeto**, no el de la piel y **nunca casi negro**. El contorno de Mito es suave (su `--stroke` es solo ~15 % más oscuro que su relleno): el del objeto debe sentirse igual. Regla práctica: tomar el color medio del relleno y bajarle ~15–20 % de luminosidad manteniendo el matiz. Detalles interiores: 1.2–2. |
 | Sombra de contacto | Donde el objeto toca a Mito, una sombra suave: trazo/elipse negra a `.14–.2` de opacidad, desplazada 2 px hacia abajo, recortada con `cpBody` si cae dentro del círculo. Sin `filter` (no se puede recolorear ni va bien en miniaturas). |
 | Paleta | Cada objeto define sus colores (no depende de la piel). Excepción: las **manos**, que usan `gBody` / `var(--stroke)` para ser de la piel. |
 
 Los degradados nuevos van en `DEFS` (`content/art/base.js`) con id `g<Nombre>`; ids de patrones `p<Nombre>`.
 
-## 2. Silueta
+## 2. Proporción y silueta
 
-1. Toda prenda debe **asomar fuera del contorno circular** (≥ 4 px en al menos un lado) o tener **volumen visible** (solapas, pliegues, grosor).
+> **La armadura A ("Plata") es la referencia de proporción y acabado de toda la ropa.**
+> Sus hombreras sobresalen poco, el metal tiene un brillo parecido al de Mito y no añade cuerpo bajo la esfera.
+> Cada prenda nueva se compara contra ella (misma página `dev/items.html`, claro y oscuro) antes de enseñarse.
+
+Reglas de proporción (el diámetro de Mito es ≈ 104 unidades: x 23–127):
+
+- Una prenda **puede sobresalir del contorno, pero poco**: como máximo **10–15 % del diámetro** (≈ 10–15 unidades) por cada lado.
+- **Nada de agregar torso ni volumen debajo de la esfera.** La ropa no baja de y ≈ 130 (el cuerpo termina en 126). Nada de faldas, conos, canastas ni colas largas.
+- Las prendas se ciñen a la esfera: bordes **curvos** que la siguen; se recortan con `cpBody` lo que quede dentro del círculo.
+- **Cada forma debe leerse como lo que es a primera vista.** Si se parece a otra cosa (alas de murciélago, tenazas, bracitos, flotador, maceta), está mal y se rehace.
+- Sin zigzags ni festones puntiagudos en capas o solapas; pliegues suaves.
+- **Excepción explícita — la capa (`cape`):** conserva su forma original de domo **detrás del cuerpo**, que baja hasta y≈148 (22 unidades bajo la esfera). Es la única prenda que puede pasar de y≈130, porque va detrás y es el diseño elegido. El collar con broche, en cambio, sigue la regla (se queda dentro de la esfera).
+
+Reglas de silueta:
+
+1. Toda prenda debe **asomar un poco fuera del contorno circular** (≥ 3 px en al menos un lado, dentro del máximo anterior) o tener **volumen visible** (solapas, pliegues, grosor).
 2. **Prohibidas las franjas planas horizontales dentro del círculo** (se leen como babero o cinturón). Un borde dentro del círculo siempre debe ser curvo y seguir la esfera.
 3. Las prendas de cuello (bufanda, suéter, gorguera, capucha) **siguen la curva** del cuerpo y tienen grosor visible por los lados.
 4. Nada tapa **boca ni ojos**: la zona de cara es `x 44–106, y 70–118`. Una prenda puede entrar en ella solo por debajo de `y 112`.
 
 ## 3. Legibilidad sobre TODAS las pieles
 
-Cada objeto se revisa sobre las 11 pieles, en claro y oscuro, con la página `dev/items.html` (sección 6).
+Cada objeto se revisa sobre las 11 pieles, en claro y oscuro, con la página `dev/items.html` (sección 6), junto a la armadura A.
 Pieles críticas: **Oro líquido** (clara y amarilla), **Chocolate**, **Lava** y **Materia oscura** (oscuras).
 
 - Si un objeto se pierde sobre alguna piel, se le añade **contorno más marcado o sombra de contacto** que lo separe del cuerpo; **no** se cambia su color según la piel.

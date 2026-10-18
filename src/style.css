@@ -1200,3 +1200,13 @@ svg.th *{animation:none!important}
 .jp-flame{transform-origin:17px 118px;animation:jp-flame .38s ease-in-out infinite alternate}
 @keyframes jp-flame{from{transform:scaleY(.78)}to{transform:scaleY(1.22)}}
 @media (prefers-reduced-motion:reduce){.jp-flame{animation:none}}
+
+/* Bufanda: balanceo de la punta */
+.sc-tail{transform-origin:104px 118px;animation:sc-sway 3.4s ease-in-out infinite}
+@keyframes sc-sway{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(4deg)}}
+@media (prefers-reduced-motion:reduce){.sc-tail{animation:none}}
+
+/* Capa: ondeo sutil del domo */
+.cp-dome{transform-origin:75px 70px;animation:cp-sway 4.2s ease-in-out infinite}
+@keyframes cp-sway{0%,100%{transform:rotate(-1.2deg)}50%{transform:rotate(1.6deg)}}
+@media (prefers-reduced-motion:reduce){.cp-dome{animation:none}}
