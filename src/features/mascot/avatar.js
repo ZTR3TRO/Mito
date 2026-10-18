@@ -5,6 +5,7 @@ import { setAura } from './auras.js';
 import { skinParts } from '../../content/art/skins.js';
 import { HALLOWEEN_DEFS, HALLOWEEN_AFTER, HALLOWEEN_PETS } from '../../content/art/halloween.js';
 import { SECRET_PETS } from '../../content/art/secrets.js';
+import { HAT_ANTENNAS } from '../../content/art/hats.js';
 import { PET_KEEP } from '../../content/petColors.js';
 import { recolorPet } from './petRecolor.js';
 
@@ -20,11 +21,21 @@ if(!document.getElementById('mitoDefs')){
     `<svg id="mitoDefs" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>${DEFS}${HALLOWEEN_DEFS}</defs></svg>`);
 }
 
+// Aplica a una antena la regla del sombrero equipado (ver content/art/hats.js).
+const ANT_RE = /^<g class="ant ant-([clr])"/;
+function fitAntenna(seg, hat){
+  const m = ANT_RE.exec(seg), rule = hat && m && hat[m[1]];
+  if(!rule) return seg;
+  const css = rule.hidden ? 'display:none;' : `translate:${rule.dx}px ${rule.dy}px;`;
+  return seg.replace('style="', `style="${css}`);
+}
+
 export function mascotMarkup(keys, id, fx = ''){
   const sk = skinParts(fx, id);
+  const hat = HAT_ANTENNAS[keys.find(k => HAT_ANTENNAS[k])];
   // los efectos de la piel van justo encima del cuerpo, debajo de cara y ropa
   const inner = avatarSegments.filter(([k])=>!k || keys.includes(k))
-    .map(s => !s[0] && s[1].includes('url(#gBody)') ? s[1] + sk.over : s[1]).join('')
+    .map(s => !s[0] && s[1].includes('url(#gBody)') ? s[1] + sk.over : fitAntenna(s[1], hat)).join('')
     .replaceAll('id="vcol"', `id="vcol-${id}"`).replaceAll('href="#vcol"', `href="#vcol-${id}"`);
   const g = GBODY.replace('id="gBody"', `id="gBody-${id}"`);
   return (`<defs>${g}${sk.defs}</defs>${PRE}<g class="rig">${inner}</g>`).split('url(#gBody)').join(`url(#gBody-${id})`);
@@ -37,9 +48,6 @@ const petMarkup = (k, colorId = '', id = 'pet') => {
   return PET_BASE + recolorPet(art, { body: color.defaults.body, defs: ALL_DEFS, id, keep: PET_KEEP[k] });
 };
 
-// Sombreros que tapan la cabeza: Mito se queda sin antenas para que no asomen por encima.
-const NO_ANT = ['pumpkinhat', 'vamphair'];
-
 // miniatura para la tienda: Mito con esa sola pieza, o la mascota sola
 export function itemThumb(catId, item){
   const eq = getEquipped(), c = findItem('color', eq.color);
@@ -50,8 +58,7 @@ export function itemThumb(catId, item){
     const pid = 'pth' + (++uid);
     return `<svg class="th" viewBox="0 0 80 80">${petMarkup(item.k, colorId, pid)}</svg>`;
   }
-  const hatClass = (item.k === 'pumpkinhat' ? ' has-tall pumpkin-hat' : '') + (NO_ANT.includes(item.k) ? ' no-ant' : '');
-  return `<svg class="th${hatClass}" viewBox="0 0 150 150" style="${st}">${mascotMarkup([item.k], 'th' + (++uid))}</svg>`;
+  return `<svg class="th" viewBox="0 0 150 150" style="${st}">${mascotMarkup([item.k], 'th' + (++uid))}</svg>`;
 }
 
 function applyTo(el, eq){
@@ -73,10 +80,6 @@ function applyTo(el, eq){
       svg.dataset.sig = sig;
       svg.dataset.fx = fx;
       svg.innerHTML = mascotMarkup(keys, id, fx);
-      svg.classList.toggle('has-crown', keys.some(k => k === 'crown' || k === 'grad'));
-      svg.classList.toggle('has-tall', keys.some(k => k === 'chef' || k === 'wizard' || k === 'pumpkinhat'));
-      svg.classList.toggle('pumpkin-hat', keys.includes('pumpkinhat'));
-      svg.classList.toggle('no-ant', keys.some(k => NO_ANT.includes(k)));
     }
   }
 
@@ -109,8 +112,9 @@ export function applyAvatar(){
   document.querySelectorAll('.mascot').forEach(el => applyTo(el, eq));
 }
 
-export function previewAvatar(cat, itemId, targetId = 'mascotPreview'){
+// `base` permite pintar un look completo en vez del equipado (lo usa dev/items.js).
+export function previewAvatar(cat, itemId, targetId = 'mascotPreview', base = getEquipped()){
   const el = document.getElementById(targetId);
   if(!el) return;
-  applyTo(el, { ...getEquipped(), [cat]: itemId });
+  applyTo(el, { ...base, [cat]: itemId });
 }

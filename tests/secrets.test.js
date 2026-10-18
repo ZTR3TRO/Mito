@@ -128,8 +128,10 @@ test('avatar: la abejita se dibuja como mascota y el cabello de vampiro/sombrero
     assert.ok(thumb.includes('data-p="bee"'));
     const hair = avatar.itemThumb('sombrero', findItemById('s-vampire'));
     const pumpkin = avatar.itemThumb('sombrero', findItemById('s-pumpkin'));
-    assert.ok(hair.includes('no-ant') && pumpkin.includes('no-ant'));
-    assert.ok(!avatar.itemThumb('sombrero', findItemById('s-mago')).includes('no-ant'), 'los demás sombreros conservan las antenas');
+    const hidden = svg => (svg.match(/<g class="ant [^>]*display:none/g) || []).length;
+    assert.equal(hidden(hair), 3, 'el cabello de vampiro oculta las tres antenas');
+    assert.equal(hidden(pumpkin), 3, 'el sombrero calabaza oculta las tres antenas');
+    assert.ok(hidden(avatar.itemThumb('sombrero', findItemById('s-mago'))) < 3, 'los demás sombreros conservan antenas');
   } finally {
     delete globalThis.document;
   }

@@ -34,7 +34,7 @@ export const WARDROBE = [
     W('r-sudadera','Sudadera',65,'hoodie'), W('r-capa','Capa',90,'cape'), W('r-armadura','Armadura',120,'armor'),
     H('r-pumpkin','Disfraz de calabaza','pumpkincos'), H('r-vampire','Capa de vampiro','vampcape') ] },
   { id:'accesorio', label:'Accesorios', items:[
-    W('ac-none','Ninguno',0), W('ac-phone','Teléfono',55,'phone'), W('ac-headphones','Audífonos',65,'headphones'), W('ac-backpack','Mochila',75,'bag'),
+    W('ac-none','Ninguno',0), W('ac-phone','Teléfono',55,'phone'), W('ac-headphones','Audífonos',65,'headphones'), W('ac-backpack','Jetpack',75,'bag'),
     W('ac-libro','Libro',55,'book'), W('ac-estetoscopio','Estetoscopio',70,'stetho'), W('ac-alas','Alas',130,'wings'), W('ac-carro','Carro',200,'car'),
     H('ac-candy','Cubeta de dulces','candy'), H('ac-fangs','Colmillos','fangs') ] },
   { id:'sombrero', label:'Sombreros', items:[
