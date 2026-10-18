@@ -3,6 +3,7 @@
 
 import { $$, byId } from '../../core/dom.js';
 import { emit } from '../../core/bus.js';
+import { guardLeave } from '../../core/leave.js';
 
 export function isVisible(view){
   return byId('view-' + view)?.classList.contains('active') ?? false;
@@ -21,7 +22,7 @@ export function goTo(view){
 
 export function initNavButtons(){
   $$('.navbtn').forEach(b=>{
-    b.addEventListener('click', ()=>goTo(b.dataset.view));
+    b.addEventListener('click', ()=>guardLeave(()=>goTo(b.dataset.view), b.dataset.view));
   });
 }
 
@@ -30,6 +31,6 @@ export function initNavButtons(){
 export function initNavLinks(){
   document.addEventListener('click', e=>{
     const nav = e.target.closest('[data-nav]');
-    if(nav) goTo(nav.dataset.nav);
+    if(nav) guardLeave(()=>goTo(nav.dataset.nav), nav.dataset.nav);
   });
 }

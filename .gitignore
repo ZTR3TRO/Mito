@@ -18,3 +18,5 @@ Thumbs.db
 .env
 .env.*
 !.env.example
+# capturas de revisión de la fase de bugs
+docs/shots/bugs/

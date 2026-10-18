@@ -35,7 +35,7 @@ function renderLives(){
   let html = '';
   for(let i=0;i<3;i++){
     const filled = i < s.getSession().lives;
-    html += `<svg viewBox="0 0 24 24" fill="${filled ? '#ff5da2' : 'none'}" stroke="${filled ? '#e83e8c' : '#f0c9dd'}" stroke-width="1.8"><path d="M13 2 3 14h7l-1 8 11-14h-8l1-6Z"/></svg>`;
+    html += `<svg class="${filled ? 'full' : 'empty'}" viewBox="0 0 24 24" fill="${filled ? '#ff5da2' : 'none'}" stroke="${filled ? '#e83e8c' : '#f0c9dd'}" stroke-width="1.8"><path d="M13 2 3 14h7l-1 8 11-14h-8l1-6Z"/></svg>`;
   }
   host.innerHTML = html;
 }

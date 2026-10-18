@@ -387,6 +387,116 @@ test('tres fallos agotan las vidas y cortan la ronda', ()=>{
   assert.equal(document.getElementById('resultTitle').textContent, 'Se acabaron las vidas');
 });
 
+const filledLives = ()=> [...document.querySelectorAll('#livesRow svg')].filter(v=>v.getAttribute('fill') !== 'none').length;
+const leaveModal = ()=> document.querySelector('.pet-modal-backdrop #leaveTitle');
+
+test('los íconos de vida pintados coinciden con las vidas de la sesión en cada fallo', ()=>{
+  resetApp();
+  document.querySelector('.mode-card[data-n="99"]').click();
+  document.querySelector('[data-action="startQuiz"]').click();
+  assert.equal(filledLives(), 3);
+  for(let i=0; i<2; i++){
+    const opts = [...document.querySelectorAll('#qOpts .opt')];
+    opts[(quizSession.currentQuestion().correct + 1) % opts.length].click();
+    assert.equal(quizSession.getSession().lives, 2 - i);
+    assert.equal(filledLives(), 2 - i, 'los íconos llenos deben ser las vidas que quedan');
+    document.getElementById('nextBtn').click();
+  }
+  assert.equal(filledLives(), 1, 'con 2 fallos queda 1 vida y se ve');
+});
+
+test('abandonar una ronda no la guarda: salir pide confirmación y solo "Salir" descarta la ronda', ()=>{
+  resetApp();
+  document.querySelector('.mode-card[data-n="99"]').click();
+  document.querySelector('[data-action="startQuiz"]').click();
+  const opts = [...document.querySelectorAll('#qOpts .opt')];
+  opts[quizSession.currentQuestion().correct].click();
+  const other = [...document.querySelectorAll('.course-pill')].find(p=>!p.classList.contains('active'));
+  const before = document.querySelector('.course-pill.active').dataset.id;
+
+  // Cambiar de materia a mitad de ronda pregunta y, si se queda, no pasa nada.
+  other.click();
+  assert.ok(leaveModal(), 'debió aparecer la confirmación propia de la app');
+  assert.equal(leaveModal().textContent, '¿Salir de la ronda?');
+  assert.ok(document.getElementById('leaveText').textContent.includes('no se guardará'));
+  document.querySelector('[data-leave="stay"]').click();
+  assert.equal(leaveModal(), null);
+  assert.equal(document.querySelector('.course-pill.active').dataset.id, before, 'seguir jugando conserva la materia');
+  assert.equal(quizSession.isRoundActive(), true);
+
+  // Cambiar de sección también pregunta; salir descarta la ronda sin registrarla.
+  document.querySelector('.navbtn[data-view="progreso"]').click();
+  assert.ok(leaveModal());
+  document.querySelector('[data-leave="exit"]').click();
+  assert.equal(leaveModal(), null);
+  assert.equal(store.getHistory().length, 0, 'una ronda abandonada no entra al historial');
+  assert.equal(quizSession.isRoundActive(), false);
+  assert.ok(document.getElementById('view-progreso').classList.contains('active'));
+  assert.equal(document.getElementById('quizIntro').style.display, 'block');
+  assert.equal(document.getElementById('sideProgressLabel').textContent.includes('0 rondas'), true);
+});
+
+test('el historial guarda el tamaño de la ronda, y las entradas viejas sin él siguen funcionando', ()=>{
+  resetApp();
+  document.querySelector('.mode-card[data-n="99"]').click();
+  document.querySelector('[data-action="startQuiz"]').click();
+  for(let i=0; i<3; i++){
+    const opts = [...document.querySelectorAll('#qOpts .opt')];
+    opts[(quizSession.currentQuestion().correct + 1) % opts.length].click();
+    if(i < 2) document.getElementById('nextBtn').click();
+  }
+  document.getElementById('nextBtn').click();
+  const last = store.getHistory().at(-1);
+  assert.equal(last.size, courses[0].questions.length, 'size = preguntas de la ronda');
+  assert.equal(last.total, 3, 'total sigue siendo lo respondido');
+
+  // una entrada antigua (sin size) se importa tal cual y se pinta igual
+  const old = { t:1, score:10, right:2, total:3, pct:67, cats:{}, courseId:courses[0].id };
+  const save = JSON.parse(store.exportSave());
+  save.history = [old, { ...old, size:'x' }, { ...old, size:8 }];
+  store.importSave(JSON.stringify(save));
+  const h = store.getHistory();
+  assert.equal('size' in h[0], false);
+  assert.equal('size' in h[1], false, 'un size inválido se descarta');
+  assert.equal(h[2].size, 8);
+  assert.equal(h[0].pct, 67);
+});
+
+test('una ronda solo se registra al terminarla, y una sola vez aunque se pulse dos veces "Ver resultado"', ()=>{
+  resetApp();
+  document.querySelector('.mode-card[data-n="99"]').click();
+  document.querySelector('[data-action="startQuiz"]').click();
+  assert.equal(quizSession.finishRound(), null, 'sin responder nada no hay ronda que contar');
+  quizSession.startRound();
+  assert.equal(store.getHistory().length, 0);
+
+  document.querySelector('[data-action="startQuiz"]').click();
+  for(let i=0; i<3; i++){
+    const opts = [...document.querySelectorAll('#qOpts .opt')];
+    opts[(quizSession.currentQuestion().correct + 1) % opts.length].click();
+    if(i < 2) document.getElementById('nextBtn').click();
+  }
+  // Round completa a falta de ver el resultado: dos pulsaciones seguidas guardan una sola ronda.
+  document.getElementById('nextBtn').click();
+  document.getElementById('nextBtn').click();
+  assert.equal(store.getHistory().length, 1, 'doble toque en "Ver resultado" no duplica la ronda');
+  assert.equal(store.getHistory()[0].total, 3);
+});
+
+test('si la última respuesta ya estaba dada, salir guarda la ronda en vez de perderla', ()=>{
+  resetApp();
+  document.querySelector('.mode-card[data-n="99"]').click();
+  document.querySelector('[data-action="startQuiz"]').click();
+  for(let i=0; i<3; i++){
+    const opts = [...document.querySelectorAll('#qOpts .opt')];
+    opts[(quizSession.currentQuestion().correct + 1) % opts.length].click();
+    if(i < 2) document.getElementById('nextBtn').click();
+  }
+  document.querySelector('.navbtn[data-view="home"]').click();
+  assert.equal(leaveModal(), null, 'una ronda terminada no pide confirmación');
+  assert.equal(store.getHistory().length, 1);
+});
+
 test('un tema corrupto en localStorage no rompe la interfaz', ()=>{
   // localStorage es editable a mano; el toggle debe seguir siendo coherente.
   const { applyTheme } = theme;

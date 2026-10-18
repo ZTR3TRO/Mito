@@ -4,11 +4,13 @@
 import { $$ } from '../../core/dom.js';
 import { addChispas, recordQuizResult, PASSING_BONUS } from '../../state/store.js';
 import { emit } from '../../core/bus.js';
+import { setLeaveCheck } from '../../core/leave.js';
 import { activeCourse } from '../course/course.js';
 import { sparkAt } from '../mascot/effects.js';
 import { activeMistakeEntries } from './review.js';
 import * as s from './session.js';
 import * as view from './view.js';
+import { askLeaveRound } from './leave.js';
 
 export function startQuiz(){
   const questions = s.startRound();
@@ -34,6 +36,7 @@ function nextQuestion(){
 
 function finishQuiz(){
   const result = s.finishRound();
+  if(!result) return;
   view.renderResult(result);
 
   const { score, right, answered, pct, total, perfect } = result;
@@ -48,8 +51,15 @@ function finishQuiz(){
       `puntos · ${right}/${answered} correctas (${pct}%) · Ganaste +${awarded} ⚡ chispas${approved ? ' (bono por aprobar)' : ''}`;
   }
 
-  recordQuizResult({ score, right, total: answered, pct, cats: s.getSession().catStats, courseId: activeCourse().id });
+  recordQuizResult({ score, right, total: answered, pct, cats: s.getSession().catStats, courseId: activeCourse().id, size: total });
   emit('quiz:finished', { pct, awarded, perfect, total });
+}
+
+// Antes de cambiar de sección o de materia: si hay una ronda a medias, pregunta; si ya estaba completa, se guarda.
+function checkLeave(proceed, target){
+  if(!s.isRoundActive() || target === 'quiz') return proceed();
+  if(s.isRoundComplete()){ finishQuiz(); return proceed(); }
+  askLeaveRound(()=>{ resetQuiz(); proceed(); });
 }
 
 export function resetQuiz(){
@@ -89,6 +99,15 @@ export function goReview(){
 }
 
 export function init(){
+  setLeaveCheck(checkLeave);
+  // Al recargar o cerrar con la ronda a medias el navegador pide confirmación (ese aviso es suyo y no se puede personalizar).
+  window.addEventListener('beforeunload', e=>{
+    if(!s.isRoundActive()) return;
+    if(s.isRoundComplete()){ finishQuiz(); return; }
+    e.preventDefault();
+    e.returnValue = '';
+  });
+
   // Selección de modo de ronda.
   $$('.mode-card').forEach(m=>{
     m.addEventListener('click', ()=>{

@@ -7,9 +7,12 @@ export function getHistory(){
   return state.history;
 }
 
-export function recordQuizResult({score, right, total, pct, cats, courseId}){
+// `size` (opcional): cuántas preguntas tenía la ronda. Las entradas antiguas no lo tienen; nada depende de él.
+export function recordQuizResult({score, right, total, pct, cats, courseId, size}){
   const today = dayStr();
-  state.history.push({ t:Date.now(), score, right, total, pct, cats, courseId });
+  const entry = { t:Date.now(), score, right, total, pct, cats, courseId };
+  if(Number.isInteger(size) && size > 0) entry.size = size;
+  state.history.push(entry);
   if(state.history.length > HISTORY_LIMIT) state.history = state.history.slice(-HISTORY_LIMIT);
 
   if(state.lastDay === today){

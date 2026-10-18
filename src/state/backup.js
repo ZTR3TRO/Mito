@@ -22,11 +22,14 @@ function cleanHistory(list){
         cats[k] = { right:num(c.right ?? c.r), total:num(c.total ?? c.t) };
       });
     }
-    return {
+    const entry = {
       t:num(h.t), score:num(h.score), right:num(h.right), total:num(h.total),
       pct:Math.min(100, Math.max(0, num(h.pct))), cats,
       courseId: typeof h.courseId === 'string' ? h.courseId : undefined,
     };
+    // campo opcional: solo si venía con un valor válido (los respaldos viejos no lo traen)
+    if(Number.isInteger(h.size) && h.size > 0) entry.size = h.size;
+    return entry;
   });
 }
 

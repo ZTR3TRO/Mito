@@ -21,9 +21,12 @@ const session = {
   answered: false,
   catStats: {},
   roundsPlayed: 0,
+  // true desde que empieza una ronda hasta que se termina (o se abandona): solo una ronda terminada se guarda.
+  active: false,
 };
 
 export const getSession = ()=> session;
+export const isRoundActive = ()=> session.active;
 
 export function currentQuestion(){
   return session.questions[session.index];
@@ -31,6 +34,11 @@ export function currentQuestion(){
 
 function isLastQuestion(){
   return session.index === session.questions.length - 1;
+}
+
+// La última respuesta ya está dada y solo falta ver el resultado: la ronda cuenta como terminada.
+export function isRoundComplete(){
+  return session.active && session.answered && isGameOver();
 }
 
 export function isGameOver(){
@@ -50,6 +58,7 @@ export function startRound(){
   const qs = activeCourse().questions;
   if(qs.length === 0) return null;
   session.questions = buildRound(readSetup());
+  session.active = session.questions.length > 0;
   session.index = 0;
   session.score = 0;
   session.streak = 0;
@@ -86,6 +95,7 @@ export function advance(){
 }
 
 export function resetSession(){
+  session.active = false;
   session.index = 0;
   session.score = 0;
   session.streak = 0;
@@ -126,9 +136,12 @@ function totals(){
   return { answered, right, pct };
 }
 
+// Devuelve null si no hay ronda en curso o no se contestó nada: así una ronda nunca se cuenta dos veces ni vacía.
 export function finishRound(){
-  session.roundsPlayed++;
   const t = totals();
+  if(!session.active || t.answered === 0) return null;
+  session.active = false;
+  session.roundsPlayed++;
   const total = session.questions.length;
   const perfect = total >= PERFECT_MIN_QUESTIONS && t.answered === total && t.right === total;
   return { ...t, total, perfect, score: session.score };

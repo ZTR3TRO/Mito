@@ -5,6 +5,7 @@
 import { COURSES } from '../../content/courses.js';
 import { getCourse, setCourse } from '../../state/store.js';
 import { emit } from '../../core/bus.js';
+import { guardLeave } from '../../core/leave.js';
 import { el, clear, byId } from '../../core/dom.js';
 
 let active = COURSES.find(c=>c.id === getCourse()) || COURSES[0];
@@ -48,6 +49,6 @@ export function initCourseTabs(){
   if(!host) return;
   host.onclick = e=>{
     const pill = e.target.closest('.course-pill');
-    if(pill) switchCourse(pill.dataset.id);
+    if(pill && pill.dataset.id !== active.id) guardLeave(()=>switchCourse(pill.dataset.id));
   };
 }

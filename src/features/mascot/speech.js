@@ -61,6 +61,25 @@ export function sayHero(text){
 
 export const getHeroLastMsg = ()=> heroLastMsg;
 
+// Mantiene el globo dentro de su contenedor (la tarjeta de la portada o la vista previa del armario):
+// limita su ancho y, si aun así se sale por un lado, lo desplaza lo justo.
+const BUBBLE_GAP = 8;
+function fitBubble(mascotEl, bub){
+  const box = mascotEl.closest('.hero, .wardrobe-preview');
+  if(!box) return;
+  bub.style.maxWidth = '';
+  bub.style.translate = '';
+  const b = box.getBoundingClientRect();
+  bub.style.maxWidth = Math.max(80, Math.min(150, b.width - BUBBLE_GAP * 2)) + 'px';
+  // posición de layout (sin la animación de entrada): la del mascot + su offset dentro de él
+  const left = mascotEl.getBoundingClientRect().left + bub.offsetLeft;
+  const right = left + bub.offsetWidth;
+  let dx = 0;
+  if(left < b.left + BUBBLE_GAP) dx = b.left + BUBBLE_GAP - left;
+  else if(right > b.right - BUBBLE_GAP) dx = b.right - BUBBLE_GAP - right;
+  if(dx) bub.style.translate = dx + 'px 0';
+}
+
 // Hace que la mascota compañera (si hay una en ese .mascot) diga algo un momento.
 export function petSay(mascotEl){
   if(!mascotEl) return;
@@ -79,6 +98,7 @@ export function petSay(mascotEl){
     mascotEl.appendChild(bub);
   }
   bub.textContent = msg;
+  fitBubble(mascotEl, bub);
   // reinicia la animación de entrada
   bub.classList.remove('show');
   void bub.offsetWidth;
