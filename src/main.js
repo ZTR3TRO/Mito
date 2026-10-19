@@ -36,6 +36,7 @@ import { setFace, playState } from './features/mascot/face.js';
 import { burstConfetti } from './features/mascot/effects.js';
 import { greeting, idleMessage, courseSwitchMessage, firstRoundMessage } from './content/messages.js';
 import { initEasterEgg, initPerfectEgg, initSparkEgg } from './features/easter.js';
+import { init as initServiceWorker } from './features/pwa/update.js';
 
 /* ---------- Re-render de las vistas que dependen de la materia ---------- */
 function renderCourseViews(){
@@ -170,7 +171,7 @@ function boot(){
     onOpenWardrobe: ()=> goTo('wardrobe'),
   });
 
-  registerServiceWorker();
+  initServiceWorker();   // solo en producción; en dev y en los tests no hace nada
 }
 
 // Recompensa del easter egg: el avatar ya trae lo nuevo, solo la celebración.
@@ -198,17 +199,6 @@ function celebratePerfectEgg(){
   const r = mascot.getBoundingClientRect();
   burstConfetti(r.left + r.width/2, r.top, 90);
   sayHero('¡Glub glub! Tienes un ajolote 🌸');
-}
-
-// Solo en producción. import.meta.env no existe fuera de Vite (p. ej. en tests),
-// por eso la comprobación es opcional.
-function registerServiceWorker(){
-  const env = import.meta.env;
-  if(env?.PROD && 'serviceWorker' in navigator && location.protocol !== 'file:'){
-    window.addEventListener('load', ()=>{
-      navigator.serviceWorker.register(env.BASE_URL + 'sw.js').catch(()=>{});
-    });
-  }
 }
 
 // Atajo para la consola: window.addChispas(n) suma chispas desde fuera.

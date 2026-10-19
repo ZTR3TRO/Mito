@@ -40,6 +40,7 @@ src/
     shop/              tienda y tienda de temporada: index, season
     progress/          vista de progreso y copia de seguridad: view, backup
     mascot/            la mascota entera: avatar, auras, face, effects, speech
+    pwa/update.js      service worker: registro y actualización segura (solo en producción)
     easter.js          el egg de los 10 toques
 ```
 
