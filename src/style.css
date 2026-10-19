@@ -956,37 +956,40 @@ svg.th *{animation:none!important}
 [data-theme="dark"] .mascot .pet-bubble{ background:var(--card); color:var(--ink); }
 [data-theme="dark"] .mascot .pet-bubble::after{ border-top-color:var(--card); }
 
-/* Vista previa de Tienda y Armario en escritorio: con mascota se reserva espacio a la izquierda de Mito para su globo */
-@media (min-width: 881px){
-  .wardrobe-preview .mascot:has(> svg.pet){ margin-left:150px; }
-  /* en el hero, Mito se corre a la derecha dentro de su columna para que el globo no quede angosto ni toque el de Mito */
-  .hero .mascot:has(> svg.pet){ margin-left:120px; }
-}
-/* En móvil no hay espacio al lado: con mascota equipada se reserva SIEMPRE (hable o no) una franja al pie de la tarjeta,
-   a todo el ancho, para que la tarjeta no cambie de alto cuando habla. Sin mascota no se reserva nada. */
+/* Franja para el globo de la mascota donde no cabe a la izquierda de Mito sin taparle la cara: la vista previa de Tienda y
+   Armario (siempre) y el hero del Inicio en móvil. Mito no se mueve de su sitio; el globo va debajo de la mascota, con la
+   colita hacia arriba apuntándole (--tail-x lo pone speech.js). Con mascota equipada el espacio se reserva SIEMPRE, hable
+   o no, para que la tarjeta no cambie de alto; sin mascota no se reserva nada. */
+.wardrobe-preview, .mascot-hero-wrap{ --pet-strip:50px; }
+.wardrobe-preview:has(> .mascot > svg.pet){ padding-bottom:calc(18px + var(--pet-strip)); }
 @media (max-width: 880px){
-  .wardrobe-preview:has(> .mascot > svg.pet){ position:relative; padding-bottom:calc(18px + var(--pet-strip)); }
-  .wardrobe-preview{ --pet-strip:50px; }
-  .wardrobe-preview > .pet-bubble{
-    position:absolute; left:16px; right:16px; bottom:14px; z-index:5; box-sizing:border-box;
-    min-height:36px; max-height:var(--pet-strip); display:flex; align-items:center; justify-content:center;
-    padding:6px 12px; border-radius:12px;
-    background:#fff; color:var(--pink-deep); box-shadow:0 4px 10px rgba(0,0,0,.14);
-    font-size:11.5px; font-weight:800; line-height:1.25; text-align:center; overflow-wrap:anywhere;
-    opacity:0; transform:translateY(6px); pointer-events:none; transition:opacity .25s ease, transform .25s ease;
-  }
-  .wardrobe-preview > .pet-bubble.show{ opacity:1; transform:none; }
-  /* colita arriba, alineada con la mascota (--tail-x lo pone speech.js) */
-  .wardrobe-preview > .pet-bubble::before{
-    content:''; position:absolute; top:-6px; left:var(--tail-x, 50%); margin-left:-6px; width:0; height:0;
-    border:6px solid transparent; border-bottom-color:#fff; border-top:0;
-  }
-  /* en oscuro, un tono más claro que la tarjeta para que el globo se distinga */
-  [data-theme="dark"] .wardrobe-preview > .pet-bubble{ background:#33293f; color:var(--ink); }
-  [data-theme="dark"] .wardrobe-preview > .pet-bubble::before{ border-bottom-color:#33293f; }
-  .wardrobe-preview:not(:has(> .mascot > svg.pet)) > .pet-bubble{ display:none; }
+  .wardrobe-preview:has(> .mascot > svg.pet){ position:relative; }   /* en escritorio ya es sticky, que también la posiciona */
+  .mascot-hero-wrap:has(> .mascot > svg.pet){ padding-bottom:var(--pet-strip); }
 }
-@media (prefers-reduced-motion: reduce){ .wardrobe-preview > .pet-bubble{ transition:none; } }
+.wardrobe-preview > .pet-bubble.in-strip, .mascot-hero-wrap > .pet-bubble.in-strip{
+  position:absolute; left:16px; right:16px; bottom:14px; z-index:5; box-sizing:border-box;
+  min-height:36px; max-height:var(--pet-strip); display:flex; align-items:center; justify-content:center;
+  padding:6px 12px; border-radius:12px;
+  background:#fff; color:var(--pink-deep); box-shadow:0 4px 10px rgba(0,0,0,.14);
+  font-size:11.5px; font-weight:800; line-height:1.25; text-align:center; overflow-wrap:anywhere;
+  opacity:0; transform:translateY(6px); pointer-events:none; transition:opacity .25s ease, transform .25s ease;
+}
+/* en el hero ocupa el ancho del área de Mito, entre el personaje y el título */
+.mascot-hero-wrap > .pet-bubble.in-strip{ left:0; right:0; bottom:4px; }
+/* en escritorio la vista previa es ancha: el globo se ajusta a su texto y arranca bajo la mascota */
+@media (min-width: 881px){
+  .wardrobe-preview > .pet-bubble.in-strip{ left:24px; right:auto; width:max-content; max-width:min(420px, calc(100% - 48px)); }
+}
+.wardrobe-preview > .pet-bubble.in-strip.show, .mascot-hero-wrap > .pet-bubble.in-strip.show{ opacity:1; transform:none; }
+.wardrobe-preview > .pet-bubble.in-strip::before, .mascot-hero-wrap > .pet-bubble.in-strip::before{
+  content:''; position:absolute; top:-6px; left:var(--tail-x, 50%); margin-left:-6px; width:0; height:0;
+  border:6px solid transparent; border-bottom-color:#fff; border-top:0;
+}
+/* en oscuro, un tono más claro que la tarjeta para que el globo se distinga */
+[data-theme="dark"] .wardrobe-preview > .pet-bubble.in-strip, [data-theme="dark"] .mascot-hero-wrap > .pet-bubble.in-strip{ background:#33293f; color:var(--ink); }
+[data-theme="dark"] .wardrobe-preview > .pet-bubble.in-strip::before, [data-theme="dark"] .mascot-hero-wrap > .pet-bubble.in-strip::before{ border-bottom-color:#33293f; }
+:not(:has(> .mascot > svg.pet)) > .pet-bubble.in-strip{ display:none; }
+@media (prefers-reduced-motion: reduce){ .pet-bubble.in-strip{ transition:none; } }
 @media (prefers-reduced-motion: reduce){ .mascot .pet-bubble{ transition:none; } }
 
 
@@ -1351,10 +1354,6 @@ body[data-view="shop"] .course-bar, body[data-view="wardrobe"] .course-bar{ disp
   .cheat-item{ padding:9px 10px; font-size:12.5px; }
   .cheat-item b{ font-size:16px; }
 
-  /* Hero del Inicio: las dos burbujas a la vez. La de Mito va arriba; la de la mascota (posición de la regla base), más chica.
-     Con mascota, Mito se corre a la derecha para que su globo tenga ancho y no se monte sobre el de Mito. */
-  .hero .pet-bubble{ padding:5px 8px; font-size:10px; }
-  .hero .mascot:has(> svg.pet){ margin-left:110px; }
 }
 
 @media (max-width: 640px){

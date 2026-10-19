@@ -75,32 +75,36 @@ export function sayHero(text){
 
 export const getHeroLastMsg = ()=> heroLastMsg;
 
-// Regla de las burbujas: ninguna tapa la cara de Mito ni a la mascota. El globo de la mascota va siempre a la izquierda de
-// Mito (la mascota se sienta a su izquierda), encima de ella y con la colita apuntándole; su ancho es el espacio libre
-// entre el borde de la caja y Mito, así nunca alcanza la cara. En la vista previa de Tienda y Armario en móvil no hay
-// espacio al lado: el globo va en una franja reservada al pie de la tarjeta (ver style.css).
+// Regla de las burbujas: ninguna tapa la cara de Mito ni a la mascota, y Mito no se mueve de su sitio para hacerles lugar.
+// - Hero del Inicio en escritorio y quiz: el globo de la mascota va a la izquierda de Mito (la mascota se sienta a su
+//   izquierda), encima de ella y con la colita apuntándole; su ancho es el espacio libre hasta Mito, así nunca alcanza la cara.
+// - Vista previa de Tienda y Armario, y hero en móvil: a la izquierda no cabe sin tapar la cara, así que el globo va en una
+//   franja reservada debajo de la mascota, con la colita hacia arriba (ver style.css).
 const BUBBLE_GAP = 8;
 const MOBILE = '(max-width: 880px)';
 
-// La caja dentro de la que debe quedar el globo.
-function bubbleBox(mascotEl){
+// Borde izquierdo del espacio libre para el globo.
+function leftBound(mascotEl){
   // En el quiz la caja es todo el quiz (así la burbuja puede usar el margen de la tarjeta).
-  if(mascotEl.closest('.mascot-quiz')) return mascotEl.closest('.quiz-shell');
-  return mascotEl.closest('.mascot-hero-wrap, .wardrobe-preview');
+  if(mascotEl.closest('.mascot-quiz')) return mascotEl.closest('.quiz-shell')?.getBoundingClientRect().left;
+  // En el hero, el espacio libre va del texto (primera columna) hasta Mito.
+  const text = mascotEl.closest('.hero-grid')?.firstElementChild;
+  return text ? text.getBoundingClientRect().right : null;
 }
 
 function fitBubble(mascotEl, bub){
-  const box = bubbleBox(mascotEl);
-  if(!box || !box.offsetWidth) return;   // sin caja (p. ej. el panel lateral oculto en móvil) no hay nada que ajustar
+  const left = leftBound(mascotEl);
+  if(left == null || !mascotEl.offsetWidth) return;   // sin caja (p. ej. el panel lateral oculto en móvil) no hay nada que ajustar
   bub.style.maxWidth = '';
-  const room = mascotEl.getBoundingClientRect().left - box.getBoundingClientRect().left - BUBBLE_GAP - 4;
-  bub.style.maxWidth = Math.max(64, Math.min(150, room)) + 'px';
+  const room = mascotEl.getBoundingClientRect().left - left - BUBBLE_GAP - 4;
+  bub.style.maxWidth = Math.max(64, Math.min(170, room)) + 'px';
 }
 
-// Vista previa en móvil: el globo vive en la franja del pie de la tarjeta y la colita se alinea con la mascota.
 function stripHost(mascotEl){
   const card = mascotEl.closest('.wardrobe-preview');
-  return card && window.matchMedia?.(MOBILE).matches ? card : null;
+  if(card) return card;
+  const hero = mascotEl.closest('.mascot-hero-wrap');
+  return hero && window.matchMedia?.(MOBILE).matches ? hero : null;
 }
 function aimStripTail(mascotEl, bub){
   const pet = mascotEl.querySelector(':scope > svg.pet').getBoundingClientRect();
@@ -144,11 +148,11 @@ function showPetBubble(mascotEl, msg){
   const strip = stripHost(mascotEl);
   const host = strip || mascotEl;
   // si cambió el ancho de la ventana, el globo del otro sitio no debe quedarse a la vista
-  (strip ? mascotEl : mascotEl.closest('.wardrobe-preview'))?.querySelector(':scope > .pet-bubble')?.classList.remove('show');
+  (strip ? mascotEl : mascotEl.closest('.mascot-hero-wrap'))?.querySelector(':scope > .pet-bubble')?.classList.remove('show');
   let bub = host.querySelector(':scope > .pet-bubble');
   if(!bub){
     bub = document.createElement('div');
-    bub.className = 'pet-bubble';
+    bub.className = 'pet-bubble' + (strip ? ' in-strip' : '');
     bub.setAttribute('aria-hidden', 'true');
     host.appendChild(bub);
   }
