@@ -100,24 +100,14 @@ button{ font-family:inherit; }
 
 @media (max-height: 900px){
   .sidebar{ padding:16px 14px; gap:14px; }
-  .navbtn{ padding:9px 11px; }
-  .navlabel{ margin:4px 0 0; }
-  .theme-toggle{ padding:8px 11px; }
-  .balance-chip{ padding:6px 12px; }
-  .streak-chip{ padding:7px 10px; }
-  .mascot-side{ padding:10px; }
   /* `.mascot-side .mascot.small`: más específico que `.mascot.small` y que las reglas del aura del panel, que van más abajo */
   .mascot-side .mascot.small{ width:52px; height:52px; --side-k:calc(52 / 150); }
   .mascot-side .mascot.small:has(.aura.on){ margin-top:calc(52px * .24 + 13px); margin-bottom:calc(52px * .24 + 4px); }
-  .mascot-side .bubble{ min-height:30px; padding:7px 9px; }
-  .progress-mini{ margin-bottom:4px; }
 }
 @media (max-height: 760px){
-  .navgroup{ gap:4px; }
   .navlabel{ display:none; }
   .mascot-side .mascot.small{ width:44px; height:44px; --side-k:calc(44 / 150); }
   .mascot-side .mascot.small:has(.aura.on){ margin-top:calc(44px * .24 + 13px); margin-bottom:calc(44px * .24 + 4px); }
-  .mascot-side .bubble{ font-size:11px; min-height:26px; }
   .sidebar .streak-chip{ display:none; }
 }
 @media (max-height: 660px){
@@ -701,6 +691,23 @@ main{ padding:38px 46px 90px; max-width:1000px; }
   background:linear-gradient(135deg,#3a3216,#2b2510); color:#ffd97a; border-color:#6b5a1f;
 }
 [data-theme="dark"] .streak-chip .sc-label{ color:#cbb26a; }
+
+/* Barra lateral compacta en ventanas bajas (escritorio). Van aquí, después de las reglas base de cada pieza, porque
+   antes las pisaban y no se aplicaban. Solo en escritorio: en móvil la barra es otra y estas medidas no le tocan. */
+@media (min-width: 881px) and (max-height: 900px){
+  .navbtn{ padding:9px 11px; }
+  .navlabel{ margin:4px 0 0; }
+  .theme-toggle{ padding:8px 11px; }
+  .balance-chip{ padding:6px 12px; }
+  .streak-chip{ padding:7px 10px; }
+  .mascot-side{ padding:10px; }
+  .mascot-side .bubble{ min-height:30px; padding:7px 9px; }
+  .progress-mini{ margin-bottom:4px; }
+}
+@media (min-width: 881px) and (max-height: 760px){
+  .navgroup{ gap:4px; }
+  .mascot-side .bubble{ font-size:11px; min-height:26px; }
+}
 
 /* ================= MODO REPASO ================= */
 .mode-card.rev{ border-style:dashed; border-color:var(--mint); background:linear-gradient(160deg, var(--mint-pale), #fff); }
