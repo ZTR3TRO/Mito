@@ -11,6 +11,8 @@ const PASS_PCT = 70;
 const GREAT_PCT = 90;
 
 function showQuizPart(part){
+  // en móvil, durante la ronda el título se achica y la descripción se oculta (ver style.css)
+  byId('view-quiz')?.classList.toggle('is-playing', part === 'play');
   byId('quizIntro').style.display = part === 'intro' ? 'block' : 'none';
   byId('quizResult').style.display = part === 'result' ? 'block' : 'none';
   byId('quizPlay').style.display = part === 'play' ? 'block' : 'none';

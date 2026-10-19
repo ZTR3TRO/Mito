@@ -1228,3 +1228,80 @@ svg.th *{animation:none!important}
 
 /* Lava: resplandor naranja alrededor del cuerpo (estático) */
 .mascot svg.mito[data-fx="lava"]{ filter:drop-shadow(0 0 8px rgba(255,120,20,.55)); }
+
+/* ================= MÓVIL COMPACTO (≤ 880 px; escritorio sin cambios) ================= */
+/* Selector de materia: oculto donde no afecta nada (en todos los tamaños) */
+body[data-view="shop"] .course-bar, body[data-view="wardrobe"] .course-bar{ display:none; }
+.nav-short{ display:none; }
+
+@media (max-width: 880px){
+  /* Selector de materia: una sola fila con scroll horizontal y desvanecido en el borde que tiene más */
+  .course-bar{ flex-wrap:nowrap; gap:10px; padding:8px 12px; margin-bottom:18px; }
+  .course-bar-label{ flex:0 0 auto; }
+  .course-tabs{
+    flex:1 1 auto; min-width:0; flex-wrap:nowrap; overflow-x:auto; overscroll-behavior-x:contain;
+    scrollbar-width:none; -webkit-overflow-scrolling:touch; padding:4px 2px;
+  }
+  .course-tabs::-webkit-scrollbar{ display:none; }
+  .course-pill{ flex:0 0 auto; white-space:nowrap; padding:8px 14px; }
+  .course-tabs.can-right{ -webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent); mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent); }
+  .course-tabs.can-left{ -webkit-mask-image:linear-gradient(90deg,transparent,#000 28px); mask-image:linear-gradient(90deg,transparent,#000 28px); }
+  .course-tabs.can-left.can-right{ -webkit-mask-image:linear-gradient(90deg,transparent,#000 28px,#000 calc(100% - 28px),transparent); mask-image:linear-gradient(90deg,transparent,#000 28px,#000 calc(100% - 28px),transparent); }
+
+  /* Header: chispas junto a la racha, mismo tamaño de pastilla */
+  .sidebar .balance-chip{
+    display:inline-flex; align-self:auto; flex:0 0 auto; gap:5px;
+    padding:8px 12px; border-radius:16px; font-size:14px;
+  }
+  .sidebar .balance-chip .bc-label{ display:none; }
+  .sidebar .balance-chip .bc-emoji{ font-size:17px; }
+
+  /* Barra inferior: etiquetas cortas debajo de cada ícono */
+  .nav-long{ display:none; }
+  .nav-short{ display:inline; }
+  .navbtn{ font-size:9.5px; font-weight:800; gap:2px; padding:6px 1px 5px; letter-spacing:-.01em; }
+  .navbtn svg{ width:20px; height:20px; }
+  main{ padding-bottom:calc(88px + env(safe-area-inset-bottom, 0px)); }
+
+  /* Chuleta de datos rápidos: 2 columnas */
+  .cheat-grid{ grid-template-columns:repeat(2,1fr); gap:8px; }
+  .cheat-item{ padding:9px 10px; font-size:12.5px; }
+  .cheat-item b{ font-size:16px; }
+
+  /* Hero del Inicio: las dos burbujas a la vez. La de Mito va arriba; la de la mascota, más chica, a la izquierda de Mito,
+     justo encima de la mascota y con la colita apuntándole. El ancho lo limita fitBubble para no pisar a Mito. */
+  .hero .pet-bubble{
+    left:auto; right:calc(100% + 4px); bottom:46%;
+    padding:5px 8px; font-size:10px; line-height:1.25; overflow-wrap:anywhere;
+  }
+  .hero .pet-bubble::after{
+    content:''; position:absolute; right:12px; bottom:-6px; width:0; height:0;
+    border:6px solid transparent; border-top-color:#fff; border-bottom:0;
+  }
+  [data-theme="dark"] .hero .pet-bubble::after{ border-top-color:var(--card); }
+}
+
+@media (max-width: 640px){
+  /* Estadísticas: una fila de 3 columnas compactas, número arriba y etiqueta abajo */
+  .stat-row{ display:flex; gap:8px; margin-bottom:24px; }
+  .stat-card{ flex:1 1 0; min-width:0; display:block; text-align:center; padding:12px 6px; border-radius:16px; }
+  .stat-card .stat-num{ order:0; font-size:22px; line-height:1.15; }
+  .stat-card .stat-lab{ order:0; margin:3px 0 0; font-size:11px; line-height:1.25; }
+
+  /* Quiz: durante la ronda, título pequeño y sin descripción (la pantalla de inicio queda igual) */
+  #view-quiz.is-playing .page-head{ margin-bottom:8px; }
+  #view-quiz.is-playing .page-head > div{ min-width:0; max-width:100%; }
+  #view-quiz.is-playing .page-title{ font-size:16px; margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+  /* Desglose de resultados: el tema arriba y la barra con el puntaje abajo, a ancho completo */
+  .cb-row{ flex-wrap:wrap; gap:4px 10px; }
+  .cb-name{ width:100%; font-size:12.5px; }
+  .cb-track{ flex:1 1 0; min-width:0; }
+  .cb-frac{ width:auto; min-width:30px; }
+}
+@media (max-width: 360px){
+  .stat-card{ padding:10px 4px; }
+  .stat-card .stat-num{ font-size:20px; }
+  .cb-name{ width:100%; font-size:12px; }
+}
+

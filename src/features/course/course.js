@@ -22,6 +22,22 @@ export function reloadCourse(){
   selectCourse(getCourse());
 }
 
+// En móvil los chips van en una sola fila con scroll: el desvanecido de los bordes solo aparece del lado donde hay más,
+// y el chip activo se centra solo (sin mover la página).
+function updateTabsFade(host){
+  host.classList.toggle('can-left', host.scrollLeft > 4);
+  host.classList.toggle('can-right', host.scrollLeft + host.clientWidth < host.scrollWidth - 4);
+}
+function centerActivePill(host){
+  const pill = host.querySelector('.course-pill.active');
+  if(pill && host.scrollWidth > host.clientWidth){
+    const smooth = !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    const x = pill.getBoundingClientRect().left - host.getBoundingClientRect().left + host.scrollLeft;
+    host.scrollTo({ left: x - (host.clientWidth - pill.offsetWidth) / 2, behavior: smooth ? 'smooth' : 'auto' });
+  }
+  updateTabsFade(host);
+}
+
 export function renderCourseTabs(){
   const host = byId('courseTabs');
   if(!host) return;
@@ -33,6 +49,7 @@ export function renderCourseTabs(){
       attrs: { 'data-id': c.id },
     }));
   });
+  centerActivePill(host);
 }
 
 // Cambia de materia y avisa al resto de la app para que se refresquen las vistas.
@@ -47,6 +64,8 @@ function switchCourse(id){
 export function initCourseTabs(){
   const host = byId('courseTabs');
   if(!host) return;
+  host.addEventListener('scroll', ()=>updateTabsFade(host), { passive:true });
+  window.addEventListener('resize', ()=>updateTabsFade(host));
   host.onclick = e=>{
     const pill = e.target.closest('.course-pill');
     if(pill && pill.dataset.id !== active.id) guardLeave(()=>switchCourse(pill.dataset.id));

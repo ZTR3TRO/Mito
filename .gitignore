@@ -20,3 +20,6 @@ Thumbs.db
 !.env.example
 # capturas de revisión de la fase de bugs
 docs/shots/bugs/
+
+# capturas de la fase de móvil
+docs/shots/movil/

@@ -15,6 +15,7 @@ export function goTo(view){
   emit('nav:before', view);
   $$('.view').forEach(v=>v.classList.remove('active'));
   byId('view-' + view)?.classList.add('active');
+  document.body.dataset.view = view;
   $$('.navbtn').forEach(b=>b.classList.toggle('active', b.dataset.view === view));
   emit('nav:after', view);
   window.scrollTo({ top:0, behavior:'smooth' });
