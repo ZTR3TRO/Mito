@@ -1,0 +1,92 @@
+{
+ "chispas": 8850,
+ "owned": {
+  "p-chick": true,
+  "ac-crown": true
+ },
+ "petNames": {
+  "p-chick": "Chispita"
+ },
+ "petLooks": {
+  "p-chick": "c-mint"
+ },
+ "claimedEggs": {},
+ "equipped": {
+  "color": "c-mint",
+  "ropa": "r-none",
+  "accesorio": "ac-none",
+  "sombrero": "ac-crown",
+  "aura": "a-none",
+  "pet": "p-chick"
+ },
+ "history": [
+  {
+   "t": 1700000000000,
+   "score": 20,
+   "right": 3,
+   "total": 6,
+   "pct": 50,
+   "cats": {
+    "Anabolismo / Catabolismo": {
+     "r": 1,
+     "t": 5
+    },
+    "El ATP": {
+     "r": 2,
+     "t": 4
+    }
+   }
+  },
+  {
+   "t": 1792388368531,
+   "score": 30,
+   "right": 7,
+   "total": 10,
+   "pct": 70,
+   "cats": {
+    "Introducción": {
+     "right": 2,
+     "total": 5
+    },
+    "Bioenergética": {
+     "right": 5,
+     "total": 5
+    }
+   },
+   "courseId": "atp",
+   "size": 10
+  },
+  {
+   "t": 1792388368531,
+   "score": 12,
+   "right": 2,
+   "total": 6,
+   "pct": 33,
+   "cats": {
+    "Gasto Energético Total (GET)": {
+     "right": 2,
+     "total": 6
+    }
+   },
+   "courseId": "calculo-dietetico"
+  }
+ ],
+ "mistakes": {
+  "atp::¿Qué proceso se define como el conjunto de reacciones químicas catalizadas por enzimas que transforman biomoléculas dentro de la célula?": {
+   "wrong": 1,
+   "right": 0
+  },
+  "calculo-dietetico::De acuerdo a la clasificación de la actividad física, ¿qué porcentaje de gasto energético extra se aplica a una persona que realiza \"Actividad moderada\" (como bailar o andar en bicicleta)?": {
+   "wrong": 1,
+   "right": 0
+  },
+  "¿Cuál de estos es un ejemplo típico de catabolismo?": {
+   "wrong": 2,
+   "right": 1
+  }
+ },
+ "streak": 4,
+ "lastDay": "__TODAY__",
+ "theme": "dark",
+ "course": "calculo-dietetico"
+}
