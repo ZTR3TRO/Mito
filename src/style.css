@@ -1453,3 +1453,15 @@ body[data-view="shop"] .course-bar, body[data-view="wardrobe"] .course-bar{ disp
    overflow-x:clip recorta el desborde sin crear un contenedor de scroll (no rompe el header sticky ni los elementos fijos). */
 main{ overflow-x:clip; }
 @supports not (overflow:clip){ main{ overflow-x:hidden; } }
+
+/* Degradados con borde transparente o punteado: por defecto el fondo se posiciona en el padding-box pero se pinta
+   hasta el border-box, así que se repite debajo del borde y el final del degradado asoma por la orilla contraria
+   (franja rosa a la izquierda y verde a la derecha en el chip de materia). Anclarlo al border-box hace que cubra el
+   elemento entero, borde incluido, sin repetirse. Va al final y repite las variantes oscuras porque el shorthand
+   `background:` de cada regla reinicia el origin. */
+.course-pill.active, .topic-pill.active, .egg-btn.primary,
+.cheat-sheet, [data-theme="dark"] .cheat-sheet,
+.mode-card.rev, [data-theme="dark"] .mode-card.rev,
+.wardrobe-preview, [data-theme="dark"] .wardrobe-preview,
+.streak-chip, [data-theme="dark"] .streak-chip,
+.mascot-side, [data-theme="dark"] .mascot-side{ background-origin:border-box; }
