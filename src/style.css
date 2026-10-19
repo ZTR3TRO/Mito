@@ -1415,6 +1415,13 @@ body[data-view="shop"] .course-bar, body[data-view="wardrobe"] .course-bar{ disp
 [data-theme="dark"] .quiz-speech{ background:var(--card); color:var(--ink); }
 [data-theme="dark"] .quiz-speech::after{ border-right-color:var(--card); }
 .mascot-quiz .pet-bubble{ padding:5px 8px; font-size:10px; }
+/* Móvil: arriba de la mascota el globo llegaba al título del quiz. Va justo a la izquierda de la mascota, a su altura, con la
+   colita de lado apuntándole; el ancho lo limita fitBubble con el espacio hasta el borde del quiz. */
+@media (max-width: 880px){
+  .mascot-quiz .pet-bubble{ right:calc(116% + 8px); bottom:0; border-radius:12px 12px 4px 12px; }
+  .mascot-quiz .pet-bubble::after{ right:-6px; bottom:10px; border:6px solid transparent; border-right:0; border-left-color:#fff; }
+  [data-theme="dark"] .mascot-quiz .pet-bubble::after{ border-top-color:transparent; border-left-color:var(--card); }
+}
 @media (prefers-reduced-motion:reduce){ .quiz-speech{ transition:none; } }
 
 /* Aura en el quiz: sobresale ~28 % del tamaño de Mito por cada lado, así que se reserva ese espacio (solo si hay aura) y los textos

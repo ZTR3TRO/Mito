@@ -65,9 +65,12 @@ const FIRST_ROUND = [
   `¡Vamos, ${USER_NAME}! Primera ronda del quiz 🔥`,
   'Empieza con una ronda rápida para calentar motores 🚀',
 ];
-const GREAT = ['¡Wow, vas increíble! 🌟', '¡Ronda de campeona! 🏆', '¡Así se hace, casi perfecta! 🎉'];
-const OK = ['¡Bien! Un repaso más y la dominas 👏', 'Vas por buen camino, sigue así 🌱'];
-const LOW = ['¡Buen intento! Repasemos un poco más 💪', 'Los fallos enseñan: mira tus apuntes y vuelve a intentar 📖'];
+// Lo que dice Mito al terminar la ronda, en el globo del quiz: cortas, como las reacciones de quizMessages.js.
+export const RESULT_MESSAGES = {
+  great: ['¡Wow, vas increíble! 🌟', '¡Ronda de campeona! 🏆', '¡Así se hace, casi perfecta! 🎉'],
+  ok: ['¡Bien! Un repaso más y la dominas 👏', 'Vas por buen camino, sigue así 🌱'],
+  low: ['¡Buen intento! Repasemos un poco más 💪', 'Los fallos enseñan: ¡repasa y vuelve! 📖'],
+};
 
 /* ---------- Mascotas compañeras (clave = `k` en wardrobe.js) ---------- */
 const PET_MESSAGES = {
@@ -187,5 +190,5 @@ export function resultTier(pct, outOfLives = false){
 
 export function resultMessage(pct, outOfLives = false){
   const tier = resultTier(pct, outOfLives);
-  return rnd(tier === 'great' ? GREAT : tier === 'ok' ? OK : LOW);
+  return rnd(RESULT_MESSAGES[tier]);
 }

@@ -44,3 +44,15 @@ test('el mensaje de resultado y el título usan los mismos umbrales (90 / 70), y
   assert.equal(resultTier(69), 'low');
   assert.equal(resultTier(95, true), 'low', 'sin vidas, el título dice "Se acabaron las vidas"');
 });
+
+test('las frases de reacción del quiz son cortas (40 caracteres como máximo) para que quepan junto a Mito en móvil', async ()=>{
+  const { RESULT_MESSAGES } = await import('../src/content/messages.js');
+  const all = [
+    ...Object.values(MITO_QUIZ).flat(),
+    ...Object.values(PET_QUIZ).flatMap(p => Object.values(p).flat()),
+    ...Object.values(RESULT_MESSAGES).flat(),
+  ];
+  // {n} es el combo: se cuenta con dos cifras
+  const long = all.map(m => m.replace('{n}', '10')).filter(m => [...m].length > 40);
+  assert.deepEqual(long, [], long.join('\n'));
+});

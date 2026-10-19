@@ -78,6 +78,7 @@ export const getHeroLastMsg = ()=> heroLastMsg;
 // Regla de las burbujas: ninguna tapa la cara de Mito ni a la mascota, y Mito no se mueve de su sitio para hacerles lugar.
 // - Hero del Inicio en escritorio y quiz: el globo de la mascota va a la izquierda de Mito (la mascota se sienta a su
 //   izquierda), encima de ella y con la colita apuntándole; su ancho es el espacio libre hasta Mito, así nunca alcanza la cara.
+//   En el quiz en móvil va a la izquierda de la mascota y a su altura, con la colita de lado, para no llegar al título.
 // - Vista previa de Tienda y Armario, y hero en móvil: a la izquierda no cabe sin tapar la cara, así que el globo va en una
 //   franja reservada debajo de la mascota, con la colita hacia arriba (ver style.css).
 const BUBBLE_GAP = 8;
@@ -96,7 +97,11 @@ function fitBubble(mascotEl, bub){
   const left = leftBound(mascotEl);
   if(left == null || !mascotEl.offsetWidth) return;   // sin caja (p. ej. el panel lateral oculto en móvil) no hay nada que ajustar
   bub.style.maxWidth = '';
-  const room = mascotEl.getBoundingClientRect().left - left - BUBBLE_GAP - 4;
+  // En el quiz en móvil el globo va a la izquierda de la mascota (no encima): el espacio llega hasta ella.
+  const pet = mascotEl.querySelector(':scope > svg.pet');
+  const sideOfPet = pet && mascotEl.closest('.mascot-quiz') && window.matchMedia?.(MOBILE).matches;
+  const anchor = sideOfPet ? pet.getBoundingClientRect().left : mascotEl.getBoundingClientRect().left;
+  const room = anchor - left - BUBBLE_GAP - 4;
   bub.style.maxWidth = Math.max(64, Math.min(170, room)) + 'px';
 }
 
