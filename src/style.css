@@ -637,6 +637,7 @@ main{ padding:38px 46px 90px; max-width:1000px; }
 .pet-look-swatch{ width:20px; height:20px; border-radius:999px; border:2px solid #fff; box-shadow:0 2px 8px rgba(51,39,74,.18); flex-shrink:0; }
 .pet-modal-actions{ display:flex; justify-content:center; gap:8px; flex-wrap:wrap; margin-top:2px; }
 .pet-modal-actions .btn-mini{ min-width:132px; justify-content:center; padding:10px 14px; }
+.pet-modal-danger{ background:#d64545; color:#fff; border:2px solid #d64545; }
 .pet-modal-ghost{ background:var(--pink-pale); color:var(--ink-dim); border:2px solid var(--line); }
 .collection-notice{ color:var(--ink-dim); font-weight:800; }
 .collection-notice:empty{ display:none; }

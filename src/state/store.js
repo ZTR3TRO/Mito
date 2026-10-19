@@ -22,4 +22,4 @@ export {
 
 export { getTheme, setTheme, getCourse, setCourse } from './preferences.js';
 
-export { exportSave, importSave, resetAll } from './backup.js';
+export { exportSave, parseSave, importSave, resetAll } from './backup.js';

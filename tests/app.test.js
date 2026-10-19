@@ -700,3 +700,97 @@ test('nota relacionada: se elige por palabras compartidas y no abre nada si no h
   assert.equal(relatedNote(topic, notes('¿Dónde ocurre el ciclo?', 'Mitocondria', 'En la matriz mitocondrial.')), 1);
   assert.equal(relatedNote(topic, notes('Pregunta inconexa', 'Nada', 'Sin relación alguna')), -1);
 });
+
+test('respaldo: exportar e importar conserva todo (progreso, historial, fallos, chispas, compras, equipado y mascotas)', ()=>{
+  resetApp();
+  const pet = WARDROBE.find(c=>c.id === 'pet').items.find(i=>i.id !== 'p-none' && i.cost > 0 && !i.secret && !i.seasonal);
+  const color = WARDROBE.find(c=>c.id === 'color').items.find(i=>i.cost === 0).id;
+  store.addChispas(5000);
+  assert.ok(store.buyAndEquip('pet', pet.id), 'la compra debe funcionar');
+  assert.ok(store.renamePet(pet.id, 'Chispita'));
+  store.setPetLook(pet.id, color);
+  playedRound({ [courses[0].questions[0].cat]: [1, 4] });
+  store.recordAnswer(courses[0].id, courses[0].questions[0].q, false, 'mi opción');
+  store.setTheme('dark');
+  const file = store.exportSave();
+  const before = JSON.parse(file);
+
+  store.resetAll();
+  store.addChispas(7);
+  store.importSave(file);
+
+  const after = JSON.parse(store.exportSave());
+  assert.deepEqual(after, before);
+  ['chispas', 'owned', 'equipped', 'history', 'mistakes', 'petNames', 'petLooks', 'streak'].forEach(k=>{
+    assert.ok(k in after, `el respaldo debe incluir ${k}`);
+  });
+  assert.equal(after.petNames[pet.id], 'Chispita');
+  assert.ok(after.owned[pet.id], 'la compra queda en el respaldo');
+  assert.equal(after.equipped.pet, pet.id);
+  assert.equal(entryOf(courses[0].questions[0].q).pick, 'mi opción');
+});
+
+test('respaldo: un archivo inválido se rechaza con un error claro y no toca nada', ()=>{
+  resetApp();
+  store.addChispas(123);
+  const before = store.exportSave();
+  const bad = [
+    ['no es JSON', 'esto no es json'],
+    ['una lista', '[1,2,3]'],
+    ['sin chispas', JSON.stringify({ equipped:{} })],
+    ['chispas de texto', JSON.stringify({ chispas:'mil', equipped:{} })],
+    ['sin equipado', JSON.stringify({ chispas:5 })],
+    ['historial dañado', JSON.stringify({ chispas:5, equipped:{}, history:'x' })],
+    ['fallos dañados', JSON.stringify({ chispas:5, equipped:{}, mistakes:[1] })],
+    ['null', 'null'],
+  ];
+  bad.forEach(([name, json])=>{
+    assert.throws(()=> store.importSave(json), err=> err instanceof Error && err.message.length > 10, name);
+    assert.throws(()=> store.parseSave(json), Error, name);
+    assert.equal(store.exportSave(), before, `${name}: el progreso actual debe quedar intacto`);
+  });
+});
+
+test('respaldo: un archivo válido a medias se completa con valores seguros', ()=>{
+  resetApp();
+  store.importSave(JSON.stringify({ chispas:-50, equipped:{}, history:[{ pct:500 }], theme:'neon', extra:'x' }));
+  const s = JSON.parse(store.exportSave());
+  assert.equal(s.chispas, 0);
+  assert.equal(s.history[0].pct, 100);
+  assert.equal(s.theme, 'light');
+  assert.ok(!('extra' in s), 'los campos desconocidos no se copian');
+});
+
+test('Progreso trae los botones de exportar e importar', ()=>{
+  assert.ok(document.querySelector('#view-progreso [data-progress="export"]'));
+  assert.ok(document.querySelector('#view-progreso [data-progress="import"]'));
+});
+
+test('"Reiniciar todo" usa el modal de la app: cancelar es lo predeterminado y no borra nada; confirmar borra', ()=>{
+  resetApp();
+  store.addChispas(500);
+  // otras pruebas (p. ej. el renombrar mascota) pueden dejar su ventana abierta
+  document.querySelectorAll('.pet-modal-backdrop').forEach(b=>b.remove());
+  const confirmed = [];
+  window.confirm = ()=>{ confirmed.push(1); return true; };
+
+  document.querySelector('[data-progress="reset"]').click();
+  const card = document.querySelector('.pet-modal-card');
+  assert.ok(card, 'debe aparecer el modal de la app');
+  assert.equal(confirmed.length, 0, 'ya no se usa el confirm nativo');
+  ['chispas', 'compras', 'mascotas', 'historial', 'fallos', 'deshacer', 'Exportar progreso'].forEach(w=>{
+    assert.ok(card.textContent.includes(w), `falta "${w}" en: ${card.textContent}`);
+  });
+  const btns = [...card.querySelectorAll('button')];
+  assert.equal(btns[0].textContent, 'Cancelar', 'cancelar va primero: es la opción con el foco');
+  assert.ok(btns[1].classList.contains('pet-modal-danger'), 'confirmar se ve destructivo');
+
+  btns[0].click();
+  assert.equal(document.querySelector('.pet-modal-card'), null);
+  assert.equal(store.getChispas(), 500, 'cancelar no borra nada');
+
+  document.querySelector('[data-progress="reset"]').click();
+  document.querySelector('.pet-modal-danger').click();
+  assert.equal(store.getChispas(), 0);
+  window.confirm = ()=> true;
+});

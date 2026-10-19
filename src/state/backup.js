@@ -47,14 +47,25 @@ function cleanMistakes(m){
   return out;
 }
 
-export function importSave(json){
-  const s = JSON.parse(json);
-  if(!s || typeof s !== 'object' || typeof s.chispas !== 'number') throw new Error('Progreso inválido');
+const isObject = v => !!v && typeof v === 'object' && !Array.isArray(v);
+
+// Valida un respaldo y devuelve el estado limpio, sin tocar nada. Lanza un Error con un mensaje
+// pensado para mostrarse tal cual si el archivo no es un progreso válido.
+export function parseSave(json){
+  let s;
+  try{ s = JSON.parse(json); }
+  catch(e){ throw new Error('El archivo no es un JSON válido.'); }
+  if(!isObject(s)) throw new Error('El archivo no tiene el formato de un progreso de Mito.');
+  if(typeof s.chispas !== 'number' || !Number.isFinite(s.chispas)) throw new Error('Al archivo le faltan las chispas, no parece un progreso de Mito.');
+  if(!isObject(s.equipped)) throw new Error('Al archivo le falta lo equipado, no parece un progreso de Mito.');
+  [['history', Array.isArray], ['owned', isObject], ['mistakes', isObject]].forEach(([field, ok])=>{
+    if(s[field] != null && !ok(s[field])) throw new Error(`El campo "${field}" del archivo está dañado.`);
+  });
   const d = defaultState();
   // solo se copian campos conocidos, con su tipo validado
-  const clean = {
+  return {
     chispas: Math.max(0, num(s.chispas)),
-    owned: s.owned && typeof s.owned === 'object' ? Object.fromEntries(Object.keys(s.owned).map(k=>[k, true])) : {},
+    owned: s.owned ? Object.fromEntries(Object.keys(s.owned).map(k=>[k, true])) : {},
     petNames: cleanPetNames(s.petNames),
     petLooks: cleanPetLooks(s.petLooks),
     claimedEggs: cleanClaimedEggs(s.claimedEggs),
@@ -66,6 +77,10 @@ export function importSave(json){
     theme: s.theme === 'dark' ? 'dark' : 'light',
     course: typeof s.course === 'string' ? s.course : d.course,
   };
+}
+
+export function importSave(json){
+  const clean = parseSave(json);
   // Object.assign mantiene la identidad de `state`: quien la capturó la sigue viendo.
   Object.assign(state, clean);
   commit();
