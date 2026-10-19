@@ -3,14 +3,17 @@
 import { clear, byId } from '../../core/dom.js';
 import { getHistory } from '../../state/store.js';
 import { escapeHtml, pctColor } from '../../core/utils.js';
-import { weakTopics, activeMistakeEntries, findQuestionByKey } from '../quiz/review.js';
+import { topicStats, weakTopics, activeMistakeEntries, findQuestionByKey, WEAK_TOPIC_PCT } from '../quiz/review.js';
 
 function renderWeakTopics(){
   const host = byId('weakTopics');
   if(!host) return;
   const weak = weakTopics();
   if(weak.length === 0){
-    host.innerHTML = `<div class="empty-state">Juega al menos 3 preguntas por tema y verás aquí tus temas débiles 📊</div>`;
+    // sin datos aún no hay nada que celebrar; con datos y ningún tema bajo el umbral, sí
+    host.innerHTML = topicStats().length === 0
+      ? `<div class="empty-state">Juega al menos 3 preguntas por tema y verás aquí tus temas débiles 📊</div>`
+      : `<div class="empty-state good">¡Todos tus temas van por encima del ${WEAK_TOPIC_PCT} %! Sigue así, Zare 🌟</div>`;
     return;
   }
   host.innerHTML = weak.map(t=>`
@@ -18,6 +21,7 @@ function renderWeakTopics(){
       <div class="wt-name">${escapeHtml(t.cat)}</div>
       <div class="wt-num">${Math.round(t.pct*100)}% <small>· ${t.r}/${t.t}</small></div>
       <div class="cb-track"><div class="cb-fill" style="width:${t.pct*100}%; background:${pctColor(t.pct*100)}"></div></div>
+      <button type="button" class="btn-mini wt-practice" data-practice="${escapeHtml(t.cat)}">🎯 Practicar este tema</button>
     </div>`).join('');
 }
 

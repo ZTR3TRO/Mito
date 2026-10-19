@@ -9,6 +9,8 @@ import { shuffle } from '../../core/utils.js';
 import { activeCourse } from '../course/course.js';
 
 const SEP = '::';
+// Un tema cuenta como débil si su porcentaje de aciertos queda por debajo de este umbral.
+export const WEAK_TOPIC_PCT = 80;
 const DEFAULT_COURSE = COURSES[0].id;
 
 // Fallos de la materia activa. Las claves viejas (sin prefijo de materia)
@@ -35,8 +37,9 @@ export function findQuestionByKey(key){
   return null;
 }
 
-// Topics ordered worst-first, only those with enough answers to be meaningful.
-export function weakTopics(minAnswers = 3){
+// Aciertos por tema de la materia activa, del más bajo al más alto. Solo entran los temas con
+// suficientes respuestas para que el porcentaje signifique algo.
+export function topicStats(minAnswers = 3){
   const course = activeCourse();
   const agg = {};
   getHistory().forEach(h=>{
@@ -53,6 +56,12 @@ export function weakTopics(minAnswers = 3){
     .map(([cat, s])=>({ cat, r:s.r, t:s.t, pct: s.t ? s.r/s.t : 1 }))
     .filter(x=>x.t >= minAnswers)
     .sort((a,b)=>a.pct-b.pct);
+}
+
+// Temas por debajo del umbral (80 %), el más débil primero. Se compara con enteros para que
+// un 80 % exacto no caiga por redondeo de decimales.
+export function weakTopics(minAnswers = 3, threshold = WEAK_TOPIC_PCT){
+  return topicStats(minAnswers).filter(x=>x.r * 100 < threshold * x.t);
 }
 
 export function buildReviewPool(){

@@ -4,7 +4,7 @@
 import { $$ } from '../../core/dom.js';
 import { addChispas, recordQuizResult, PASSING_BONUS } from '../../state/store.js';
 import { emit } from '../../core/bus.js';
-import { setLeaveCheck } from '../../core/leave.js';
+import { setLeaveCheck, guardLeave } from '../../core/leave.js';
 import { activeCourse } from '../course/course.js';
 import { openNotesFor } from '../course/notes.js';
 import { sparkAt } from '../mascot/effects.js';
@@ -13,9 +13,9 @@ import * as s from './session.js';
 import * as view from './view.js';
 import { askLeaveRound } from './leave.js';
 
-export function startQuiz(){
-  const questions = s.startRound();
-  if(!questions) return;
+export function startQuiz(topic){
+  const questions = s.startRound(topic);
+  if(!questions || questions.length === 0) return;
   view.showPlay();
   view.renderQuestion(answer);
   emit('quiz:started', { total: questions.length });
@@ -34,6 +34,14 @@ function answer(idx){
 function viewInNotes(){
   if(!s.isRoundActive()) return;
   if(openNotesFor(s.currentQuestion())) emit('nav:request', 'apuntes');
+}
+
+// "Practicar este tema" desde Progreso: una ronda solo con las preguntas de ese tema.
+export function practiceTopic(cat){
+  guardLeave(()=>{
+    emit('nav:request', 'quiz');
+    startQuiz(cat);
+  }, 'practice');
 }
 
 function nextQuestion(){
@@ -131,9 +139,11 @@ export function init(){
   });
 
   // Acciones declaradas en index.html con data-action.
-  const actions = { startQuiz, resetQuiz, nextQuestion, goReview, viewInNotes };
+  const actions = { startQuiz: ()=>startQuiz(), resetQuiz, nextQuestion, goReview, viewInNotes };
   document.addEventListener('click', e=>{
     const action = e.target.closest('[data-action]');
     if(action && actions[action.dataset.action]) actions[action.dataset.action]();
+    const practice = e.target.closest('[data-practice]');
+    if(practice) practiceTopic(practice.dataset.practice);
   });
 }

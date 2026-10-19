@@ -547,6 +547,60 @@ test('importar un respaldo repinta todo y respeta el tema', ()=>{
 });
 
 
+/* ---------- Flujo de estudio ---------- */
+
+// Una ronda ya jugada con los aciertos por tema que se indican: { 'Tema': [right, total] }.
+function playedRound(cats){
+  const out = {};
+  Object.entries(cats).forEach(([cat, [right, total]])=>{ out[cat] = { right, total }; });
+  store.recordQuizResult({ score:10, right:1, total:1, pct:50, cats:out, courseId:courses[0].id, size:1 });
+}
+const entryOf = q => store.getMistakes()[`${courses[0].id}::${q}`];
+
+test('temas débiles: solo los que quedan por debajo del 80 %, del más bajo al más alto', ()=>{
+  resetApp();
+  const [a, b, c, d, e] = [...new Set(courses[0].questions.map(q=>q.cat))];
+  playedRound({ [a]: [9, 10], [b]: [4, 10], [c]: [8, 10], [d]: [1, 10], [e]: [2, 2] });
+
+  const weak = review.weakTopics();
+  assert.deepEqual(weak.map(t=>t.cat), [d, b], 'el 90 %, el 80 % exacto y el tema con pocas respuestas no son débiles');
+  assert.equal(review.WEAK_TOPIC_PCT, 80);
+  assert.ok(weak[0].pct <= weak[1].pct);
+
+  emit('state:imported');
+  const rows = [...document.querySelectorAll('#weakTopics .wt-row')];
+  assert.equal(rows.length, 2);
+  assert.equal(rows[0].querySelector('[data-practice]').dataset.practice, d);
+});
+
+test('temas débiles: si ninguno baja del umbral se muestra un mensaje positivo, y sin datos la invitación a jugar', ()=>{
+  resetApp();
+  assert.ok(document.querySelector('#weakTopics .empty-state').textContent.includes('Juega al menos'));
+  assert.equal(document.querySelector('#weakTopics .empty-state.good'), null);
+
+  playedRound({ [courses[0].questions[0].cat]: [10, 10] });
+  emit('state:imported');
+  const msg = document.querySelector('#weakTopics .empty-state.good');
+  assert.ok(msg, 'con datos y todo arriba del umbral debe felicitar');
+  assert.ok(msg.textContent.includes('80 %'));
+  assert.equal(document.querySelectorAll('#weakTopics .wt-row').length, 0);
+});
+
+test('"Practicar este tema" arma una ronda solo con las preguntas de ese tema', ()=>{
+  resetApp();
+  const cat = courses[0].questions[0].cat;
+  playedRound({ [cat]: [1, 5] });
+  emit('state:imported');
+
+  document.querySelector('.navbtn[data-view="progreso"]').click();
+  document.querySelector(`#weakTopics [data-practice="${cat}"]`).click();
+
+  assert.ok(document.getElementById('view-quiz').classList.contains('active'));
+  const expected = courses[0].questions.filter(q=>q.cat === cat).length;
+  assert.equal(quizSession.getSession().questions.length, expected);
+  assert.ok(quizSession.getSession().questions.every(q=>q.cat === cat));
+  assert.equal(document.getElementById('qTotalLabel').textContent, String(expected));
+});
 
 test('quiz: dentro de la ronda el contador de aciertos seguidos se llama "Combo"', ()=>{
   resetApp();

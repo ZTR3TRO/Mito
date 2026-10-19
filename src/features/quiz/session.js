@@ -46,18 +46,20 @@ export function isGameOver(){
 }
 
 // Elige el banco de preguntas según el modo seleccionado.
-function buildRound(setup){
+function buildRound(setup, topic){
   const qs = activeCourse().questions;
+  if(topic) return shuffle(qs.filter(q=>q.cat === topic));
   if(setup === 'repaso') return buildReviewPool();
   const nRaw = parseInt(document.querySelector('.mode-card.selected')?.dataset.n, 10);
   const n = Number.isFinite(nRaw) ? Math.min(nRaw, qs.length) : qs.length;
   return shuffle(qs).slice(0, n);
 }
 
-export function startRound(){
+// `topic` (opcional): una ronda solo con las preguntas de ese tema, sin importar el modo elegido.
+export function startRound(topic){
   const qs = activeCourse().questions;
   if(qs.length === 0) return null;
-  session.questions = buildRound(readSetup());
+  session.questions = buildRound(readSetup(), topic);
   session.active = session.questions.length > 0;
   session.index = 0;
   session.score = 0;
