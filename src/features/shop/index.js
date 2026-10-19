@@ -17,6 +17,10 @@ const ACTION_FAILED = 'No se pudo completar la acción. Revisa tu saldo y tu col
 const PET_NAME_MAX = 20;
 let petNameReturnFocus = null;
 
+// Móvil (≤ 880 px): tocar un objeto lo pone "en prueba" (vista previa grande + barra fija); comprar o equipar solo con el botón de la barra.
+const isMobile = ()=> !!window.matchMedia?.('(max-width: 880px)').matches;
+let trial = null;   // { cat, id } del objeto en prueba
+
 function displayName(cat, item, custom){
   return custom && cat === 'pet' ? getPetDisplayName(item.id) : item.name;
 }
@@ -59,10 +63,17 @@ export function updatePreviewLabels(){
   });
 }
 
+// Texto del botón de compra: con saldo, el precio; sin saldo, cuántas chispas faltan.
+function buyLabel(item){
+  const missing = item.cost - getChispas();
+  return missing > 0 ? `Te faltan ${missing} ⚡` : 'Comprar · ⚡ ' + item.cost;
+}
+
 /* ---------- Colecciones ---------- */
 export function renderShop(){
   renderCollection('shopHost', true);
   renderCollection('wardrobeHost', false);
+  syncTrial();
 }
 
 function renderCollection(hostId, shopping, seasonalOnly = false){
@@ -115,7 +126,7 @@ function buildCard(cat, item, { shopping, equipped, previewId }){
   const name = displayName(cat.id, item, !shopping);
   const hasCustomPetName = cat.id === 'pet' && !shopping && !!getPetName(item.id);
   const card = document.createElement('div');
-  card.className = 'shop-item' + (equipped ? ' equipped' : '');
+  card.className = 'shop-item' + (equipped ? ' equipped' : '') + (trial && trial.id === item.id ? ' is-trial' : '');
   card.dataset.item = item.id;
   card.innerHTML = `
     <div class="si-visual">${visualFor(cat, item)}</div>
@@ -132,7 +143,7 @@ function buildCard(cat, item, { shopping, equipped, previewId }){
     mini.textContent = 'Equipar';
     mini.dataset.equip = item.id;
   } else {
-    mini.textContent = 'Comprar · ⚡ ' + item.cost;
+    mini.textContent = buyLabel(item);
     mini.dataset.buy = item.id;
     if(!affordable){
       mini.setAttribute('aria-disabled','true');
@@ -157,11 +168,13 @@ function buildCard(cat, item, { shopping, equipped, previewId }){
   card.appendChild(actions);
 
   // Preview al pasar el ratón o al tabular por el botón.
-  const preview = ()=> previewAvatar(cat.id, item.id, previewId);
+  // (En móvil el toque dispara mouseenter: ahí manda la prueba, no el hover.)
+  const preview = ()=>{ if(!isMobile()) previewAvatar(cat.id, item.id, previewId); };
+  const restore = ()=>{ if(!isMobile()) applyAvatar(); };
   card.addEventListener('mouseenter', preview);
-  card.addEventListener('mouseleave', applyAvatar);
+  card.addEventListener('mouseleave', restore);
   mini.addEventListener('focus', preview);
-  mini.addEventListener('blur', applyAvatar);
+  mini.addEventListener('blur', restore);
   return card;
 }
 
@@ -284,7 +297,87 @@ function updateAffordability(){
       btn.removeAttribute('aria-disabled');
       btn.removeAttribute('title');
     }
+    btn.textContent = buyLabel(item);
+    btn.setAttribute('aria-label', `${btn.textContent}: ${item.name}`);
   });
+  renderTrialBar();
+}
+
+/* ---------- Prueba en móvil: barra fija ---------- */
+const currentCollectionIsShop = ()=> document.body.dataset.view === 'shop';
+
+function previewTargets(){
+  return [currentCollectionIsShop() ? 'mascotPreview' : 'mascotWardrobe', 'mascotBar'];
+}
+
+function setTrial(card){
+  const id = card.dataset.item;
+  const cat = categoryOf(id);
+  if(!id || !cat) return;
+  trial = { cat, id };
+  applyAvatar();   // Mito con lo equipado, y encima se prueba el objeto
+  previewTargets().forEach(t=> previewAvatar(cat, id, t));
+  document.querySelectorAll('.shop-item.is-trial').forEach(c=>c.classList.remove('is-trial'));
+  document.querySelectorAll(`.shop-item[data-item="${id}"]`).forEach(c=>c.classList.add('is-trial'));
+  renderTrialBar();
+}
+
+function clearTrial(){
+  if(!trial) return;
+  trial = null;
+  document.querySelectorAll('.shop-item.is-trial').forEach(c=>c.classList.remove('is-trial'));
+  applyAvatar();
+  renderTrialBar();
+}
+
+// Si el objeto en prueba ya no está en pantalla (se compró, cambió la vista…), se quita la prueba.
+function syncTrial(){
+  if(trial && !document.querySelector(`.shop-item[data-item="${trial.id}"]`)){ trial = null; applyAvatar(); }
+  renderTrialBar();
+}
+
+function renderTrialBar(){
+  const name = byId('tbName'), sub = byId('tbSub'), act = byId('tbAct'), close = byId('tbClose');
+  if(!name || !act) return;
+  const item = trial && findItemById(trial.id);
+  // La barra solo existe mientras hay un objeto en prueba; sin él, ni se ve ni reserva espacio abajo.
+  byId('trialBar').classList.toggle('is-open', !!item);
+  document.body.classList.toggle('trial-open', !!item);
+  if(!item){
+    name.textContent = '';
+    sub.textContent = '';
+    act.hidden = close.hidden = true;
+    return;
+  }
+  // Composición de Mito en el recuadro: según lleve aura y/o mascota se escala para que quepa entera (ver .tb-mito en style.css)
+  const mini = byId('mascotBar');
+  const hasAura = !!mini.querySelector(':scope > .aura.on'), hasPet = !!mini.querySelector(':scope > svg.pet');
+  const box = document.querySelector('.tb-mito');
+  box.dataset.comp = hasAura ? (hasPet ? 'aura-pet' : 'aura') : hasPet ? 'pet' : 'solo';
+  box.dataset.aura = hasAura ? mini.querySelector(':scope > .aura.on').dataset.a : '';
+  const shopping = currentCollectionIsShop();
+  const cat = WARDROBE.find(c=>c.id === trial.cat);
+  const equipped = !shopping && getEquipped()[trial.cat] === item.id;
+  name.textContent = displayName(trial.cat, item, !shopping);
+  sub.textContent = cat.label + (shopping ? ` · ⚡ ${item.cost}` : equipped ? ' · Equipado' : '');
+  close.hidden = false;
+  act.hidden = false;
+  act.className = 'btn-mini tb-act' + (!shopping && !equipped ? ' equip-only' : '');
+  ['buy','equip'].forEach(k=> delete act.dataset[k]);
+  act.removeAttribute('aria-disabled'); act.removeAttribute('disabled'); act.removeAttribute('title');
+  if(shopping){
+    act.textContent = buyLabel(item);
+    act.dataset.buy = item.id;
+    const missing = item.cost - getChispas();
+    if(missing > 0){ act.setAttribute('aria-disabled','true'); act.title = `Te faltan ${missing} chispas`; }
+  } else if(equipped){
+    act.textContent = 'Equipado';
+    act.setAttribute('disabled','');
+  } else {
+    act.textContent = 'Equipar';
+    act.dataset.equip = item.id;
+  }
+  act.setAttribute('aria-label', `${act.textContent}: ${item.name}`);
 }
 
 /* ---------- Compra / equipar ---------- */
@@ -319,6 +412,7 @@ function handlePurchase(btn){
   // Si el foco estaba en el botón que acabamos de destruir, muévelo al aviso
   // para que el usuario no pierda el hilo con el teclado.
   const hadFocus = document.activeElement === btn;
+  trial = null;   // al comprar o equipar, la prueba termina: la barra vuelve a Mito con lo equipado
   applyAvatar();
   renderShop();
   updateBalance();
@@ -344,6 +438,12 @@ export function init(){
     const clear = e.target.closest('[data-clear-pet-name]');
     if(clear){ savePetName(clear.dataset.clearPetName, ''); return; }
     if(e.target.closest('[data-close-pet-modal]') || e.target.classList.contains('pet-modal-backdrop')){ closePetNameModal(); return; }
+    if(e.target.closest('[data-trial-clear]')){ clearTrial(); return; }
+    if(isMobile()){
+      // En móvil, tocar una tarjeta (o su botón) solo pone el objeto en prueba; la compra va en la barra.
+      const card = e.target.closest('.shop-item');
+      if(card && !e.target.closest('.rename-pet')){ setTrial(card); return; }
+    }
     const btn = e.target.closest('[data-buy], [data-equip]');
     if(btn) handlePurchase(btn);
   });
@@ -360,4 +460,10 @@ export function init(){
 
   // El saldo decide qué se puede comprar, así que la tienda reacciona a los chispas.
   on('state:changed', updateAffordability);
+  // Al cambiar de vista (Tienda ↔ Armario, etc.) no se arrastra la prueba.
+  on('nav:after', ()=>{
+    trial = null;
+    document.querySelectorAll('.shop-item.is-trial').forEach(c=>c.classList.remove('is-trial'));
+    renderTrialBar();
+  });
 }

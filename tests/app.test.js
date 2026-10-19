@@ -158,6 +158,21 @@ test('comprar descuenta chispas, actualiza el saldo y avisa en la tienda', ()=>{
   assert.equal(store.owns(id), true);
 });
 
+test('en la tienda, el botón sin saldo dice cuántas chispas faltan y se actualiza con el saldo', ()=>{
+  resetApp();
+  emit('state:changed');
+  const btn = document.querySelector('#shopHost [data-buy]');
+  const id = btn.dataset.buy;
+  const cost = store.getChispas() + 40;   // 40 más de lo que hay
+  assert.match(document.querySelector('#shopHost [data-buy][aria-disabled="true"]').textContent, /^Te faltan \d+ ⚡$/);
+  store.addChispas(5000);
+  emit('state:changed');
+  const after = document.querySelector(`#shopHost [data-buy="${id}"]`);
+  assert.match(after.textContent, /^Comprar · ⚡ \d+$/, 'con saldo vuelve el precio');
+  assert.equal(after.getAttribute('aria-disabled'), null);
+  assert.ok(cost > 0);
+});
+
 test('comprar y luego equipar deja la pieza activa en el avatar', ()=>{
   resetApp();
   store.addChispas(5000);

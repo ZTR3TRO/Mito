@@ -282,7 +282,7 @@
       <div class="page-head">
         <div>
           <h2 class="page-title">Tienda</h2>
-          <p class="page-sub">Descubre lo que aún no tienes. Cada compra se equipa automáticamente y se guarda en tu armario. Previsualiza los productos con el cursor o al enfocar su botón.</p>
+          <p class="page-sub">Descubre lo que aún no tienes. Cada compra se equipa automáticamente y se guarda en tu armario. <span class="hint-pointer">Previsualiza los productos con el cursor o al enfocar su botón.</span><span class="hint-touch">Toca un objeto para probártelo.</span></p>
         </div>
         <div class="shop-head-actions">
           <div class="balance-chip big">
@@ -336,6 +336,21 @@
       <p id="wardrobeNotice" class="collection-notice" role="status"></p>
     </section>
   </main>
+</div>
+
+<!-- Vista previa flotante (solo móvil, en Tienda y Armario, y solo mientras hay un objeto en prueba): Mito con el objeto y su botón de acción -->
+<div class="trial-bar" id="trialBar" role="region" aria-label="Vista previa de Mito">
+  <div class="tb-mito">
+    <div class="mascot face-happy" id="mascotBar">
+      <svg class="mito" viewBox="0 0 150 150"></svg>
+    </div>
+  </div>
+  <div class="tb-text" aria-live="polite" aria-atomic="true">
+    <b class="tb-name" id="tbName">Toca un objeto para probártelo</b>
+    <span class="tb-sub" id="tbSub"></span>
+  </div>
+  <button type="button" class="btn-mini tb-act" id="tbAct" hidden></button>
+  <button type="button" class="tb-close" id="tbClose" data-trial-clear aria-label="Quitar la prueba" hidden>×</button>
 </div>
 
 <script type="module" src="./src/main.js"></script>
