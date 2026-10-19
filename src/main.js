@@ -8,7 +8,7 @@
 // 5) tienda  6) progreso  7) mascot  8) easter egg  9) service worker
 
 import { on } from './core/bus.js';
-import { byId } from './core/dom.js';
+import { byId, blurButtonsAfterPointer } from './core/dom.js';
 
 import { applyAvatar } from './features/mascot/avatar.js';
 import { getHistory, getTheme, addChispas, getChispas } from './state/store.js';
@@ -132,6 +132,7 @@ function boot(){
   initShop();
   initSeason();
   initBackup();
+  blurButtonsAfterPointer();   // se registra después de los demás clics: el botón suelta el foco cuando ya hicieron su trabajo
 
   initSpeech({ courseId: ()=> activeCourse().id });
   initReactions();

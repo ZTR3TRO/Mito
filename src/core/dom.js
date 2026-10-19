@@ -38,3 +38,12 @@ export function setText(id, value){
   const node = byId(id);
   if(node) node.textContent = value;
 }
+// Tras un clic o un toque, el botón suelta el foco: así ningún navegador dibuja el anillo de foco por haberlo tocado.
+// Con teclado (Enter / Espacio, donde el clic llega con detail 0) el botón conserva el foco y su anillo.
+export function blurButtonsAfterPointer(){
+  document.addEventListener('click', e=>{
+    if(e.detail === 0) return;
+    const btn = e.target.closest ? e.target.closest('button') : null;
+    if(btn && btn === document.activeElement) btn.blur();
+  });
+}
