@@ -1416,3 +1416,8 @@ body[data-view="shop"] .course-bar, body[data-view="wardrobe"] .course-bar{ disp
 [data-theme="dark"] .tb-mito{ background:linear-gradient(150deg, var(--mint-pale), #1a1424); }
 @media (min-width: 881px){ .trial-bar{ display:none !important; } }
 
+/* Los efectos del aura (p. ej. las estrellas fugaces de la Cósmica) se mueven fuera de la tarjeta con transform; eso contaba como
+   desborde horizontal y, en móvil, el navegador volvía la página desplazable de lado a ratos (la pantalla "brincaba" al hacer scroll).
+   overflow-x:clip recorta el desborde sin crear un contenedor de scroll (no rompe el header sticky ni los elementos fijos). */
+main{ overflow-x:clip; }
+@supports not (overflow:clip){ main{ overflow-x:hidden; } }
