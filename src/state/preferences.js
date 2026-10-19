@@ -1,6 +1,6 @@
-// Preferencias: tema y materia activa.
+// Preferencias: tema, materia activa y cuántas veces se mostró la pista de la Casa.
 
-import { state, commit } from './core.js';
+import { state, commit, num } from './core.js';
 
 export function getTheme(){
   return state.theme;
@@ -22,4 +22,15 @@ export function setCourse(id){
   state.course = id;
   commit();
   return state.course;
+}
+
+// Pista de la Casa ("pícalo, hazle cosquillas…"): solo se muestra las primeras veces.
+// `houseHint` es opcional: las partidas guardadas antes de la Casa no lo tienen y cuentan como 0.
+export function getHouseHintCount(){
+  return Math.max(0, Math.floor(num(state.houseHint)));
+}
+
+export function markHouseHintShown(){
+  state.houseHint = getHouseHintCount() + 1;
+  commit();
 }

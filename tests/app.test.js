@@ -85,8 +85,8 @@ function resetApp(){
   document.querySelector('.navbtn[data-view="home"]').click();
 }
 
-test('arranque: las 7 vistas existen y el router cambia entre ellas', ()=>{
-  ['home','apuntes','claves','quiz','progreso','shop','wardrobe'].forEach(v=>{
+test('arranque: las 8 vistas existen y el router cambia entre ellas', ()=>{
+  ['home','apuntes','claves','quiz','progreso','shop','house','wardrobe'].forEach(v=>{
     assert.ok(document.getElementById('view-' + v), 'falta la vista ' + v);
   });
   assert.ok(document.getElementById('view-home').classList.contains('active'));
@@ -97,6 +97,61 @@ test('arranque: las 7 vistas existen y el router cambia entre ellas', ()=>{
 
   // El botón activo de la sidebar sigue a la vista.
   assert.ok(document.querySelector('.navbtn[data-view="quiz"]').classList.contains('active'));
+});
+
+test('casa: reemplaza al Armario en la navegación y abre el armario desde su barra', ()=>{
+  assert.equal(document.querySelector('.navbtn[data-view="wardrobe"]'), null, 'el Armario ya no tiene botón propio');
+  const casa = document.querySelector('.navbtn[data-view="house"]');
+  assert.ok(casa.textContent.includes('Casa'));
+
+  casa.click();
+  assert.ok(document.getElementById('view-house').classList.contains('active'));
+  // el cuarto está montado: ventana y Mito con su dibujo (el piso se dibuja con el tamaño real, que aquí no hay)
+  assert.ok(document.querySelector('#houseRoom .win svg .cur-shape'), 'falta la ventana con cortinas');
+  assert.ok(document.querySelector('#mascotHouse > svg.mito .rig'), 'falta Mito');
+
+  // la barra de acciones abre el armario de siempre, y la Casa sigue marcada en la navegación
+  document.querySelector('#view-house .house-act[data-nav="wardrobe"]').click();
+  assert.ok(document.getElementById('view-wardrobe').classList.contains('active'));
+  assert.ok(casa.classList.contains('active'), 'en el armario se marca Casa');
+  assert.ok(document.querySelector('#wardrobeHost .shop-item'), 'el armario muestra sus prendas');
+
+  // y se vuelve a la Casa
+  document.querySelector('#view-wardrobe [data-nav="house"]').click();
+  assert.ok(document.getElementById('view-house').classList.contains('active'));
+});
+
+test('casa: la pista sale solo en las primeras visitas y se guarda como campo opcional', ()=>{
+  resetApp();
+  assert.equal(store.getHouseHintCount(), 0, 'una partida sin el campo cuenta como 0');
+  const hint = document.getElementById('houseHint');
+  const visit = ()=>{ document.querySelector('.navbtn[data-view="home"]').click(); document.querySelector('.navbtn[data-view="house"]').click(); };
+  for(let i = 1; i <= 3; i++){ visit(); assert.equal(hint.hidden, false, `visita ${i}: debe verse`); }
+  visit();
+  assert.equal(hint.hidden, true, 'a la cuarta ya no sale');
+  assert.equal(store.getHouseHintCount(), 3);
+
+  // viaja en el respaldo; un archivo sin el campo (o con basura) no lo rompe
+  assert.equal(JSON.parse(store.exportSave()).houseHint, 3);
+  const old = JSON.parse(store.exportSave()); delete old.houseHint;
+  assert.equal('houseHint' in store.parseSave(JSON.stringify(old)), false);
+  assert.equal('houseHint' in store.parseSave(JSON.stringify({ ...old, houseHint: 'x' })), false);
+  assert.equal(store.parseSave(JSON.stringify({ ...old, houseHint: 2.7 })).houseHint, 2);
+  // reiniciar todo vuelve a mostrarla
+  resetApp();
+  assert.equal(store.getHouseHintCount(), 0);
+});
+
+test('casa: lo equipado se ve en Mito dentro de la Casa', ()=>{
+  resetApp();
+  store.addChispas(500);
+  assert.ok(store.buyAndEquip('pet', 'p-chick'));
+  assert.ok(store.buyAndEquip('aura', 'a-mint'));
+  document.querySelector('.navbtn[data-view="house"]').click();
+  const mito = document.getElementById('mascotHouse');
+  assert.ok(mito.querySelector(':scope > svg.pet'), 'falta la mascota');
+  assert.ok(mito.querySelector(':scope > .aura.on'), 'falta el aura');
+  resetApp();
 });
 
 test('arranque: apuntes, claves y contadores del quiz quedan pintados', ()=>{

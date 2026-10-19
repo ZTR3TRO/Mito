@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mito · Casa (solo dev)</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../src/style.css">
+<style>
+  /* Comparación: versión aprobada y nueva lado a lado. Los estilos del cuarto son los de la app (style.css). */
+  body{ margin:0; }
+  .panel{ background:var(--bg); color:var(--ink); padding:20px; }
+  .panel h1{ font-size:20px; margin:0 0 4px; }
+  .panel h2{ font-size:15px; margin:28px 0 10px; }
+  .pair{ display:flex; gap:28px; align-items:flex-start; }
+  .lbl{ font-size:11px; font-weight:800; color:var(--ink-faint); margin:0 0 6px; text-transform:uppercase; letter-spacing:.04em; }
+  .house{ display:flex; }
+  .approved .room{ border-radius:var(--radius); border:2px solid var(--line); box-shadow:var(--shadow-soft); }
+  .approved-bar{ margin-top:10px; position:relative; height:62px; background:var(--card); border:2px solid var(--line); border-radius:18px; }
+  .approved-bar .house-bar{ position:absolute; background:none; border:0; box-shadow:none; -webkit-backdrop-filter:none; backdrop-filter:none; bottom:4px; }
+  .still .room *, .still .mascot, .still .mascot *{ animation:none !important; }
+  /* ?grid: lugar de casa y muebles de ejemplo de la Fase 4, dentro del bloque */
+  .zones{ position:absolute; inset:0; z-index:5; pointer-events:none; display:none; font:800 10px/1 var(--font-body); }
+  .show-grid .zones{ display:block; }
+  .zones .home{ position:absolute; left:var(--home-x); top:var(--home-y); width:12px; height:12px; translate:-50% -50%; border-radius:50%; background:var(--pink); box-shadow:0 0 0 3px #fff; }
+  .zones .ph{ position:absolute; translate:-50% -100%; border-radius:10px; background:rgba(255,201,60,.55); border:2px solid #e0a516; display:grid; place-items:center; color:#6b4a00; text-align:center; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="module" src="./house.js"></script>
+</body>
+</html>

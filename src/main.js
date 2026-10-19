@@ -5,7 +5,7 @@
 // añadir sin tocar los demás.
 //
 // Orden de arranque: 0) núcleo  1) tema  2) navegación  3) materia  4) quiz
-// 5) tienda  6) progreso  7) mascot  8) easter egg  9) service worker
+// 5) tienda y casa  6) progreso  7) mascot  8) easter egg  9) service worker
 
 import { on } from './core/bus.js';
 import { byId, blurButtonsAfterPointer } from './core/dom.js';
@@ -26,6 +26,7 @@ import { renderQuizCounts, renderStreak } from './features/quiz/counts.js';
 
 import { init as initShop, renderShop, updateBalance, updatePreviewLabels } from './features/shop/index.js';
 import { init as initSeason, checkSeason } from './features/shop/season.js';
+import { init as initHouse } from './features/house/index.js';
 
 import { init as initBackup } from './features/progress/backup.js';
 import { renderProgress, renderSidebarStats } from './features/progress/view.js';
@@ -132,6 +133,7 @@ function boot(){
   initQuiz();
   initShop();
   initSeason();
+  initHouse();
   initBackup();
   blurButtonsAfterPointer();   // se registra después de los demás clics: el botón suelta el foco cuando ya hicieron su trabajo
 

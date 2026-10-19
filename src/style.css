@@ -1324,7 +1324,7 @@ svg.th *{animation:none!important}
 
 /* ================= MÓVIL COMPACTO (≤ 880 px; escritorio sin cambios) ================= */
 /* Selector de materia: oculto donde no afecta nada (en todos los tamaños) */
-body[data-view="shop"] .course-bar, body[data-view="wardrobe"] .course-bar{ display:none; }
+body[data-view="shop"] .course-bar, body[data-view="wardrobe"] .course-bar, body[data-view="house"] .course-bar{ display:none; }
 .nav-short{ display:none; }
 
 @media (max-width: 880px){
@@ -1516,3 +1516,153 @@ main{ overflow-x:clip; }
 .wardrobe-preview, [data-theme="dark"] .wardrobe-preview,
 .streak-chip, [data-theme="dark"] .streak-chip,
 .mascot-side, [data-theme="dark"] .mascot-side{ background-origin:border-box; }
+
+/* ================= CASA DE MITO ================= */
+/* El cuarto ocupa todo el espacio de la vista: en escritorio, toda el área principal junto al menú lateral; en
+   móvil, todo el alto entre el header y la barra de navegación. La escena aprobada es un bloque fijo (.scene:
+   16:9 en pantallas anchas, 3:4 en altas) que se escala entero para caber, y el fondo (pared y piso) se extiende
+   a su alrededor. La composición la calcula features/house/layout.js y room.js la escribe en variables en px. */
+.sr-only{ position:absolute; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0; }
+body[data-view="house"] main{ padding:0; max-width:none; display:flex; flex-direction:column; min-height:0; overflow:hidden; }
+body[data-view="house"] .mascot-side{ display:none; }   /* en la Casa ya está el Mito grande; el del panel distrae */
+#view-house.active{ display:flex; flex-direction:column; flex:1 1 auto; min-height:0; }
+.house{ position:relative; flex:1 1 auto; min-height:0; display:flex; container:house / size; }
+@media (min-width: 881px){
+  body[data-view="house"] .app{ height:100vh; height:100dvh; }
+  body[data-view="house"] main{ height:100vh; height:100dvh; }
+}
+@media (max-width: 880px){
+  /* header arriba (su alto natural) y el cuarto hasta la barra de navegación fija (--nav-h lo mide house/index.js) */
+  body[data-view="house"] .app{ display:flex; flex-direction:column; height:100vh; height:100dvh; }
+  body[data-view="house"] .sidebar{ flex:0 0 auto; }
+  body[data-view="house"] main{ flex:1 1 auto; padding:0 0 var(--nav-h, calc(64px + env(safe-area-inset-bottom, 0px))); }
+}
+.room{
+  /* Las escribe features/house/room.js en px: el bloque (--bx, --by, --bw, --bh), el zócalo (--horizon) y el
+     alto del piso y de la pared dentro del bloque (--fb, --wb). Estos valores son solo el respaldo inicial. */
+  --bx: 0px; --by: 0px; --bw: 100%; --bh: 100%; --horizon: 62%; --fb: 200px; --wb: 400px;
+  --bar-space: 84px;                              /* franja de abajo para la barra de acciones */
+  --fly-x: 0px; --fly-y: 0px; --lift: 0;   /* desplazamiento de Mito al arrastrarlo o lanzarlo (features/house/motion.js) */
+
+  /* paleta de día */
+  --wall-1:#ffe6f1; --wall-2:#fff6fa; --dot:#ffd0e5; --vignette:rgba(150,40,100,.10);
+  --base-hi:#7bf0c4; --base-1:var(--mint); --base-2:var(--mint-deep); --base-drop:rgba(13,120,85,.28); --wall-ao:rgba(150,40,100,.10);
+  --plank-1:#cdf3e3; --plank-2:#bdeed8; --plank-3:#c6f1de; --joint:#8fd3b6; --bevel:rgba(255,255,255,.6); --grain:rgba(13,140,100,.14);
+  --floor-near:rgba(10,90,65,.16); --floor-far:rgba(255,255,255,.18);
+  --frame:#fff; --frame-in:#f6e3ee; --frame-line:#efc3d8; --frame-shadow:rgba(150,40,100,.14);
+  --sill-top:#fff; --sill-front:#f7dbe9;
+  --sky-1:#a8e0ff; --sky-2:#ffe0ef; --hill:#9fe6c6; --hill-2:#7fdab3; --glare:.38;
+  --rod:var(--lilac); --rod-line:#8f5fe0; --cur-1:#ff8fc0; --cur-2:#ffb6d6; --cur-line:#e8619c; --tie:var(--mint); --tie-line:var(--mint-deep);
+  --light:255,249,232; --light-shaft:.3; --light-patch:.56; --light-soft:2.4;   /* sol: crema tenue y bordes suaves */
+  --shadow:51,39,74; --shadow-a:.36;
+
+  position:relative; flex:1 1 auto; min-height:0; container:room / size; overflow:hidden;
+  isolation:isolate; user-select:none; -webkit-user-select:none;
+}
+@container house (orientation: portrait) or (max-width: 640px){
+  .room{ --bar-space: 76px; }
+}
+[data-theme="dark"] .room{
+  /* noche */
+  --wall-1:#2b2140; --wall-2:#231b33; --dot:#382a4d; --vignette:rgba(0,0,0,.38);
+  --base-hi:#2fa57c; --base-1:#1e7a5c; --base-2:#14563f; --base-drop:rgba(0,0,0,.45); --wall-ao:rgba(0,0,0,.28);
+  --plank-1:#1b3a32; --plank-2:#17322b; --plank-3:#1d3f36; --joint:#0e211b; --bevel:rgba(140,230,190,.08); --grain:rgba(140,230,190,.07);
+  --floor-near:rgba(0,0,0,.25); --floor-far:rgba(0,0,0,0);
+  --frame:#3e3254; --frame-in:#332947; --frame-line:#55466e; --frame-shadow:rgba(0,0,0,.35);
+  --sill-top:#4a3d63; --sill-front:#35294a;
+  --sky-1:#1c1640; --sky-2:#4a2f6b; --hill:#22403a; --hill-2:#1a332e; --glare:.12;
+  --rod:#7d5bb8; --rod-line:#5d3f94; --cur-1:#9a3f72; --cur-2:#b9548c; --cur-line:#6e2c53; --tie:#1e7a5c; --tie-line:#14563f;
+  --light:196,182,255; --light-shaft:.28; --light-patch:.4; --light-soft:1;     /* luna: fría */
+  --shadow:0,0,0; --shadow-a:.6;
+}
+.room > *, .scene > *{ position:absolute; }
+
+/* el bloque de la escena aprobada: dentro, todo como en la versión aprobada (en % de su ancho y alto; --mito lo
+   escribe room.js en px: 21 % del ancho del bloque, o 44 % en el bloque alto). Sin z-index ni contención propios,
+   para que la luz se mezcle con el piso y la pared como en la versión aprobada. */
+.scene{ left:var(--bx); top:var(--by); width:var(--bw); height:var(--bh);
+  --mito: calc(var(--bw) * .21); --home-x: 50%; --home-y: 86%; --win-x: 6%; --win-w: 22%; }
+.scene[data-kind="tall"]{ --mito: calc(var(--bw) * .44); --home-y: 84%; --win-x: 55%; --win-w: 40%; }
+
+/* pared: degradado + lunares + viñeta en las esquinas */
+.room-wall{ left:0; right:0; top:0; height:var(--horizon);
+  background:
+    radial-gradient(circle at 25% 25%, var(--dot) 0 2.2px, transparent 2.8px) 0 0 / 28px 28px,
+    radial-gradient(circle at 75% 75%, var(--dot) 0 2.2px, transparent 2.8px) 0 0 / 28px 28px,
+    linear-gradient(180deg, var(--wall-1), var(--wall-2)); }
+.room-wall::after{ content:''; position:absolute; inset:0;
+  background:radial-gradient(130% 120% at 50% 70%, transparent 55%, var(--vignette) 100%); }
+.room-wall::before{ content:''; position:absolute; left:0; right:0; bottom:0; height:calc(var(--wb) * .12);   /* sombra donde la pared baja al zócalo */
+  background:linear-gradient(0deg, var(--wall-ao), transparent); }
+
+/* piso: duela en perspectiva (SVG) + sombra junto a la pared y viñeta */
+.room-floor{ left:0; right:0; top:var(--horizon); bottom:0; }
+.room-floor svg{ position:absolute; inset:0; width:100%; height:100%; display:block; }
+.room-floor::after{ content:''; position:absolute; inset:0; pointer-events:none;
+  background:
+    linear-gradient(180deg, var(--floor-near) 0, transparent calc(var(--fb) * .22)),
+    radial-gradient(120% 100% at 50% 0%, transparent 60%, var(--vignette) 100%),
+    linear-gradient(0deg, var(--floor-far), transparent 40%); }
+
+/* zócalo con volumen: brillo arriba, cuerpo y sombra que cae al piso */
+.room-base{ left:0; right:0; top:calc(var(--horizon) - max(9px, var(--bw) * .015)); height:max(9px, calc(var(--bw) * .015)); z-index:1;
+  background:linear-gradient(180deg, var(--base-hi) 0 2px, var(--base-1) 2px 55%, var(--base-2));
+  box-shadow:0 2px 0 rgba(0,0,0,.06), 0 4px 10px var(--base-drop); }
+
+/* luz: haz y reflejo de la ventana. Va detrás de la ventana (el haz sale de su contorno) y debajo de Mito */
+.room-light{ inset:0; z-index:2; pointer-events:none; }
+.room-light svg{ width:100%; height:100%; display:block; }
+[data-theme="dark"] .room-light{ mix-blend-mode:screen; }
+
+/* ventana (SVG con marco, repisón y cortinas) */
+.win{ left:var(--win-x); top:5%; width:var(--win-w); z-index:3; pointer-events:none; }
+.win svg{ width:100%; height:auto; display:block; overflow:visible; }
+.win .night{ display:none; }
+[data-theme="dark"] .win .day{ display:none; }
+[data-theme="dark"] .win .night{ display:inline; }
+
+/* escenario: sombras de contacto, mascota y Mito */
+.room-stage{ inset:0; z-index:4; }
+.room .mascot{ position:absolute; width:var(--mito); height:var(--mito); animation:none;   /* en la Casa está en el piso: no flota */
+  left:var(--home-x); top:var(--home-y); translate:-50% -88%; outline:none; -webkit-tap-highlight-color:transparent; }
+.room .mascot .pet{ left:-30%; }
+.room .mascot > svg.mito > ellipse{ display:none; }   /* su sombra de siempre volaría con él: en la Casa la sombra está en el piso (.contact-mito) */
+.contact{ position:absolute; border-radius:50%; pointer-events:none; translate:-50% -50%;
+  background:radial-gradient(closest-side, rgba(var(--shadow), var(--shadow-a)), rgba(var(--shadow), calc(var(--shadow-a) * .45)) 60%, transparent); }
+.contact-mito{ left:calc(var(--home-x) + var(--fly-x)); top:calc(var(--home-y) - var(--mito) * .015);
+  width:calc(var(--mito) * .78); height:calc(var(--mito) * .13);
+  scale:calc(1 - var(--lift) * .55); opacity:calc(1 - var(--lift) * .65); }
+.contact-pet{ left:calc(var(--home-x) - var(--mito) * .63); top:calc(var(--home-y) + var(--mito) * .075);
+  width:calc(var(--mito) * .3); height:calc(var(--mito) * .06); }
+.room:not(:has(.mascot > svg.pet)) .contact-pet{ display:none; }
+
+/* barra de acciones: flota abajo, dentro del cuarto, en la franja --bar-space (Mito y la mascota quedan encima).
+   Hay sitio para más botones (Comer, Bañar, Dormir y Decorar en las siguientes fases). */
+.house-bar{ left:50%; bottom:max(12px, calc((var(--bar-space) - 58px) / 2)); translate:-50% 0; z-index:7;
+  display:flex; justify-content:center; gap:8px; padding:6px; max-width:calc(100% - 24px);
+  background:color-mix(in srgb, var(--card) 72%, transparent); -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px);
+  border:1.5px solid color-mix(in srgb, var(--line) 80%, transparent); border-radius:20px; box-shadow:0 8px 22px -10px rgba(51,39,74,.35); }
+.house-act{ all:unset; cursor:pointer; display:inline-flex; align-items:center; gap:8px;
+  padding:10px 20px; border-radius:14px; font-family:var(--font-display); font-weight:700; font-size:15px; color:#fff;
+  background:linear-gradient(135deg,var(--pink),var(--lilac)); box-shadow:0 4px 0 0 #c4559a, var(--shadow-pink);
+  transition:transform .1s ease, filter .15s ease; -webkit-tap-highlight-color:transparent; }
+.house-act svg{ width:20px; height:20px; }
+@media (hover:hover){ .house-act:hover{ transform:translateY(-1px); filter:brightness(1.05); } }
+.house-act:active{ transform:translateY(2px); box-shadow:0 2px 0 0 #c4559a, var(--shadow-pink); }
+.house-act:focus-visible{ outline:3px solid var(--lilac); outline-offset:3px; }
+@container house (max-width: 640px){ .house-act{ padding:9px 18px; font-size:14px; } }
+
+/* pista de las primeras visitas: pequeña, arriba del cuarto, y se desvanece sola o al primer gesto */
+.house-hint{ top:14px; left:50%; translate:-50% 0; z-index:6; margin:0; width:max-content; max-width:min(560px, calc(100% - 28px));
+  padding:7px 14px; border-radius:999px; font-size:12.5px; font-weight:800; line-height:1.3; text-align:center;
+  color:var(--pink-deep); background:color-mix(in srgb, var(--card) 86%, transparent); box-shadow:var(--shadow-soft);
+  -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px); pointer-events:none;
+  opacity:0; transition:opacity .5s ease; }
+.house-hint.show{ opacity:1; }
+.house-hint[hidden]{ display:none; }
+@container house (orientation: portrait) or (max-width: 640px){
+  /* en vertical la ventana está arriba a la derecha: la pista va a la izquierda */
+  .house-hint{ left:12px; translate:none; max-width:calc(52% - 12px); border-radius:14px; font-size:11.5px; text-align:left; }
+}
+[data-theme="dark"] .house-hint{ color:var(--ink); background:color-mix(in srgb, #3b3050 90%, transparent); }
+

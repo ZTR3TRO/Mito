@@ -1,5 +1,6 @@
 // Navegación entre vistas. Es el router de la app: cada vista es una <section>
-// con id "view-<nombre>" y un .navbtn con data-view="<nombre>".
+// con id "view-<nombre>" y un .navbtn con data-view="<nombre>". Una vista sin botón propio
+// (el Armario, que se abre desde la Casa) dice con data-nav-parent qué botón queda marcado.
 
 import { $$, byId } from '../../core/dom.js';
 import { emit } from '../../core/bus.js';
@@ -16,7 +17,8 @@ export function goTo(view){
   $$('.view').forEach(v=>v.classList.remove('active'));
   byId('view-' + view)?.classList.add('active');
   document.body.dataset.view = view;
-  $$('.navbtn').forEach(b=>b.classList.toggle('active', b.dataset.view === view));
+  const navView = byId('view-' + view)?.dataset.navParent || view;
+  $$('.navbtn').forEach(b=>b.classList.toggle('active', b.dataset.view === navView));
   emit('nav:after', view);
   window.scrollTo({ top:0, behavior:'smooth' });
 }

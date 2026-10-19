@@ -181,7 +181,7 @@ function mitoChangedRecently(t){
   return Math.abs(t - heroChangedAt) < PET_HERO_GAP_MS || Math.abs(t - bubbleLastChange) < PET_HERO_GAP_MS;
 }
 
-// Habla en la vista que estás viendo (portada, tienda o armario). En el panel lateral solo habla Mito.
+// Habla en la vista que estás viendo (portada, tienda o armario; en la Casa calla). En el panel lateral solo habla Mito.
 // Cada frase se agenda sola con un retraso al azar; con la pestaña oculta se pausa y al volver se retoma.
 export function initPetTalk({ viewVisible }){
   let timer = null;
@@ -193,6 +193,8 @@ export function initPetTalk({ viewVisible }){
     const now = Date.now();
     if(mitoChangedRecently(now)){ schedule(PET_HERO_GAP_MS); return; }   // Mito acaba de hablar: se desfasa unos segundos
     petSpokeAt = now;
+    // En la Casa no hay charla automática: la mascota solo habla para reaccionar a lo que pasa en el cuarto.
+    if(viewVisible('house')){ schedule(nextDelay()); return; }
     const main = viewVisible('home') ? byId('mascotHero')
       : viewVisible('shop') ? byId('mascotPreview')
       : viewVisible('wardrobe') ? byId('mascotWardrobe') : null;

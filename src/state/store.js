@@ -20,6 +20,6 @@ export {
   getMistakes, clearMistakes, getStreak,
 } from './progress.js';
 
-export { getTheme, setTheme, getCourse, setCourse } from './preferences.js';
+export { getTheme, setTheme, getCourse, setCourse, getHouseHintCount, markHouseHintShown } from './preferences.js';
 
 export { exportSave, parseSave, importSave, resetAll } from './backup.js';

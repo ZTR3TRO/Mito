@@ -38,6 +38,8 @@ src/
     quiz/              ronda, sesión, reparto y fallos: index, session,
                        view, review, counts
     shop/              tienda y tienda de temporada: index, season
+    house/             la Casa: index (cableado), layout (bloque aprobado escalado, piso y luz; puro),
+                       room (dibuja la escena)
     progress/          vista de progreso y copia de seguridad: view, backup
     mascot/            la mascota entera: avatar, auras, face, effects, speech
     pwa/update.js      service worker: registro y actualización segura (solo en producción)

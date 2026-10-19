@@ -76,6 +76,8 @@ export function parseSave(json){
     lastDay: typeof s.lastDay === 'string' ? s.lastDay : null,
     theme: s.theme === 'dark' ? 'dark' : 'light',
     course: typeof s.course === 'string' ? s.course : d.course,
+    // opcional: si el archivo no lo trae, se queda como estaba
+    ...(Number.isFinite(s.houseHint) ? { houseHint: Math.max(0, Math.floor(s.houseHint)) } : {}),
   };
 }
 
@@ -89,6 +91,7 @@ export function importSave(json){
 export function resetAll(){
   const prevTheme = state.theme;
   Object.assign(state, defaultState());
+  delete state.houseHint;   // empezar de cero también vuelve a mostrar la pista de la Casa
   state.theme = prevTheme;
   commit();
 }

@@ -1,6 +1,7 @@
 // Tema claro / oscuro. Persiste en el store y se refleja en <html data-theme>.
 
 import { byId } from '../../core/dom.js';
+import { emit } from '../../core/bus.js';
 import { getTheme, setTheme } from '../../state/store.js';
 
 const LABELS = {
@@ -10,6 +11,7 @@ const LABELS = {
 
 export function applyTheme(t){
   document.documentElement.dataset.theme = t;
+  emit('theme:changed', t);   // la luz de la Casa se recalcula con el tono del modo
   const btn = byId('themeToggle');
   if(!btn) return;
   // localStorage es editable a mano: un tema inesperado no debe romper la app.
