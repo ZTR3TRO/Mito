@@ -794,3 +794,25 @@ test('"Reiniciar todo" usa el modal de la app: cancelar es lo predeterminado y n
   assert.equal(store.getChispas(), 0);
   window.confirm = ()=> true;
 });
+
+test('Inicio: el título del hero se encoge con nombres largos y las materias sin datos del ATP muestran temas y puntos clave', async ()=>{
+  const { heroTitleSize } = await import('../src/features/course/home.js');
+  assert.equal(heroTitleSize('el ATP'), 's');
+  assert.equal(heroTitleSize('Cálculo Dietético'), 's');
+  assert.equal(heroTitleSize('Epidemiología y Nutrición'), 'm');
+  assert.equal(heroTitleSize('Fisiopatología Gastrointestinal y Nutrición'), 'l');
+
+  resetApp();
+  const hero = document.querySelector('.hero');
+  assert.equal(hero.dataset.size, 's');
+  assert.equal(document.querySelector('.other-only').style.display, 'none', 'en el ATP ya hay sus propios datos');
+
+  document.querySelectorAll('#courseTabs .course-pill')[3].click();
+  assert.equal(hero.dataset.size, heroTitleSize(courses[3].label));
+  assert.equal(document.getElementById('statTopics').textContent, String(courses[3].notes.length));
+  assert.equal(document.getElementById('statKeys').textContent, String(courses[3].keypoints.length));
+  assert.equal(document.querySelector('.other-only').style.display, '');
+  assert.equal(document.querySelector('.atp-only').style.display, 'none');
+
+  document.querySelectorAll('#courseTabs .course-pill')[0].click();
+});
