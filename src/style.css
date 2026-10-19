@@ -883,7 +883,7 @@ svg.th [data-k="fangs"] .fg-n{display:inline}
 
 .mascot svg.mito,svg.th{--body:#1fd79a;--stroke:#0da876;--hi:#6cf0c4}
 .mascot svg{transform-origin:50% 88%}
-.mascot.small .a-parts{display:none}
+.mascot-side .mascot .a-parts{display:none}   /* en el panel lateral (Mito pequeño) las partículas del aura se omiten; en el quiz Mito ya es grande y se pintan completas */
 svg.th{width:100%;height:100%;overflow:visible}
 svg.th .f-normal{display:inline}
 svg.th *{animation:none!important}
@@ -902,7 +902,6 @@ svg.th *{animation:none!important}
   transition:opacity .25s ease, transform .25s ease;
 }
 .mascot .pet-bubble.show{ opacity:1; transform:none; }
-.mascot.small .pet-bubble{ display:none; }
 [data-theme="dark"] .mascot .pet-bubble{ background:var(--card); color:var(--ink); }
 @media (prefers-reduced-motion: reduce){ .mascot .pet-bubble{ transition:none; } }
 
@@ -1304,4 +1303,55 @@ body[data-view="shop"] .course-bar, body[data-view="wardrobe"] .course-bar{ disp
   .stat-card .stat-num{ font-size:20px; }
   .cb-name{ width:100%; font-size:12px; }
 }
+
+/* Panel lateral (escritorio): Mito centrado en la tarjeta, con la mascota a su costado. La mascota no habla aquí (solo Mito). */
+.mascot-side .mascot{ margin-left:auto; margin-right:auto; }
+.mascot-side .pet-bubble{ display:none; }
+
+/* Reacciones del quiz (móvil y escritorio): globito de Mito a la derecha de su mascota y el de la mascota a la izquierda */
+.mascot-quiz{ position:relative; --mw:150px; }
+.mascot-quiz.is-result{ --mw:150px; margin-bottom:0; }
+/* Durante la ronda la descripción se oculta (escritorio y móvil); la pantalla de inicio del quiz la conserva */
+#view-quiz.is-playing .page-sub{ display:none; }
+/* Mito y la mascota durante la ronda: del mismo tamaño que en inicio y resultados (150 px en escritorio, 96 px en móvil) */
+.mascot-quiz .mascot.small{ width:var(--mw); height:var(--mw); }
+@media (max-width: 880px){ .mascot-quiz.is-result .quiz-speech{ max-width:84px; font-size:10.5px; } }
+@media (max-width: 640px){
+  /* móvil: 1.3× y menos aire alrededor para no empujar la pregunta; inicio y resultado un poco más chicos para que los tres tamaños sean coherentes */
+  .mascot-quiz{ --mw:96px; margin-bottom:2px; }
+  .mascot-quiz.is-result{ --mw:120px; }
+  #view-quiz .quiz-top{ margin-bottom:12px; }
+  #mascotIntro, #mascotResult{ width:120px; height:120px; }
+}
+.quiz-speech{
+  position:absolute; left:calc(50% + var(--mw) / 2 + 8px); top:calc(50% - 18px); width:max-content;
+  max-width:min(220px, calc(50% - var(--mw) / 2 - 16px)); padding:6px 10px; border-radius:12px 12px 12px 4px;
+  background:#fff; color:var(--pink-deep); font-size:11px; font-weight:800; line-height:1.25; text-align:left;
+  box-shadow:0 4px 10px rgba(0,0,0,.18); z-index:5; overflow-wrap:anywhere;
+  opacity:0; visibility:hidden; transform:translateY(6px) scale(.9); pointer-events:none;
+  transition:opacity .25s ease, transform .25s ease, visibility .25s;
+}
+.quiz-speech.show{ opacity:1; visibility:visible; transform:none; }
+.quiz-speech::after{
+  content:''; position:absolute; left:-6px; bottom:8px; width:0; height:0;
+  border:6px solid transparent; border-left:0; border-right-color:#fff;
+}
+[data-theme="dark"] .quiz-speech{ background:var(--card); color:var(--ink); }
+[data-theme="dark"] .quiz-speech::after{ border-right-color:var(--card); }
+.mascot-quiz .pet-bubble{
+  left:auto; right:calc(100% + 4px); bottom:46%; padding:5px 8px; font-size:10px; line-height:1.25; overflow-wrap:anywhere;
+}
+.mascot-quiz .pet-bubble::after{
+  content:''; position:absolute; right:12px; bottom:-6px; width:0; height:0;
+  border:6px solid transparent; border-top-color:#fff; border-bottom:0;
+}
+[data-theme="dark"] .mascot-quiz .pet-bubble::after{ border-top-color:var(--card); }
+@media (prefers-reduced-motion:reduce){ .quiz-speech{ transition:none; } }
+
+/* Aura en el quiz: sobresale ~28 % del tamaño de Mito por cada lado, así que se reserva ese espacio (solo si hay aura) y los textos
+   de alrededor quedan por encima, nunca tapados por ella. */
+.mascot-quiz:has(.aura.on){ margin-top:calc(var(--mw) * .28); margin-bottom:calc(var(--mw) * .28); }
+#view-quiz .page-head, #view-quiz .quiz-top, #view-quiz .qbar-track, #view-quiz .quiz-intro h2, #view-quiz .quiz-result h2{ position:relative; z-index:1; }
+/* El texto del hero queda por encima del aura de Mito (el aura sobresale ~24 % de su tamaño) */
+.hero h1, .hero p, .hero-actions{ position:relative; z-index:1; }
 

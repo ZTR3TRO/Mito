@@ -5,10 +5,9 @@ import { el, clear, byId, setText } from '../../core/dom.js';
 import { setFace, playState } from '../mascot/face.js';
 import { burstConfetti, sparkAt } from '../mascot/effects.js';
 import * as s from './session.js';
+import { PASS_PCT, GREAT_PCT } from '../../content/messages.js';
 
 const LETTERS = ['A','B','C','D'];
-const PASS_PCT = 70;
-const GREAT_PCT = 90;
 
 function showQuizPart(part){
   // en móvil, durante la ronda el título se achica y la descripción se oculta (ver style.css)

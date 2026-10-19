@@ -30,10 +30,11 @@ import { init as initSeason, checkSeason } from './features/shop/season.js';
 import { init as initBackup } from './features/progress/backup.js';
 import { renderProgress, renderSidebarStats } from './features/progress/view.js';
 
+import { init as initReactions } from './features/mascot/reactions.js';
 import { init as initSpeech, initPetTalk, say, sayHero, getHeroLastMsg } from './features/mascot/speech.js';
 import { setFace, playState } from './features/mascot/face.js';
 import { burstConfetti } from './features/mascot/effects.js';
-import { greeting, idleMessage, courseSwitchMessage, firstRoundMessage, resultMessage } from './content/messages.js';
+import { greeting, idleMessage, courseSwitchMessage, firstRoundMessage } from './content/messages.js';
 import { initEasterEgg, initPerfectEgg, initSparkEgg } from './features/easter.js';
 
 /* ---------- Re-render de las vistas que dependen de la materia ---------- */
@@ -97,7 +98,6 @@ function wire(){
     // Solo hay que repintar la tienda si el saldo cambió (state:changed ya
     // actualiza el saldo y los botones de compra).
     if(awarded > 0) renderShop();
-    say(resultMessage(pct));
     if(isVisible('progreso')) renderProgress();
   });
 
@@ -134,6 +134,7 @@ function boot(){
   initBackup();
 
   initSpeech({ courseId: ()=> activeCourse().id });
+  initReactions();
   initPetTalk({ viewVisible: isVisible });
 
   renderCourseViews();

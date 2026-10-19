@@ -1,7 +1,7 @@
 // Mensajes de Mito. Todo el texto de la mascota vive aquí para no ensuciar main.js.
 // Para agregar mensajes de una materia nueva: añade una clave con su `id` en BY_COURSE.
 
-const USER_NAME = 'Zare';
+export const USER_NAME = 'Zare';
 
 /* ---------- Mensajes generales (sirven para cualquier materia) ---------- */
 const GENERAL = [
@@ -173,8 +173,19 @@ export function petMessage(petKey, last){
 
 export function firstRoundMessage(){ return rnd(FIRST_ROUND); }
 
-export function resultMessage(pct){
-  if(pct >= 80) return rnd(GREAT);
-  if(pct >= 60) return rnd(OK);
-  return rnd(LOW);
+// Umbrales del resultado de una ronda. Los comparten el título de la pantalla de resultados y estos mensajes.
+export const GREAT_PCT = 90;
+export const PASS_PCT = 70;
+
+// Nivel del resultado: sin vidas cuenta como "low" (el título dice "Se acabaron las vidas").
+export function resultTier(pct, outOfLives = false){
+  if(outOfLives) return 'low';
+  if(pct >= GREAT_PCT) return 'great';
+  if(pct >= PASS_PCT) return 'ok';
+  return 'low';
+}
+
+export function resultMessage(pct, outOfLives = false){
+  const tier = resultTier(pct, outOfLives);
+  return rnd(tier === 'great' ? GREAT : tier === 'ok' ? OK : LOW);
 }

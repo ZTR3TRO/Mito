@@ -17,13 +17,15 @@ export function startQuiz(){
   if(!questions) return;
   view.showPlay();
   view.renderQuestion(answer);
-  emit('quiz:started');
+  emit('quiz:started', { total: questions.length });
 }
 
 function answer(idx){
   const outcome = s.submitAnswer(idx);
   if(!outcome) return;
   view.renderAnswerResult(idx, outcome);
+  const { lives, streak } = s.getSession();
+  emit('quiz:answered', { correct: outcome.correct, streak, lives, over: s.isGameOver() });
 }
 
 function nextQuestion(){
@@ -32,6 +34,8 @@ function nextQuestion(){
     return;
   }
   view.renderQuestion(answer);
+  const { index, questions, lives, streak } = s.getSession();
+  emit('quiz:question', { index, total: questions.length, lives, streak, last: index === questions.length - 1 });
 }
 
 function finishQuiz(){
@@ -52,7 +56,7 @@ function finishQuiz(){
   }
 
   recordQuizResult({ score, right, total: answered, pct, cats: s.getSession().catStats, courseId: activeCourse().id, size: total });
-  emit('quiz:finished', { pct, awarded, perfect, total });
+  emit('quiz:finished', { pct, awarded, perfect, total, outOfLives: s.getSession().lives <= 0 });
 }
 
 // Antes de cambiar de sección o de materia: si hay una ronda a medias, pregunta; si ya estaba completa, se guarda.
@@ -64,6 +68,7 @@ function checkLeave(proceed, target){
 
 export function resetQuiz(){
   s.resetSession();
+  emit('quiz:ended');
   view.showIntro();
 }
 
