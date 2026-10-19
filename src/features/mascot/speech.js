@@ -88,6 +88,9 @@ const MOBILE = '(max-width: 880px)';
 function leftBound(mascotEl){
   // En el quiz la caja es todo el quiz (así la burbuja puede usar el margen de la tarjeta).
   if(mascotEl.closest('.mascot-quiz')) return mascotEl.closest('.quiz-shell')?.getBoundingClientRect().left;
+  // En la Casa, el globo no sale del cuarto.
+  const room = mascotEl.closest('.room');
+  if(room) return room.getBoundingClientRect().left + 6;
   // En el hero, el espacio libre va del texto (primera columna) hasta Mito.
   const text = mascotEl.closest('.hero-grid')?.firstElementChild;
   return text ? text.getBoundingClientRect().right : null;

@@ -328,11 +328,13 @@
             <div class="win"></div>
             <div class="room-stage">
               <div class="contact contact-mito"></div><div class="contact contact-pet"></div>
-              <div class="mascot face-normal" id="mascotHouse">
+              <div class="mascot face-normal" id="mascotHouse" tabindex="0" role="button" aria-label="Mito. Pulsa Enter para hacerle boop">
                 <svg class="mito" viewBox="0 0 150 150"></svg>
+                <div class="house-blush" aria-hidden="true"></div>
               </div>
             </div>
           </div>
+          <div class="house-speech" id="houseSpeech" role="status" aria-live="polite"></div>
           <p class="house-hint" id="houseHint" hidden>Pícalo, hazle cosquillas, acarícialo o mantenlo presionado para lanzarlo.</p>
           <!-- Barra de acciones: flota abajo, dentro del cuarto. Aquí entrarán Comer, Bañar, Dormir y Decorar. -->
           <div class="house-bar" role="toolbar" aria-label="Acciones de la Casa">

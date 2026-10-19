@@ -1,10 +1,13 @@
 // Lógica de la Casa que no depende del navegador: clasificación de gestos (core/gesture.js),
-// física del rebote (core/physics.js), composición del cuarto y luz (features/house/layout.js).
+// física del rebote (core/physics.js), frases y reacciones (content/house.js), y composición del
+// cuarto y luz (features/house/layout.js).
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createGestureClassifier, GESTURE as G } from '../src/core/gesture.js';
 import { PHYSICS as P, step, advance, clampToRoom } from '../src/core/physics.js';
+import { MITO_HOUSE, PET_HOUSE } from '../src/content/house.js';
+import { WARDROBE } from '../src/content/wardrobe.js';
 import { sceneLayout, lightPlan, BLOCKS, FLOOR, floorRowY, floorX, GLASS } from '../src/features/house/layout.js';
 
 /* ---------------- gestos ---------------- */
@@ -240,6 +243,23 @@ test('física: si pasa maxSim se da por detenido', ()=>{
   b = advance(b, WORLD, .02).body;
   assert.ok(b.stopped);
   assert.equal(b.y, WORLD.floor);
+});
+
+/* ---------------- contenido ---------------- */
+
+test('contenido: cada mascota del catálogo reacciona a todo en la Casa', ()=>{
+  const keys = WARDROBE.find(c => c.id === 'pet').items.map(i => i.k).filter(Boolean);
+  for(const k of keys){
+    assert.ok(PET_HOUSE[k], `falta la mascota ${k}`);
+    for(const ev of ['poke', 'tickle', 'pet', 'grab', 'land']) assert.ok(PET_HOUSE[k].act[ev], `${k} no reacciona a ${ev}`);
+    for(const ev of ['pet', 'land']) assert.ok(PET_HOUSE[k].say[ev]?.length >= 2, `${k} necesita frases para ${ev}`);
+  }
+});
+
+test('contenido: las frases de la Casa son cortas (caben junto a Mito a 360 px)', ()=>{
+  const all = [...Object.values(MITO_HOUSE).flat(), ...Object.values(PET_HOUSE).flatMap(p => Object.values(p.say).flat())];
+  const long = all.filter(m => [...m].length > 34);
+  assert.deepEqual(long, []);
 });
 
 /* ---------------- composición del cuarto ---------------- */

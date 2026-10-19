@@ -20,6 +20,7 @@ src/
     atp.js           contenido de Bioquímica del ATP
     wardrobe.js      catálogo de prendas (WARDROBE)
     messages.js      frases de la mascota
+    house.js         frases de la Casa y reacciones de cada mascota
     art/             SVG y piezas de dibujo
       base.js         cuerpo y caras de Mito
       halloween.js    piezas de Halloween
@@ -41,7 +42,8 @@ src/
                        view, review, counts
     shop/              tienda y tienda de temporada: index, season
     house/             la Casa: index (cableado), layout (bloque aprobado escalado, piso y luz; puro),
-                       room (dibuja la escena), gestures (dedo y ratón), motion (arrastrar y lanzar)
+                       room (dibuja la escena), gestures (dedo y ratón), motion (arrastrar y lanzar),
+                       reactions (cara, frases y mascota)
     progress/          vista de progreso y copia de seguridad: view, backup
     mascot/            la mascota entera: avatar, auras, face, effects, speech
     pwa/update.js      service worker: registro y actualización segura (solo en producción)
@@ -82,6 +84,7 @@ un fichero suelto, un ciclo o un export muerto rompen `npm test`:
 | Cambiar el dibujo de Mito | `content/art/base.js` y `features/mascot/avatar.js` |
 | Añadir un aura o mascota secreta | `content/art/secrets.js` y `content/art/skins.js` |
 | Cambiar lo que dice la mascota | `content/messages.js` |
+| Cambiar lo que dicen Mito y la mascota en la Casa | `content/house.js` |
 | Ajustar los umbrales de los gestos o la física | `core/gesture.js` (`GESTURE`), `core/physics.js` (`PHYSICS`) |
 | Cambiar cómo se cobra o se guarda | `state/economy.js`, `state/inventory.js` |
 | Añadir una vista nueva | carpeta en `features/`, un `init()` y un caso en `nav/router.js` |
