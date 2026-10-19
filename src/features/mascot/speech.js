@@ -75,28 +75,38 @@ export function sayHero(text){
 
 export const getHeroLastMsg = ()=> heroLastMsg;
 
-// Mantiene el globo dentro de su contenedor (la tarjeta de la portada o la vista previa del armario):
-// limita su ancho y, si aun así se sale por un lado, lo desplaza lo justo.
+// Regla de las burbujas: ninguna tapa la cara de Mito ni a la mascota. El globo de la mascota va siempre a la izquierda de
+// Mito (la mascota se sienta a su izquierda), encima de ella y con la colita apuntándole; su ancho es el espacio libre
+// entre el borde de la caja y Mito, así nunca alcanza la cara. En la vista previa de Tienda y Armario en móvil no hay
+// espacio al lado: el globo va en una franja reservada al pie de la tarjeta (ver style.css).
 const BUBBLE_GAP = 8;
-function fitBubble(mascotEl, bub){
+const MOBILE = '(max-width: 880px)';
+
+// La caja dentro de la que debe quedar el globo.
+function bubbleBox(mascotEl){
   // En el quiz la caja es todo el quiz (así la burbuja puede usar el margen de la tarjeta).
-  const box = mascotEl.closest('.mascot-quiz') ? mascotEl.closest('.quiz-shell') : mascotEl.closest('.hero, .wardrobe-preview');
+  if(mascotEl.closest('.mascot-quiz')) return mascotEl.closest('.quiz-shell');
+  return mascotEl.closest('.mascot-hero-wrap, .wardrobe-preview');
+}
+
+function fitBubble(mascotEl, bub){
+  const box = bubbleBox(mascotEl);
   if(!box || !box.offsetWidth) return;   // sin caja (p. ej. el panel lateral oculto en móvil) no hay nada que ajustar
   bub.style.maxWidth = '';
-  bub.style.translate = '';
-  const b = box.getBoundingClientRect();
-  // En el hero en móvil la burbuja va a la izquierda de Mito: su ancho es el espacio libre hasta él.
-  const besideMito = !!mascotEl.closest('.mascot-quiz') || (box.classList.contains('hero') && window.matchMedia?.('(max-width: 880px)').matches);
-  let room = b.width - BUBBLE_GAP * 2;
-  if(besideMito) room = mascotEl.getBoundingClientRect().left - b.left - BUBBLE_GAP - 4;
-  bub.style.maxWidth = Math.max(besideMito ? 64 : 80, Math.min(150, room)) + 'px';
-  // posición de layout (sin la animación de entrada): la del mascot + su offset dentro de él
-  const left = mascotEl.getBoundingClientRect().left + bub.offsetLeft;
-  const right = left + bub.offsetWidth;
-  let dx = 0;
-  if(left < b.left + BUBBLE_GAP) dx = b.left + BUBBLE_GAP - left;
-  else if(right > b.right - BUBBLE_GAP) dx = b.right - BUBBLE_GAP - right;
-  if(dx) bub.style.translate = dx + 'px 0';
+  const room = mascotEl.getBoundingClientRect().left - box.getBoundingClientRect().left - BUBBLE_GAP - 4;
+  bub.style.maxWidth = Math.max(64, Math.min(150, room)) + 'px';
+}
+
+// Vista previa en móvil: el globo vive en la franja del pie de la tarjeta y la colita se alinea con la mascota.
+function stripHost(mascotEl){
+  const card = mascotEl.closest('.wardrobe-preview');
+  return card && window.matchMedia?.(MOBILE).matches ? card : null;
+}
+function aimStripTail(mascotEl, bub){
+  const pet = mascotEl.querySelector(':scope > svg.pet').getBoundingClientRect();
+  const b = bub.getBoundingClientRect();
+  const x = pet.left + pet.width / 2 - b.left;
+  bub.style.setProperty('--tail-x', Math.max(14, Math.min(b.width - 14, x)) + 'px');
 }
 
 // Hace que la mascota compañera (si hay una en ese .mascot) diga algo un momento. Si se pasan más .mascot
@@ -131,15 +141,20 @@ export function quizSay(text){
 }
 
 function showPetBubble(mascotEl, msg){
-  let bub = mascotEl.querySelector(':scope > .pet-bubble');
+  const strip = stripHost(mascotEl);
+  const host = strip || mascotEl;
+  // si cambió el ancho de la ventana, el globo del otro sitio no debe quedarse a la vista
+  (strip ? mascotEl : mascotEl.closest('.wardrobe-preview'))?.querySelector(':scope > .pet-bubble')?.classList.remove('show');
+  let bub = host.querySelector(':scope > .pet-bubble');
   if(!bub){
     bub = document.createElement('div');
     bub.className = 'pet-bubble';
     bub.setAttribute('aria-hidden', 'true');
-    mascotEl.appendChild(bub);
+    host.appendChild(bub);
   }
   bub.textContent = msg;
-  fitBubble(mascotEl, bub);
+  if(strip) aimStripTail(mascotEl, bub);
+  else fitBubble(mascotEl, bub);
   // reinicia la animación de entrada
   bub.classList.remove('show');
   void bub.offsetWidth;
