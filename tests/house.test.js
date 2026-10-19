@@ -1,8 +1,246 @@
-// Lógica de la Casa que no depende del navegador: composición del cuarto y luz (features/house/layout.js).
+// Lógica de la Casa que no depende del navegador: clasificación de gestos (core/gesture.js),
+// física del rebote (core/physics.js), composición del cuarto y luz (features/house/layout.js).
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { createGestureClassifier, GESTURE as G } from '../src/core/gesture.js';
+import { PHYSICS as P, step, advance, clampToRoom } from '../src/core/physics.js';
 import { sceneLayout, lightPlan, BLOCKS, FLOOR, floorRowY, floorX, GLASS } from '../src/features/house/layout.js';
+
+/* ---------------- gestos ---------------- */
+
+const types = events => events.map(e => e.type);
+
+// Un toque en (x, y) que empieza en t y dura `ms`.
+function tap(c, t, ms = 80, x = 100, y = 100){
+  c.down(t, x, y);
+  return c.up(t + ms, x, y);
+}
+
+test('gestos: un toque rápido es picar', ()=>{
+  const c = createGestureClassifier();
+  assert.deepEqual(types(tap(c, 0)), ['poke']);
+});
+
+test('gestos: un temblor del dedo menor al margen sigue siendo picar', ()=>{
+  const c = createGestureClassifier();
+  c.down(0, 100, 100);
+  assert.deepEqual(c.move(40, 100 + G.slopPx * .6, 100 - G.slopPx * .6), []);
+  assert.deepEqual(types(c.up(90, 104, 96)), ['poke']);
+});
+
+test('gestos: tres toques seguidos son cosquillas, y los siguientes también', ()=>{
+  const c = createGestureClassifier();
+  let t = 0;
+  const out = [];
+  for(let i = 0; i < 5; i++){ out.push(...tap(c, t)); t += 80 + G.tickleGapMs - 50; }
+  assert.deepEqual(types(out), ['poke', 'poke', 'tickle', 'tickle', 'tickle']);
+});
+
+test('gestos: toques con pausa larga no son cosquillas', ()=>{
+  const c = createGestureClassifier();
+  let t = 0;
+  const out = [];
+  for(let i = 0; i < 4; i++){ out.push(...tap(c, t)); t += 80 + G.tickleGapMs + 100; }
+  assert.deepEqual(types(out), ['poke', 'poke', 'poke', 'poke']);
+});
+
+test('gestos: un toque lento (más de tapMaxMs) pica pero rompe la cadena de cosquillas', ()=>{
+  const c = createGestureClassifier();
+  tap(c, 0); tap(c, 200);
+  const slow = tap(c, 400, G.tapMaxMs + 20);
+  assert.deepEqual(types(slow), ['poke']);
+  assert.deepEqual(types(tap(c, 400 + G.tapMaxMs + 120)), ['poke']);
+});
+
+test('gestos: deslizar sobre el objeto es acariciar, una vez por cada strokePx', ()=>{
+  const c = createGestureClassifier();
+  c.down(0, 100, 100);
+  const out = [];
+  for(let i = 1; i <= 26; i++) out.push(...c.move(i * 16, 100 + i * 6, 100));   // 156 px en 416 ms
+  assert.equal(c.state, 'stroking');
+  const pets = out.filter(e => e.type === 'pet');
+  assert.equal(pets.length, Math.floor(26 * 6 / G.strokePx));
+  assert.deepEqual(types(c.up(430, 256, 100)), ['petEnd']);
+});
+
+test('gestos: ir y venir también suma recorrido (caricia de lado a lado)', ()=>{
+  const c = createGestureClassifier();
+  c.down(0, 100, 100);
+  const out = [];
+  let t = 0;
+  for(let i = 0; i < 6; i++){ t += 50; out.push(...c.move(t, 100 + (i % 2 ? -20 : 20), 100)); }
+  assert.ok(out.some(e => e.type === 'pet'));
+});
+
+test('gestos: si el dedo sale del objeto es un barrido y no cuenta', ()=>{
+  const c = createGestureClassifier();
+  c.down(0, 100, 100);
+  c.move(20, 130, 100, true);
+  const out = c.move(40, 220, 100, false);
+  assert.equal(c.state, 'swipe');
+  assert.deepEqual(out, []);
+  assert.deepEqual(c.up(60, 260, 100), []);
+});
+
+test('gestos: mantener quieto longPressMs agarra; luego se arrastra y al soltar trae la velocidad', ()=>{
+  const c = createGestureClassifier();
+  c.down(0, 100, 100);
+  assert.deepEqual(c.tick(G.longPressMs - 1), [], 'antes de tiempo no agarra');
+  assert.deepEqual(types(c.tick(G.longPressMs)), ['grab']);
+  assert.deepEqual(types(c.move(G.longPressMs + 20, 140, 100)), ['drag']);
+  c.move(G.longPressMs + 40, 160, 90);
+  c.move(G.longPressMs + 60, 180, 80);
+  const [drop] = c.up(G.longPressMs + 70, 190, 75);
+  assert.equal(drop.type, 'drop');
+  assert.ok(drop.vx > 0 && drop.vy < 0, 'lanzado a la derecha y hacia arriba');
+});
+
+test('gestos: si no se llamó tick, moverse tras longPressMs también agarra', ()=>{
+  const c = createGestureClassifier();
+  c.down(0, 100, 100);
+  assert.deepEqual(types(c.move(G.longPressMs + 5, 130, 100)), ['grab', 'drag']);
+});
+
+test('gestos: moverse antes de longPressMs nunca agarra', ()=>{
+  const c = createGestureClassifier();
+  c.down(0, 100, 100);
+  c.move(G.longPressMs - 100, 100 + G.slopPx + 5, 100);
+  assert.deepEqual(c.tick(G.longPressMs + 50), []);
+  assert.notEqual(c.state, 'grabbing');
+});
+
+test('gestos: la velocidad de lanzamiento tiene tope', ()=>{
+  const c = createGestureClassifier();
+  c.down(0, 0, 0);
+  c.tick(G.longPressMs);
+  c.move(G.longPressMs + 5, 400, 0);
+  const [drop] = c.up(G.longPressMs + 10, 800, 0);
+  assert.ok(Math.hypot(drop.vx, drop.vy) <= G.maxThrowPxMs + 1e-9);
+});
+
+test('gestos: soltar sin moverse tras agarrar cae quieto; cancelar suelta', ()=>{
+  const c = createGestureClassifier();
+  c.down(0, 50, 50);
+  c.tick(G.longPressMs);
+  const [drop] = c.up(G.longPressMs + 200, 50, 50);
+  assert.equal(drop.type, 'drop');
+  assert.equal(Math.hypot(drop.vx, drop.vy), 0);
+
+  c.down(1000, 50, 50);
+  c.tick(1000 + G.longPressMs);
+  assert.deepEqual(types(c.cancel()), ['drop']);
+  assert.equal(c.state, 'idle');
+});
+
+test('gestos: tras arrastrar, el siguiente toque empieza una cadena nueva', ()=>{
+  const c = createGestureClassifier();
+  tap(c, 0); tap(c, 150);
+  c.down(300, 0, 0); c.tick(300 + G.longPressMs); c.up(300 + G.longPressMs + 10, 0, 0);
+  assert.deepEqual(types(tap(c, 300 + G.longPressMs + 100)), ['poke']);
+});
+
+/* ---------------- física ---------------- */
+
+const WORLD = { width: 16 / 9, floor: .86, r: .09, h: .2 };
+const inside = (b, w = WORLD) =>
+  b.x >= w.r - 1e-9 && b.x <= w.width - w.r + 1e-9 && b.y >= w.h - 1e-9 && b.y <= w.floor + 1e-9;
+
+// Simula hasta que se detiene; devuelve el cuerpo final y la traza.
+function run(body, world = WORLD, frame = 1 / 60){
+  const trace = [];
+  let b = body, time = 0;
+  while(!b.stopped && time < 20){
+    const r = advance(b, world, frame);
+    b = r.body; time += frame;
+    trace.push({ ...b, hits: r.hits });
+  }
+  return { body: b, trace, time };
+}
+
+// Generador pseudoaleatorio con semilla: las pruebas fallan siempre igual.
+function rng(seed){
+  let s = seed;
+  return () => (s = (s * 1664525 + 1013904223) % 4294967296) / 4294967296;
+}
+
+test('física: soltado desde arriba cae, rebota y se detiene en el piso', ()=>{
+  const { body, trace } = run({ x: .9, y: .3, vx: 0, vy: 0 });
+  assert.ok(body.stopped && body.resting);
+  assert.equal(body.y, WORLD.floor);
+  assert.ok(trace.some(s => s.hits.some(h => h.hit === 'floor')), 'debió rebotar en el piso');
+});
+
+test('física: cada rebote sube menos que el anterior (pierde energía)', ()=>{
+  const { trace } = run({ x: .9, y: .25, vx: 0, vy: 0 }, WORLD, 1 / 240);
+  // alturas máximas entre rebotes = puntos donde vy cambia de negativo a positivo
+  const peaks = [];
+  for(let i = 1; i < trace.length; i++) if(trace[i - 1].vy < 0 && trace[i].vy >= 0) peaks.push(WORLD.floor - trace[i].y);
+  assert.ok(peaks.length >= 2, 'esperaba varios rebotes');
+  for(let i = 1; i < peaks.length; i++) assert.ok(peaks[i] < peaks[i - 1], `rebote ${i} no bajó`);
+});
+
+test('física: lanzamientos al azar nunca salen del cuarto y siempre se detienen', ()=>{
+  const r = rng(42);
+  for(let i = 0; i < 300; i++){
+    const world = { width: .6 + r() * 1.4, floor: .7 + r() * .25, r: .05 + r() * .12, h: .1 + r() * .25 };
+    const start = { x: r() * world.width, y: r() * world.floor, vx: (r() - .5) * 12, vy: (r() - .5) * 12 };
+    const { body, trace, time } = run(start, world);
+    assert.ok(trace.every(b => inside(b, world)), `lanzamiento ${i} salió del cuarto`);
+    assert.ok(body.stopped, `lanzamiento ${i} no se detuvo`);
+    assert.ok(time <= P.maxSim + .1, `lanzamiento ${i} tardó demasiado`);
+  }
+});
+
+test('física: rebota en las paredes con pérdida de energía', ()=>{
+  const r = step({ x: WORLD.width - WORLD.r - .001, y: .5, vx: 3, vy: 0 }, WORLD, .01);
+  assert.equal(r.hit, 'wall');
+  assert.ok(r.body.vx < 0 && Math.abs(r.body.vx) < 3);
+  assert.equal(r.body.x, WORLD.width - WORLD.r);
+});
+
+test('física: el techo también lo detiene', ()=>{
+  const r = step({ x: .9, y: WORLD.h + .001, vx: 0, vy: -4 }, WORLD, .01);
+  assert.equal(r.hit, 'ceiling');
+  assert.ok(r.body.vy > 0);
+  assert.ok(inside(r.body));
+});
+
+test('física: un tirón enorme de tiempo no lo saca ni lo dispara', ()=>{
+  const { body } = advance({ x: .9, y: .4, vx: 2, vy: -2 }, WORLD, 30);
+  assert.ok(inside(body));
+  assert.ok(body.t <= P.maxFrame + 1e-9, 'solo procesa maxFrame de golpe');
+});
+
+test('física: valores no numéricos no lo rompen', ()=>{
+  const { body } = advance({ x: NaN, y: undefined, vx: Infinity, vy: NaN }, WORLD, 1 / 60);
+  assert.ok(Number.isFinite(body.x) && Number.isFinite(body.y));
+  assert.ok(inside(body));
+  assert.deepEqual(advance({ x: .5, y: .5, vx: 0, vy: 0 }, WORLD, NaN).body.t, 0);
+});
+
+test('física: clampToRoom sirve para arrastrar con el dedo', ()=>{
+  const b = clampToRoom({ x: -5, y: 9, vx: 0, vy: 0 }, WORLD);
+  assert.equal(b.x, WORLD.r);
+  assert.equal(b.y, WORLD.floor);
+  const c = clampToRoom({ x: 99, y: -3 }, WORLD);
+  assert.equal(c.x, WORLD.width - WORLD.r);
+  assert.equal(c.y, WORLD.h);
+});
+
+test('física: un cuarto más angosto que el cuerpo no lo atrapa ni da NaN', ()=>{
+  const tiny = { width: .1, floor: .1, r: .2, h: .3 };
+  const { body } = run({ x: 0, y: 0, vx: 1, vy: 1 }, tiny);
+  assert.ok(Number.isFinite(body.x) && Number.isFinite(body.y));
+  assert.ok(body.stopped);
+});
+
+test('física: si pasa maxSim se da por detenido', ()=>{
+  let b = { x: .9, y: .5, vx: 0, vy: 0, t: P.maxSim - .01 };
+  b = advance(b, WORLD, .02).body;
+  assert.ok(b.stopped);
+  assert.equal(b.y, WORLD.floor);
+});
 
 /* ---------------- composición del cuarto ---------------- */
 

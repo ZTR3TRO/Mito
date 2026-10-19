@@ -13,6 +13,8 @@ src/
     bus.js           bus de eventos (on/emit)
     dom.js           $, $$, byId, el, clear, delegate, setText
     utils.js         funciones puras: shuffle, escapeHtml, isNumericSeries, fechas
+    gesture.js       clasificador de gestos (picar, cosquillas, acariciar, agarrar); umbrales en GESTURE
+    physics.js       física de rebote dentro de una caja (gravedad, rebote, reposo)
   content/         datos puros. No importan nada del proyecto, ni del DOM ni del store
     courses.js       registro COURSES (materias)
     atp.js           contenido de Bioquímica del ATP
@@ -39,7 +41,7 @@ src/
                        view, review, counts
     shop/              tienda y tienda de temporada: index, season
     house/             la Casa: index (cableado), layout (bloque aprobado escalado, piso y luz; puro),
-                       room (dibuja la escena)
+                       room (dibuja la escena), gestures (dedo y ratón), motion (arrastrar y lanzar)
     progress/          vista de progreso y copia de seguridad: view, backup
     mascot/            la mascota entera: avatar, auras, face, effects, speech
     pwa/update.js      service worker: registro y actualización segura (solo en producción)
@@ -80,5 +82,6 @@ un fichero suelto, un ciclo o un export muerto rompen `npm test`:
 | Cambiar el dibujo de Mito | `content/art/base.js` y `features/mascot/avatar.js` |
 | Añadir un aura o mascota secreta | `content/art/secrets.js` y `content/art/skins.js` |
 | Cambiar lo que dice la mascota | `content/messages.js` |
+| Ajustar los umbrales de los gestos o la física | `core/gesture.js` (`GESTURE`), `core/physics.js` (`PHYSICS`) |
 | Cambiar cómo se cobra o se guarda | `state/economy.js`, `state/inventory.js` |
 | Añadir una vista nueva | carpeta en `features/`, un `init()` y un caso en `nav/router.js` |
