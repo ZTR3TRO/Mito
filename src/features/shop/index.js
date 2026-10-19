@@ -124,7 +124,9 @@ function hasAnythingToEquip(){
 function buildCard(cat, item, { shopping, equipped, previewId }){
   const affordable = getChispas() >= item.cost;
   const name = displayName(cat.id, item, !shopping);
-  const hasCustomPetName = cat.id === 'pet' && !shopping && !!getPetName(item.id);
+  // La línea "Original: …" solo sale si la mascota tiene un nombre propio distinto del original.
+  const customName = cat.id === 'pet' && !shopping ? getPetName(item.id) : '';
+  const hasCustomPetName = !!customName && customName.trim().toLowerCase() !== item.name.trim().toLowerCase();
   const card = document.createElement('div');
   card.className = 'shop-item' + (equipped ? ' equipped' : '') + (trial && trial.id === item.id ? ' is-trial' : '');
   card.dataset.item = item.id;
