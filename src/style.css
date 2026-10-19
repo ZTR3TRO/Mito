@@ -106,14 +106,17 @@ button{ font-family:inherit; }
   .balance-chip{ padding:6px 12px; }
   .streak-chip{ padding:7px 10px; }
   .mascot-side{ padding:10px; }
-  .mascot.small{ width:52px; height:52px; }
+  /* `.mascot-side .mascot.small`: más específico que `.mascot.small` y que las reglas del aura del panel, que van más abajo */
+  .mascot-side .mascot.small{ width:52px; height:52px; --side-k:calc(52 / 150); }
+  .mascot-side .mascot.small:has(.aura.on){ margin-top:calc(52px * .24 + 13px); margin-bottom:calc(52px * .24 + 4px); }
   .mascot-side .bubble{ min-height:30px; padding:7px 9px; }
   .progress-mini{ margin-bottom:4px; }
 }
 @media (max-height: 760px){
   .navgroup{ gap:4px; }
   .navlabel{ display:none; }
-  .mascot-side .mascot{ width:44px; height:44px; }
+  .mascot-side .mascot.small{ width:44px; height:44px; --side-k:calc(44 / 150); }
+  .mascot-side .mascot.small:has(.aura.on){ margin-top:calc(44px * .24 + 13px); margin-bottom:calc(44px * .24 + 4px); }
   .mascot-side .bubble{ font-size:11px; min-height:26px; }
   .sidebar .streak-chip{ display:none; }
 }
@@ -915,7 +918,17 @@ svg.th [data-k="fangs"] .fg-n{display:inline}
 
 .mascot svg.mito,svg.th{--body:#1fd79a;--stroke:#0da876;--hi:#6cf0c4}
 .mascot svg{transform-origin:50% 88%}
-.mascot-side .mascot .a-parts{display:none}   /* en el panel lateral (Mito pequeño) las partículas del aura se omiten; en el quiz Mito ya es grande y se pintan completas */
+/* Panel lateral: el aura va completa (anillo, partículas, estrellas, destellos). Las partículas y sus recorridos miden px fijos,
+   así que el aura se pinta al tamaño del Armario (Mito de 150 px) y se reduce entera al tamaño de Mito aquí (--side-k): se ve
+   igual que en el Armario, solo más chica. */
+.mascot-side .mascot{ --side-k:calc(64 / 150); }
+.mascot-side .mascot .aura{ inset:auto; left:50%; top:50%; width:calc(150px * 1.48); height:calc(150px * 1.48); margin:calc(150px * -.74) 0 0 calc(150px * -.74); transform:scale(var(--side-k)); }
+/* el aura sobresale ~24 % de Mito por lado: se le hace sitio para que no se meta en la burbuja ni en el texto de rondas
+   (arriba, 9 px más porque Mito flota hasta 9 px hacia arriba) */
+.mascot-side .mascot:has(.aura.on){ margin-top:calc(64px * .24 + 13px); margin-bottom:calc(64px * .24 + 4px); }
+/* lo que se escape en su recorrido (llamas que suben, estrellas fugaces) no sale de la tarjeta y pasa por detrás de los textos */
+.mascot-side{ overflow:clip; }
+.mascot-side .bubble, .mascot-side .side-progress{ position:relative; z-index:1; }
 svg.th{width:100%;height:100%;overflow:visible}
 svg.th .f-normal{display:inline}
 svg.th *{animation:none!important}
