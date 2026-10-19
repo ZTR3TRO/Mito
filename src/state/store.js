@@ -16,7 +16,7 @@ export {
 } from './inventory.js';
 
 export {
-  recordQuizResult, getHistory, recordAnswer,
+  MASTERY_STREAK, recordQuizResult, getHistory, recordAnswer,
   getMistakes, clearMistakes, getStreak,
 } from './progress.js';
 

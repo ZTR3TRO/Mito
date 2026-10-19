@@ -602,6 +602,54 @@ test('"Practicar este tema" arma una ronda solo con las preguntas de ese tema', 
   assert.equal(document.getElementById('qTotalLabel').textContent, String(expected));
 });
 
+test('fallos: guardan la opción elegida y salen tras 2 aciertos seguidos; fallar reinicia la cuenta', ()=>{
+  resetApp();
+  const q = courses[0].questions[0].q;
+  const rec = (ok, pick)=> store.recordAnswer(courses[0].id, q, ok, pick);
+
+  rec(true);
+  assert.equal(entryOf(q), undefined, 'acertar algo que nunca se falló no deja rastro');
+
+  rec(false, 'opción X');
+  assert.equal(entryOf(q).pick, 'opción X');
+  rec(true);
+  assert.equal(entryOf(q).ok, 1, '1 acierto no basta');
+  rec(false, 'opción Y');
+  assert.equal(entryOf(q).ok, 0, 'fallar de nuevo reinicia los aciertos seguidos');
+  assert.equal(entryOf(q).pick, 'opción Y');
+  assert.equal(entryOf(q).wrong, 2);
+
+  rec(true);
+  rec(true);
+  assert.equal(entryOf(q), undefined, '2 aciertos seguidos sacan el fallo de la lista');
+});
+
+test('fallos: las entradas guardadas con el formato anterior siguen funcionando y se muestran sin respuesta elegida', ()=>{
+  resetApp();
+  const [q1, q2] = courses[0].questions;
+  const legacy = { mistakes:{
+    [`${courses[0].id}::${q1.q}`]: { wrong:2, right:1 },
+    [q2.q]: { wrong:1, right:0 },
+  } };
+  const snapshot = JSON.parse(store.exportSave());
+  store.importSave(JSON.stringify({ ...snapshot, ...legacy }));
+  emit('state:imported');
+
+  const cards = [...document.querySelectorAll('#mistakesList .mistake-card')];
+  assert.equal(cards.length, 2, 'ambos formatos de clave aparecen');
+  assert.equal(document.querySelectorAll('#mistakesList .mc-wrong').length, 0, 'sin pick no se muestra la elegida');
+  assert.ok(cards[0].querySelector('.mc-correct'));
+
+  store.recordAnswer(courses[0].id, q1.q, true);
+  store.recordAnswer(courses[0].id, q1.q, true);
+  assert.equal(entryOf(q1.q), undefined, 'una entrada vieja también sale con 2 seguidos');
+
+  // y uno nuevo muestra la elegida marcada como incorrecta
+  store.recordAnswer(courses[0].id, q1.q, false, 'respuesta equivocada');
+  emit('state:imported');
+  assert.ok(document.querySelector('#mistakesList .mc-wrong').textContent.includes('respuesta equivocada'));
+});
+
 test('quiz: dentro de la ronda el contador de aciertos seguidos se llama "Combo"', ()=>{
   resetApp();
   document.querySelector('.mode-card[data-n="99"]').click();

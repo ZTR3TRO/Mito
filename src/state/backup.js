@@ -37,7 +37,11 @@ function cleanMistakes(m){
   const out = {};
   if(m && typeof m === 'object'){
     Object.keys(m).slice(0, MISTAKES_LIMIT).forEach(k=>{
-      out[k] = { wrong:num(m[k] && m[k].wrong), right:num(m[k] && m[k].right) };
+      const e = m[k] || {};
+      out[k] = { wrong:num(e.wrong), right:num(e.right) };
+      // opcionales: los respaldos viejos no los traen
+      if(Number.isFinite(e.ok) && e.ok >= 0) out[k].ok = Math.floor(e.ok);
+      if(typeof e.pick === 'string' && e.pick) out[k].pick = e.pick.slice(0, 300);
     });
   }
   return out;

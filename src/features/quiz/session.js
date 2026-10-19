@@ -115,7 +115,7 @@ export function submitAnswer(idx){
 
   if(!session.catStats[item.cat]) session.catStats[item.cat] = { right:0, total:0 };
   session.catStats[item.cat].total++;
-  recordAnswer(activeCourse().id, item.q, correct);
+  recordAnswer(activeCourse().id, item.q, correct, item.opts[idx]);
 
   if(correct){
     session.streak++;

@@ -31,16 +31,26 @@ export function getMistakes(){
   return { ...state.mistakes };
 }
 
-export function recordAnswer(courseId, q, correct){
+// Aciertos seguidos que hacen falta para sacar un fallo de la lista.
+export const MASTERY_STREAK = 2;
+
+// `pick`: el texto de la opción que se eligió (las opciones se barajan, así que no sirve el índice).
+// Las entradas guardadas antes no traen `ok` ni `pick`: cuentan como 0 seguidas y sin respuesta elegida.
+export function recordAnswer(courseId, q, correct, pick){
   const key = `${courseId}::${q}`;
-  const m = state.mistakes[key] || { wrong:0, right:0 };
-  if(correct) m.right++; else m.wrong++;
-  // solo cuenta como "fallo pendiente" si hay errores y aún no los dominas
-  // (se libera cuando aciertas al menos el doble de veces que fallas)
-  if(m.wrong > 0 && m.right < m.wrong*2){
-    state.mistakes[key] = { wrong:m.wrong, right:m.right };
+  const m = state.mistakes[key];
+  if(correct){
+    // acertar algo que nunca se falló no deja rastro
+    if(m){
+      const ok = (m.ok || 0) + 1;
+      if(ok >= MASTERY_STREAK) delete state.mistakes[key];
+      else state.mistakes[key] = { ...m, right:m.right + 1, ok };
+    }
   } else {
-    delete state.mistakes[key];
+    // fallar reinicia los aciertos seguidos
+    const entry = { wrong:(m ? m.wrong : 0) + 1, right:m ? m.right : 0, ok:0 };
+    if(typeof pick === 'string' && pick) entry.pick = pick;
+    state.mistakes[key] = entry;
   }
   const keys = Object.keys(state.mistakes);
   if(keys.length > MISTAKES_LIMIT){

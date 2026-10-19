@@ -1,7 +1,7 @@
 // Vista de progreso: temas débiles, historial de rondas y lista de fallos.
 
 import { clear, byId } from '../../core/dom.js';
-import { getHistory } from '../../state/store.js';
+import { getHistory, MASTERY_STREAK } from '../../state/store.js';
 import { escapeHtml, pctColor } from '../../core/utils.js';
 import { topicStats, weakTopics, activeMistakeEntries, findQuestionByKey, WEAK_TOPIC_PCT } from '../quiz/review.js';
 
@@ -46,6 +46,12 @@ function renderHistory(){
   }).join('');
 }
 
+// La opción que eligió Zare, marcada como incorrecta. Los fallos guardados antes no la traen: entonces no se muestra.
+function pickHtml(m, item){
+  if(!m.pick || m.pick === item.opts[item.correct]) return '';
+  return `<div class="mc-wrong">✗ ${escapeHtml(m.pick)}</div>`;
+}
+
 function renderMistakes(){
   const host = byId('mistakesList');
   if(!host) return;
@@ -60,9 +66,10 @@ function renderMistakes(){
     return `
       <div class="mistake-card">
         <div class="mc-top"><span class="q-cat" style="margin:0">${item.cat.toUpperCase()}</span>
-          <span class="mc-ratio">✖${m.wrong} · ✔${m.right}</span>
+          <span class="mc-ratio">✖${m.wrong} · ✔${m.right} · seguidos ${m.ok || 0}/${MASTERY_STREAK}</span>
         </div>
         <p class="mc-q">${item.q}</p>
+        ${pickHtml(m, item)}
         <div class="mc-correct">✓ ${escapeHtml(item.opts[item.correct])}</div>
         <div class="mc-exp">${item.exp}</div>
       </div>`;

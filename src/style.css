@@ -710,6 +710,8 @@ main{ padding:38px 46px 90px; max-width:1000px; }
 }
 .wt-practice{ background:var(--mint-pale); color:var(--mint-deep); border:2px solid var(--mint); white-space:nowrap; justify-content:center; }
 .empty-state.good{ border-style:solid; border-color:var(--mint); background:var(--mint-light); color:var(--mint-deep); }
+.mistake-card .mc-wrong{ background:#ffe9e9; border:2px solid #ffb3b3; color:#d64545; border-radius:12px; padding:9px 12px; font-size:13.5px; font-weight:800; margin-bottom:8px; }
+[data-theme="dark"] .mistake-card .mc-wrong{ background:rgba(255,107,107,.12); border-color:rgba(255,107,107,.45); color:#ff8f8f; }
 .fb-notes, .back-quiz{
   display:inline-flex; align-items:center; gap:6px; margin-top:10px; padding:7px 14px; border-radius:999px; cursor:pointer;
   background:var(--card); color:var(--mint-deep); border:2px solid var(--mint); font:inherit; font-size:13px; font-weight:800;
