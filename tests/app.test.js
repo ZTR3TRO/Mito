@@ -543,3 +543,13 @@ test('importar un respaldo repinta todo y respeta el tema', ()=>{
   assert.equal(document.documentElement.dataset.theme, 'dark',
     'resetAll conserva el tema; importarlo debe respetarlo');
 });
+
+
+test('quiz: dentro de la ronda el contador de aciertos seguidos se llama "Combo"', ()=>{
+  resetApp();
+  document.querySelector('.mode-card[data-n="99"]').click();
+  document.querySelector('[data-action="startQuiz"]').click();
+  assert.ok(document.querySelector('.streak-flame').textContent.startsWith('Combo'));
+  assert.ok(document.querySelector('#view-quiz .page-sub').textContent.includes('combo'));
+  assert.ok(!/racha/i.test(document.querySelector('#view-quiz .quiz-meta').textContent));
+});

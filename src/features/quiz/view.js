@@ -95,7 +95,7 @@ export function renderAnswerResult(idx, outcome){
   if(outcome.correct){
     fb.classList.add('ok');
     fb.classList.remove('no');
-    setText('fbHead', outcome.streak >= 3 ? `¡Racha de ${outcome.streak}! Correcto.` : '¡Correcto!');
+    setText('fbHead', outcome.streak >= 3 ? `¡Combo de ${outcome.streak}! Correcto.` : '¡Correcto!');
     setFace(mascot, 'happy');
     playState(mascot, 'happy');
     const rect = opts[idx].getBoundingClientRect();

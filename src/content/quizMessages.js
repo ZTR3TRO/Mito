@@ -1,6 +1,6 @@
 // Frases con las que Mito y la mascota compañera reaccionan durante el quiz (datos puros).
 // Una por evento y solo habla uno de los dos (se alternan). Reglas: ninguna da pistas de la respuesta
-// (hablan del ánimo, la racha y las vidas, nunca del contenido) y los fallos se animan, no se regañan.
+// (hablan del ánimo, el combo y las vidas, nunca del contenido) y los fallos se animan, no se regañan.
 // `{n}` se sustituye por el número de aciertos seguidos. Clave de mascota = `k` en wardrobe.js.
 //
 // Eventos: correct, streak (3+ seguidas), wrong, lastLife (queda 1 vida), lastQuestion.
@@ -10,7 +10,7 @@ import { USER_NAME as Z } from './messages.js';
 
 export const MITO_QUIZ = {
   correct: [`¡Eso, ${Z}! ✨`, '¡Bien ahí! 🎉', '¡Correcto! Sigue así 💪', '¡Qué crack! 🌟', '¡Eso estuvo genial! 🙌'],
-  streak: ['¡Llevas {n} seguidas! 🔥', `¡{n} seguidas, ${Z}! Imparable ⚡`, '¡Racha de {n}! No pares 🔥', '¡{n} aciertos al hilo! 🚀'],
+  streak: ['¡Llevas {n} seguidas! 🔥', `¡{n} seguidas, ${Z}! Imparable ⚡`, '¡Combo de {n}! No pares 🔥', '¡{n} aciertos al hilo! 🚀'],
   wrong: ['Tranqui, la que sigue es tuya 💪', 'Pasa a cualquiera, ¡a la siguiente! 🌈', 'Cada fallo enseña algo, vamos 📖', 'Respira hondo, tú puedes 🍃', `Sin drama, ${Z}: ¡sigue! ✨`],
   lastLife: ['Te queda una vida, pero tú puedes 💛', '¡Última vida! Con calma y a pensar 🧠', 'Una vida basta si vas con cabeza 💪', `Estoy contigo, ${Z}: respira y sigue 🤗`],
   lastQuestion: ['¡Última pregunta! Cierra con todo 🏁', `¡Ya casi, ${Z}! Una más y listo 🎯`, '¡La recta final! Tú puedes 🚀', '¡Última! Hazla brillar ✨'],
@@ -49,7 +49,7 @@ export const PET_QUIZ = {
   },
   ufo: {
     correct: ['Bip bop: ¡acierto detectado! 🛸', 'Transmisión: ¡correcto! ✨'],
-    streak: ['Bip: ¡racha de {n} en órbita! 🌌', '¡{n} aciertos seguidos! Señal fuerte 📡'],
+    streak: ['Bip: ¡combo de {n} en órbita! 🌌', '¡{n} aciertos seguidos! Señal fuerte 📡'],
     wrong: ['Bip… señal perdida. Recalculando ruta 🛸', 'Sin drama: la siguiente señal es tuya 📡'],
     lastLife: ['Alerta: queda 1 vida. Escudos al máximo, ¡tú puedes! 🛡️', 'Bip bop, una vida restante. Cuento contigo 🛸'],
     lastQuestion: ['Aterrizaje a la vista: ¡última pregunta! 🌍', 'Bip: pregunta final detectada. ¡A por ella! 🚀'],
@@ -129,7 +129,7 @@ export const PET_QUIZ = {
   },
 };
 
-// Elige una frase de la bolsa (sin repetir la anterior si hay más de una) y pone el número de la racha.
+// Elige una frase de la bolsa (sin repetir la anterior si hay más de una) y pone el número del combo.
 export function quizMessage(pool, last, n){
   const all = pool.map(m => m.replace('{n}', n));
   const opts = all.filter(m => m !== last);

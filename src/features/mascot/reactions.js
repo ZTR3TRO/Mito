@@ -11,7 +11,7 @@ import { resultMessage, resultTier } from '../../content/messages.js';
 import { MITO_QUIZ, PET_QUIZ, quizMessage } from '../../content/quizMessages.js';
 import { quizSay, petSpeak, hideReactions } from './speech.js';
 
-const STREAK_MIN = 3;   // a partir de cuántas seguidas se nota la racha
+const STREAK_MIN = 3;   // a partir de cuántas seguidas se nota el combo
 const lastMsg = {};
 let turn = 0;
 

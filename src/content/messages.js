@@ -11,7 +11,7 @@ const GENERAL = [
   'Explicar en voz alta lo que aprendiste te ayuda a recordarlo 🗣️',
   'Los fallos del quiz son oro: repásalos y se vuelven aciertos 🎯',
   'Toma agua y estírate un poco, tu cerebro también se cansa 💧',
-  `¡Vamos, ${USER_NAME}! Una racha más en el quiz 🔥`,
+  `¡Vamos, ${USER_NAME}! Un combo más en el quiz 🔥`,
   'Junta chispas en el quiz y ven a cambiarme de look 🎨',
   'Antes del examen completo, repasa los puntos clave 🔑',
   'Un descanso corto entre temas ayuda a que se te queden 🧠',
