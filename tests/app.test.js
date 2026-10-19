@@ -64,7 +64,7 @@ async function installBrowserGlobals(){
 
 // store, bus y main se importan una sola vez y se comparten entre pruebas:
 // así los listeners registrados al arrancar siguen apuntando al documento vivo.
-let store, quiz, quizSession, theme, courses;
+let store, quiz, quizSession, review, notesModule, theme, courses;
 
 before(async ()=>{
   await installBrowserGlobals();
@@ -72,6 +72,8 @@ before(async ()=>{
   await import('../src/main.js');
   quiz = await import('../src/features/quiz/index.js');
   quizSession = await import('../src/features/quiz/session.js');
+  review = await import('../src/features/quiz/review.js');
+  notesModule = await import('../src/features/course/notes.js');
   theme = await import('../src/features/theme/index.js');
   courses = (await import('../src/content/courses.js')).COURSES;
 });
@@ -545,6 +547,7 @@ test('importar un respaldo repinta todo y respeta el tema', ()=>{
 });
 
 
+
 test('quiz: dentro de la ronda el contador de aciertos seguidos se llama "Combo"', ()=>{
   resetApp();
   document.querySelector('.mode-card[data-n="99"]').click();
@@ -552,4 +555,46 @@ test('quiz: dentro de la ronda el contador de aciertos seguidos se llama "Combo"
   assert.ok(document.querySelector('.streak-flame').textContent.startsWith('Combo'));
   assert.ok(document.querySelector('#view-quiz .page-sub').textContent.includes('combo'));
   assert.ok(!/racha/i.test(document.querySelector('#view-quiz .quiz-meta').textContent));
+});
+
+test('"Ver en apuntes": aparece al fallar, abre el tema y vuelve a la misma pregunta sin perder la ronda', ()=>{
+  resetApp();
+  document.querySelector('.mode-card[data-n="99"]').click();
+  document.querySelector('[data-action="startQuiz"]').click();
+  const fb = document.getElementById('fbNotes');
+  assert.ok(fb.hasAttribute('hidden'), 'antes de responder no hay enlace');
+
+  const item = quizSession.currentQuestion();
+  const opts = [...document.querySelectorAll('#qOpts .opt')];
+  opts[(item.correct + 1) % opts.length].click();
+  assert.ok(!fb.hasAttribute('hidden'), 'al fallar aparece');
+
+  const qText = document.getElementById('qText').textContent;
+  fb.click();
+  assert.ok(document.getElementById('view-apuntes').classList.contains('active'));
+  assert.equal(leaveModal(), null, 'no dispara la confirmación de salida');
+  const topic = courses[0].notes.find(t=>t.label === item.cat);
+  assert.ok(document.getElementById('block-' + topic.id).classList.contains('active'), 'la pestaña del tema queda activa');
+  assert.equal(document.querySelector('.topic-pill.active').dataset.target, 'block-' + topic.id);
+  assert.equal(quizSession.isRoundActive(), true);
+  assert.ok(!document.getElementById('backToQuiz').hasAttribute('hidden'));
+
+  document.getElementById('backToQuiz').click();
+  assert.ok(document.getElementById('view-quiz').classList.contains('active'));
+  assert.equal(document.getElementById('qText').textContent, qText, 'sigue en la misma pregunta');
+  assert.ok(document.getElementById('qFeedback').classList.contains('show'));
+  assert.ok(document.getElementById('backToQuiz').hasAttribute('hidden'));
+  assert.equal(quizSession.getSession().lives, 2);
+});
+
+test('nota relacionada: se elige por palabras compartidas y no abre nada si no hay coincidencia', ()=>{
+  const topic = { items:[
+    { q:'¿Qué es la glucólisis?', a:'Ruta que degrada glucosa en el citosol hasta piruvato.' },
+    { q:'¿Qué es el ciclo de Krebs?', a:'Ocurre en la matriz mitocondrial.' },
+  ] };
+  const notes = (q, correct, exp)=> ({ q, opts:[correct], correct:0, exp });
+  const { relatedNote } = notesModule;
+  assert.equal(relatedNote(topic, notes('¿Dónde ocurre la glucólisis?', 'Citosol', 'La glucosa se degrada hasta piruvato.')), 0);
+  assert.equal(relatedNote(topic, notes('¿Dónde ocurre el ciclo?', 'Mitocondria', 'En la matriz mitocondrial.')), 1);
+  assert.equal(relatedNote(topic, notes('Pregunta inconexa', 'Nada', 'Sin relación alguna')), -1);
 });

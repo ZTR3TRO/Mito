@@ -704,6 +704,13 @@ main{ padding:38px 46px 90px; max-width:1000px; }
 .wt-name{ font-weight:800; color:var(--ink-dim); font-size:13.5px; }
 .wt-num{ font-size:12.5px; color:var(--ink-faint); font-weight:700; text-align:right; }
 .wt-num small{ font-weight:800; }
+.fb-notes, .back-quiz{
+  display:inline-flex; align-items:center; gap:6px; margin-top:10px; padding:7px 14px; border-radius:999px; cursor:pointer;
+  background:var(--card); color:var(--mint-deep); border:2px solid var(--mint); font:inherit; font-size:13px; font-weight:800;
+}
+.back-quiz{ margin:0 0 16px; background:var(--mint-light); }
+.fb-notes[hidden], .back-quiz[hidden]{ display:none; }
+@media (hover:hover){ .fb-notes:hover, .back-quiz:hover{ background:var(--mint-light); } }
 .hist-row{ display:grid; grid-template-columns:60px 1fr 52px 76px; align-items:center; gap:12px; padding:9px 0; border-bottom:1px dashed var(--line); }
 .hist-row:last-child{ border-bottom:none; }
 .hist-date{ font-size:12px; font-weight:800; color:var(--ink-faint); }

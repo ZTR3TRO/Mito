@@ -61,6 +61,7 @@ export function renderQuestion(onAnswer){
   renderHud();
   const fb = byId('qFeedback');
   if(fb) fb.className = 'feedback';
+  byId('fbNotes')?.setAttribute('hidden', '');
   const nextBtn = byId('nextBtn');
   if(nextBtn) nextBtn.style.display = 'none';
   setFace(byId('mascotQuiz'), 'normal');
@@ -106,6 +107,7 @@ export function renderAnswerResult(idx, outcome){
     fb.classList.add('no');
     fb.classList.remove('ok');
     setText('fbHead', 'No era esa.');
+    byId('fbNotes')?.removeAttribute('hidden');
     setFace(mascot, 'sad');
     playState(mascot, 'sad');
     sparkAt(mascot, '💔');

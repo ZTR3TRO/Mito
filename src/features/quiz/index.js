@@ -6,6 +6,7 @@ import { addChispas, recordQuizResult, PASSING_BONUS } from '../../state/store.j
 import { emit } from '../../core/bus.js';
 import { setLeaveCheck } from '../../core/leave.js';
 import { activeCourse } from '../course/course.js';
+import { openNotesFor } from '../course/notes.js';
 import { sparkAt } from '../mascot/effects.js';
 import { activeMistakeEntries } from './review.js';
 import * as s from './session.js';
@@ -26,6 +27,13 @@ function answer(idx){
   view.renderAnswerResult(idx, outcome);
   const { lives, streak } = s.getSession();
   emit('quiz:answered', { correct: outcome.correct, streak, lives, over: s.isGameOver() });
+}
+
+// "Ver en apuntes" tras un fallo. Se navega a Apuntes sin pasar por la confirmación de salida:
+// la sesión vive en memoria y la vista de la ronda queda intacta, así que al volver sigue en la misma pregunta.
+function viewInNotes(){
+  if(!s.isRoundActive()) return;
+  if(openNotesFor(s.currentQuestion())) emit('nav:request', 'apuntes');
 }
 
 function nextQuestion(){
@@ -123,7 +131,7 @@ export function init(){
   });
 
   // Acciones declaradas en index.html con data-action.
-  const actions = { startQuiz, resetQuiz, nextQuestion, goReview };
+  const actions = { startQuiz, resetQuiz, nextQuestion, goReview, viewInNotes };
   document.addEventListener('click', e=>{
     const action = e.target.closest('[data-action]');
     if(action && actions[action.dataset.action]) actions[action.dataset.action]();
