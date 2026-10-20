@@ -59,6 +59,12 @@ function windowSvg(s){
       <path d="M19 139Q31 149 45 139L46 148Q31 158 18 148Z" fill="var(--tie)" stroke="var(--tie-line)" stroke-width="1.5" stroke-linejoin="round"/>
       <circle cx="32" cy="148" r="3" fill="var(--yellow)" stroke="#e0a516" stroke-width="1.1"/>
     </g>`;
+  // Cortina cerrada: un paño recto de la barra hasta abajo, con pliegues y el borde de abajo ondulado.
+  // (el espejo va en un grupo aparte: la animación de style.css usa transform y lo reemplazaría)
+  const closedPanel = mirror => `<g${mirror ? ' transform="translate(200 0) scale(-1 1)"' : ''}><g class="cur-panel">
+      <path d="M12 26H102V218Q96 224 90 218Q83 224 76 218Q69 224 62 218Q55 224 48 218Q41 224 34 218Q27 224 20 218Q16 222 12 218Z" fill="url(#cur-${s})" stroke="var(--cur-line)" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M27 30V214M41 30V214M55 30V214M69 30V214M83 30V214M96 30V214" fill="none" stroke="var(--cur-line)" stroke-width="1.2" opacity=".4" stroke-linecap="round"/>
+    </g></g>`;
   const { x0, x1, y0, y1 } = GLASS;
   return `<svg viewBox="0 0 200 250" aria-hidden="true">
     <defs>
@@ -102,8 +108,9 @@ function windowSvg(s){
     <rect x="34" y="204" width="132" height="10" rx="5" style="fill:var(--frame-shadow)" opacity=".8"/>
     <path d="M40 188H160L168 196H32Z" style="fill:var(--sill-top)" stroke="var(--frame-line)" stroke-width="1.6" stroke-linejoin="round"/>
     <rect x="30" y="195.5" width="140" height="10" rx="3" style="fill:var(--sill-front)" stroke="var(--frame-line)" stroke-width="1.6"/>
-    <!-- barra y cortinas -->
-    ${curtain(false)}${curtain(true)}
+    <!-- barra y cortinas: abiertas (amarradas) y cerradas (al dormir se despliegan desde los lados; style.css) -->
+    <g class="cur-open">${curtain(false)}${curtain(true)}</g>
+    <g class="cur-closed">${closedPanel(false)}${closedPanel(true)}</g>
     <rect x="10" y="21" width="180" height="6" rx="3" style="fill:var(--rod)" stroke="var(--rod-line)" stroke-width="1.4"/>
     <circle cx="8" cy="24" r="6.5" fill="var(--yellow)" stroke="#e0a516" stroke-width="1.6"/><circle cx="192" cy="24" r="6.5" fill="var(--yellow)" stroke="#e0a516" stroke-width="1.6"/>
   </svg>`;

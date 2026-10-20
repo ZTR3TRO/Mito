@@ -1,6 +1,7 @@
 // La Casa de Mito: el cuarto a pantalla completa con Mito y su mascota, los gestos para jugar con él y la
 // barra de acciones. Se compone de: room.js (la escena), gestures.js (dedo y ratón), motion.js (arrastrar y
-// lanzar) y reactions.js (cara, frases y mascota). Lo único que guarda es cuántas veces mostró la pista.
+// lanzar), reactions.js (cara, frases y mascota) y sleep.js (dormir). Guarda cuántas veces mostró la pista y las
+// necesidades de Mito (state/house.js).
 //
 // Avisa por el bus lo que pasa (house:poke, house:tickle, house:pet, house:grab, house:drop, house:land) para que
 // las fases siguientes (necesidades, decoración) puedan reaccionar sin tocar los gestos.
@@ -12,6 +13,7 @@ import { buildRoom, layoutRoom } from './room.js';
 import { bindGestures } from './gestures.js';
 import { createMotion } from './motion.js';
 import { createReactions } from './reactions.js';
+import { createSleep } from './sleep.js';
 
 const reducedMotion = ()=> !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 const WELCOME_MS = 450;
@@ -42,6 +44,9 @@ export function init(){
   }
 
   const reactions = createReactions(room, mascot, speech);
+  const act = name => room.querySelector(`[data-house-act="${name}"]`);
+  const sleep = createSleep(room, mascot, reactions, { button: act('sleep') });
+  act('sleep')?.addEventListener('click', ()=>{ hideHint(); sleep.toggle(); });
   const motion = createMotion(room, mascot, {
     onPaint: reactions.place,
     onHit: (kind, impact)=> reactions.hit(kind, impact),
@@ -49,9 +54,11 @@ export function init(){
   });
 
   const cancelGesture = bindGestures(mascot, {
-    onPetTap: ()=>{ hideHint(); reactions.petTap(); },
+    onPetTap: ()=>{ hideHint(); if(!sleep.asleep) reactions.petTap(); },
     onGesture: g=>{
       hideHint();
+      // Dormido: cualquier gesto lo despierta con ternura (abre un ojito) y no hace nada más.
+      if(sleep.asleep){ if(g.type !== 'drag' && g.type !== 'drop') sleep.touch(); return; }
       // Mientras vuela o vuelve a su lugar, solo se le puede volver a agarrar.
       if(motion.busy && g.type !== 'grab' && g.type !== 'drag' && g.type !== 'drop') return;
       switch(g.type){
@@ -74,6 +81,9 @@ export function init(){
   const relight = ()=> layoutRoom(room);
   if(typeof ResizeObserver !== 'undefined') new ResizeObserver(()=>{ relight(); motion.repaint(); }).observe(room);
   on('theme:changed', ()=> requestFrame(relight));
+  // Si la partida cambia por fuera (importar, reiniciar, el panel de depuración), la Casa se repinta con el estado nuevo.
+  let inHouse = false;
+  on('state:changed', ()=>{ if(inHouse) sleep.sync(); });
 
   // En móvil el cuarto llega justo hasta la barra de navegación fija: se mide su alto real (cambia con la zona segura).
   const measureNav = ()=>{
@@ -87,14 +97,17 @@ export function init(){
   let welcomeTimer = 0;
   on('nav:after', view=>{
     clearTimeout(welcomeTimer);
+    inHouse = view === 'house';
     if(view === 'house'){
       measureNav();
       requestFrame(relight);
       maybeShowHint();
-      welcomeTimer = setTimeout(()=> reactions.welcome(), WELCOME_MS);
+      const asleep = sleep.enter();
+      welcomeTimer = setTimeout(()=>{ if(!asleep) reactions.welcome(); }, WELCOME_MS);
     } else {
       cancelGesture();
       motion.reset();
+      sleep.leave();
       reactions.clear();
       if(hint){ clearTimeout(hintTimer); hint.classList.remove('show'); hint.hidden = true; }
     }

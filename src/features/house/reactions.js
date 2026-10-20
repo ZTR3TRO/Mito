@@ -35,7 +35,7 @@ export function createReactions(room, mascot, speech){
   /* ---------- cara y clases ---------- */
   function face(f, ms){
     setFace(mascot, f);
-    if(ms) later('face', ms, ()=> setFace(mascot, 'normal'));
+    if(ms) later('face', ms, ()=>{ timers.delete('face'); setFace(mascot, 'normal'); });
     else clearTimeout(timers.get('face'));
   }
   function play(cls, ms){
@@ -80,15 +80,20 @@ export function createReactions(room, mascot, speech){
     speech.style.setProperty('--tail', Math.max(14, Math.min(w - 14, cx - x)).toFixed(1) + 'px');
   }
 
-  function say(kind){
-    const t = Date.now();
-    if(lastAt[kind] && t - lastAt[kind] < SAME_KIND_MS) return;
-    lastAt[kind] = t;
-    speech.textContent = lastMsg[kind] = pick(MITO_HOUSE[kind], lastMsg[kind]);
+  function show(text){
+    speech.textContent = text;
     speech.classList.add('show');
     place();
     later('speech', SPEECH_MS, ()=> speech.classList.remove('show'));
   }
+  // Una frase al azar de un grupo, sin repetir la anterior de ese grupo ni decirla dos veces seguidas muy rápido.
+  function sayFrom(pool, key){
+    const t = Date.now();
+    if(lastAt[key] && t - lastAt[key] < SAME_KIND_MS) return;
+    lastAt[key] = t;
+    show(lastMsg[key] = pick(pool, lastMsg[key]));
+  }
+  const say = kind => sayFrom(MITO_HOUSE[kind], kind);
 
   /* ---------- mascota ---------- */
   const stopPet = el => [...el.classList].filter(c => c.startsWith('pr-')).forEach(c => el.classList.remove(c));
@@ -121,6 +126,7 @@ export function createReactions(room, mascot, speech){
 
   return {
     place,
+    sayFrom,
 
     poke(px, py){
       const s = svg()?.getBoundingClientRect();
@@ -196,5 +202,8 @@ export function createReactions(room, mascot, speech){
       speech.classList.remove('show');
       setFace(mascot, 'normal');
     },
+
+    // Callar el globo (al dormirse, por ejemplo).
+    hush(){ clearTimeout(timers.get('speech')); speech.classList.remove('show'); },
   };
 }

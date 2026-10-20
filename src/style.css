@@ -777,6 +777,7 @@ main{ padding:38px 46px 90px; max-width:1000px; }
 .blink{transform-origin:75px 82px;animation:blink 4.6s infinite}
 @keyframes blink{0%,93%,100%{transform:scaleY(1)}96%{transform:scaleY(.08)}}
 .f{display:none}
+.lid{display:none}   /* párpados de la Casa: solo los muestra la Casa según el estado de Mito */
 .mascot.face-normal .f-normal,.mascot.face-happy .f-happy,.mascot.face-sad .f-sad,.mascot.face-excited .f-excited{display:inline}
 .tear{animation:tear 1.6s ease-in infinite}
 @keyframes tear{0%{transform:translateY(0);opacity:0}15%{opacity:1}100%{transform:translateY(16px);opacity:0}}
@@ -1734,3 +1735,49 @@ body[data-view="house"] .mascot-side{ display:none; }   /* en la Casa ya está e
 [data-theme="dark"] .house-speech, [data-theme="dark"] .room .mascot .pet-bubble{
   background:#3b3050; color:#fff; border:1px solid rgba(255,255,255,.14); box-shadow:0 6px 16px rgba(0,0,0,.5); }
 [data-theme="dark"] .room .mascot .pet-bubble::after{ border-top-color:#3b3050; }
+
+/* ================= CASA · FASE 2: necesidades, dormir ================= */
+/* Todo depende de clases del cuarto (data-need, is-asleep, is-bathing): fuera de la Casa Mito se ve normal. */
+
+/* párpados (content/art/house.js): copia del cuerpo de Mito recortada, debajo de las gafas */
+.room.is-asleep .mascot .lid-closed{ display:inline; }
+.room.is-asleep .mascot.peek .lid-r.lid-closed{ display:none; }          /* un gesto: abre un ojito */
+.room.is-asleep .mascot.peek .lid-r.lid-half{ display:inline; }
+
+/* dormido: se apaga la luz, se cierran las cortinas, ojos cerrados y zzz; la mascota también duerme */
+.room-night{ inset:0; z-index:5; pointer-events:none; opacity:0; transition:opacity 1.2s ease;
+  background:radial-gradient(120% 90% at 50% 75%, rgba(40,28,90,.34), rgba(16,10,44,.62)); }
+[data-theme="dark"] .room-night{ background:radial-gradient(120% 90% at 50% 75%, rgba(6,4,20,.3), rgba(4,2,14,.55)); }
+.room.is-asleep .room-night{ opacity:1; }
+.room-light{ transition:opacity 1.2s ease; }
+.room.is-asleep .room-light{ opacity:0; }
+.win .cur-open{ transition:opacity .45s ease .4s; }
+.win .cur-panel{ transform-box:fill-box; transform-origin:left center; transform:scaleX(.16); opacity:0;
+  transition:transform 1s cubic-bezier(.4,0,.2,1), opacity .3s ease .7s; }
+.room.is-asleep .win .cur-open{ opacity:0; transition-delay:0s; }
+.room.is-asleep .win .cur-panel{ transform:none; opacity:1; transition:transform 1s cubic-bezier(.4,0,.2,1), opacity .2s ease; }
+.room.is-asleep .mascot > svg.mito .rig{ animation-duration:5.5s; }
+.room.is-asleep .mascot > svg.mito .ant{ animation:none; transform:rotate(calc(var(--d) * 20deg)); }
+.room.is-asleep .mascot > svg.pet .pe{ animation:none; transform:scaleY(.12); }
+.room.is-asleep .mascot > svg.pet, .room.is-asleep .mascot > svg.pet *{ animation-duration:4.5s !important; }
+.room.is-asleep .mascot > svg.pet[data-k="ufo"]{ filter:brightness(.72) saturate(.85); }
+.zzz{ display:none; z-index:6; left:calc(50% + var(--mito) * .3); top:calc(var(--home-y) - var(--mito) * .78);
+  font:800 calc(var(--mito) * .13)/1 var(--font-display); color:#e9e2ff; text-shadow:0 0 8px rgba(185,138,246,.9); pointer-events:none; }
+.room.is-asleep .zzz{ display:block; }
+.zzz i{ position:absolute; font-style:normal; opacity:0; animation:zzz 3s ease-in infinite; }
+.zzz i:nth-child(2){ animation-delay:1s; font-size:1.25em; } .zzz i:nth-child(3){ animation-delay:2s; font-size:1.55em; }
+@keyframes zzz{ 0%{ transform:translate(0, 0); opacity:0; } 20%{ opacity:1; } 100%{ transform:translate(1.4em, -2.6em); opacity:0; } }
+
+/* botones de la barra: el activo (Despertar) en menta; deshabilitado, apagado */
+.house-act.is-on{ background:linear-gradient(135deg, var(--mint), #5fd9b0); box-shadow:0 4px 0 0 var(--mint-deep), var(--shadow-mint); }
+.house-act[disabled]{ opacity:.45; cursor:default; filter:saturate(.6); }
+@container house (max-width: 420px){
+  .house-act{ padding:8px 11px; font-size:13px; gap:6px; }
+  .house-act svg{ width:18px; height:18px; }
+  .house-bar{ gap:6px; padding:5px; }
+}
+
+@media (prefers-reduced-motion: reduce){
+  .zzz i{ animation:none; opacity:.9; }
+  .zzz i:nth-child(2){ transform:translate(.6em, -.9em); } .zzz i:nth-child(3){ transform:translate(1.2em, -1.9em); }
+}

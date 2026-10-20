@@ -64,11 +64,12 @@ async function installBrowserGlobals(){
 
 // store, bus y main se importan una sola vez y se comparten entre pruebas:
 // así los listeners registrados al arrancar siguen apuntando al documento vivo.
-let store, quiz, quizSession, review, notesModule, theme, courses;
+let store, quiz, quizSession, review, notesModule, theme, courses, coreState;
 
 before(async ()=>{
   await installBrowserGlobals();
   store = await import('../src/state/store.js');
+  coreState = (await import('../src/state/core.js')).state;
   await import('../src/main.js');
   quiz = await import('../src/features/quiz/index.js');
   quizSession = await import('../src/features/quiz/session.js');
@@ -151,6 +152,48 @@ test('casa: lo equipado se ve en Mito dentro de la Casa', ()=>{
   const mito = document.getElementById('mascotHouse');
   assert.ok(mito.querySelector(':scope > svg.pet'), 'falta la mascota');
   assert.ok(mito.querySelector(':scope > .aura.on'), 'falta el aura');
+  resetApp();
+});
+
+test('casa · fase 2: dormir desde la barra, y se guarda', ()=>{
+  resetApp();
+  document.querySelector('.navbtn[data-view="house"]').click();
+  const room = document.getElementById('houseRoom');
+  const sleep = room.querySelector('[data-house-act="sleep"]');
+  assert.ok(sleep.textContent.includes('Dormir'));
+
+  // con la energía alta no tiene sueño: lo dice y no se duerme (el botón nunca está deshabilitado)
+  assert.ok(!sleep.hasAttribute('disabled'));
+  sleep.click();
+  assert.ok(!room.classList.contains('is-asleep'), 'con energía alta no se duerme');
+  assert.match(document.getElementById('houseSpeech').textContent, /sueño|energía|jugar/);
+  // con poca energía, sí
+  coreState.house = { at: Date.now(), needs: { hunger: 100, clean: 100, energy: 30, mood: 100 }, sleepSince: null };
+  sleep.click();
+  assert.ok(room.classList.contains('is-asleep'), 'se apaga la luz');
+  assert.ok(sleep.textContent.includes('Despertar'));
+  assert.equal(store.getNeeds().asleep, true, 'el sueño queda guardado');
+  // salir de la Casa no lo despierta
+  document.querySelector('.navbtn[data-view="home"]').click();
+  assert.equal(store.getNeeds().asleep, true);
+  document.querySelector('.navbtn[data-view="house"]').click();
+  assert.ok(room.classList.contains('is-asleep'), 'al volver sigue dormido');
+  sleep.click();
+  assert.ok(!room.classList.contains('is-asleep'));
+  assert.equal(store.getNeeds().asleep, false);
+  resetApp();
+});
+
+test('casa · fase 2: los párpados son parte del dibujo de Mito, debajo de las gafas', ()=>{
+  resetApp();
+  store.addChispas(500);
+  assert.ok(store.buyAndEquip('ropa', 'r-gafas'));
+  document.querySelector('.navbtn[data-view="house"]').click();
+  const html = document.querySelector('#mascotHouse > svg.mito').innerHTML;
+  assert.match(html, /<g id="mb-[^"]+">/, 'el cuerpo va en un grupo que los párpados copian');
+  assert.match(html, /<use href="#mb-[^"]+" clip-path=/, 'los párpados usan el relleno del cuerpo');
+  const lids = html.indexOf('class="lid '), glasses = html.indexOf('data-k="glasses"');
+  assert.ok(lids > 0 && glasses > lids, 'las gafas quedan delante de los párpados');
   resetApp();
 });
 

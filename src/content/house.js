@@ -38,3 +38,12 @@ export const PET_HOUSE = {
   bee: pet('spin', 'spin', 'flutter', 'spin', ['Bzzz, más dulce que la miel 🍯', 'Bzz bzz 💛'], ['¡Bzzz! ¡Qué vuelo! 🐝', '¡Bzz! ¡Otra vez! 🎉']),
   ajolote: pet('wiggle', 'wiggle', 'hop', 'hop', ['¡Glub! Qué suavecito 🫧', 'Glub glub, abrazo 🌸'], ['¡Glub! ¡Qué chapuzón! 🫧', '¡Glub glub! ¡Bravo! 💖']),
 };
+
+/* ---------- Fase 2: necesidades, dormir y bañar ---------- */
+
+export const MITO_SLEEP = {
+  goodnight: ['Buenas noches 🌙', 'A dormir… 💤', 'Que sueñes bonito 🌙'],
+  woke: ['¡Qué bien dormí! ☀️', '¡Buenos días! Qué rico descanso', '¡Lleno de energía! ⚡'],
+  peek: ['Mmm… ¿ya es de día? 😴', '¿Eh? Cinco minutitos más…', 'Mmm… ¿me llamabas? 💤'],
+  notSleepy: ['¡Todavía no tengo sueño!', 'Aún tengo mucha energía ⚡', '¿Dormir? ¡Pero si quiero jugar!'],
+};
