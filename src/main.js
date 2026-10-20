@@ -174,6 +174,10 @@ function boot(){
   });
 
   initServiceWorker();   // solo en producción; en dev y en los tests no hace nada
+
+  // Panel de depuración de la Casa (adelantar el tiempo, fijar necesidades): solo en desarrollo y con ?debug.
+  // En el build de producción import.meta.env.DEV es false y Vite elimina esta rama entera.
+  if(import.meta.env?.DEV && new URLSearchParams(location.search).has('debug')) import('../dev/debug.js');
 }
 
 // Recompensa del easter egg: el avatar ya trae lo nuevo, solo la celebración.
