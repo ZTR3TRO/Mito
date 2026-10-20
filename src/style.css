@@ -1736,7 +1736,7 @@ body[data-view="house"] .mascot-side{ display:none; }   /* en la Casa ya está e
   background:#3b3050; color:#fff; border:1px solid rgba(255,255,255,.14); box-shadow:0 6px 16px rgba(0,0,0,.5); }
 [data-theme="dark"] .room .mascot .pet-bubble::after{ border-top-color:#3b3050; }
 
-/* ================= CASA · FASE 2: necesidades, dormir ================= */
+/* ================= CASA · FASE 2: necesidades, dormir y bañar ================= */
 /* Todo depende de clases del cuarto (data-need, is-asleep, is-bathing): fuera de la Casa Mito se ve normal. */
 
 /* párpados (content/art/house.js): copia del cuerpo de Mito recortada, debajo de las gafas */
@@ -1768,7 +1768,47 @@ body[data-view="house"] .mascot-side{ display:none; }   /* en la Casa ya está e
 .zzz i:nth-child(2){ animation-delay:1s; font-size:1.25em; } .zzz i:nth-child(3){ animation-delay:2s; font-size:1.55em; }
 @keyframes zzz{ 0%{ transform:translate(0, 0); opacity:0; } 20%{ opacity:1; } 100%{ transform:translate(1.4em, -2.6em); opacity:0; } }
 
-/* botones de la barra: el activo (Despertar) en menta; deshabilitado, apagado */
+/* bañar: esponja, burbujas y espuma; al terminar, Mito brilla */
+.room.is-bathing{ cursor:grab; touch-action:none; }
+.room.is-bathing.is-rubbing{ cursor:grabbing; }
+.sponge{ z-index:8; width:clamp(54px, calc(var(--bw) * .12), 92px); translate:-50% -50%; pointer-events:none;
+  filter:drop-shadow(0 6px 8px rgba(51,39,74,.25)); transition:rotate .15s ease, scale .15s ease; }
+.sponge[hidden]{ display:none; }
+.sponge svg{ width:100%; height:auto; display:block; }
+.room.is-rubbing .sponge{ rotate:-10deg; scale:.94; }
+/* espuma (content/art/house.js): racimos pegados al cuerpo de Mito que crecen con --f (0 a 1) donde pasa la esponja;
+   nunca sobre la cara. Se mueven con Mito como su rubor. */
+.mascot > .mito-foam{ position:absolute; inset:0; width:100%; height:100%; z-index:1; pointer-events:none; overflow:visible;
+  translate:var(--fly-x) var(--fly-y); }
+.mito-foam{ filter:drop-shadow(0 1px 1.5px rgba(90,140,190,.35)); }
+.mito-foam .fc{ fill:#fff; stroke:rgba(170,205,235,.7); stroke-width:.7; opacity:0; transform:scale(calc(.5 + var(--f, 0) * .95));
+  transition:opacity .35s ease, transform .35s cubic-bezier(.3,1.4,.5,1); }
+.mito-foam .fc.on{ opacity:calc(.82 + var(--f, 0) * .18); }
+.mito-foam .fc .fh{ fill:#fff; stroke:none; opacity:.9; }
+.room.is-rinsing .mito-foam .fc{ transition:opacity .7s ease, transform .7s ease; transform:translateY(6px) scale(.6); }
+/* burbujas: suben, se mecen y revientan */
+.bath-bubble{ z-index:7; width:calc(16px * var(--s)); aspect-ratio:1; border-radius:50%; translate:-50% -50%; pointer-events:none;
+  background:radial-gradient(circle at 32% 30%, #fff 0 13%, rgba(255,255,255,.22) 28%, rgba(170,220,255,.2) 60%, rgba(255,255,255,.8) 71%, transparent 74%);
+  animation:bubbleUp 1.7s ease-out forwards; }
+@keyframes bubbleUp{ 0%{ transform:scale(.3); opacity:0; } 14%{ opacity:1; } 50%{ transform:translate(calc(var(--dx) * .5), calc(var(--rise) * -.5)) scale(1); }
+  86%{ transform:translate(var(--dx), calc(var(--rise) * -1)) scale(1.08); opacity:1; } 100%{ transform:translate(var(--dx), calc(var(--rise) * -1)) scale(1.6); opacity:0; } }
+/* enjuague: caen gotas y la espuma se va */
+.rinse-drop{ z-index:7; width:7px; height:12px; border-radius:50% 50% 50% 50% / 60% 60% 40% 40%; pointer-events:none; translate:-50% 0;
+  background:linear-gradient(180deg, rgba(255,255,255,.95), rgba(140,205,255,.9)); box-shadow:0 0 6px rgba(140,205,255,.7);
+  opacity:0; animation:rinseDrop .65s ease-in var(--delay, 0s) forwards; }
+@keyframes rinseDrop{ 0%{ transform:translateY(0); opacity:0; } 15%{ opacity:1; } 100%{ transform:translateY(var(--fall)); opacity:0; } }
+/* a la mascota le cae espuma y se sacude */
+.pet-suds{ z-index:7; width:26px; height:18px; translate:-50% -50%; pointer-events:none;
+  background:radial-gradient(circle at 30% 60%, #fff 0 40%, transparent 42%), radial-gradient(circle at 70% 60%, #fff 0 38%, transparent 40%), radial-gradient(circle at 50% 30%, #fff 0 34%, transparent 36%);
+  filter:drop-shadow(0 1px 1px rgba(120,170,220,.5)); animation:petSuds 1.3s ease forwards; }
+@keyframes petSuds{ 0%{ transform:translateY(-26px) scale(.5); opacity:0; } 25%{ transform:none; opacity:1; } 60%{ transform:none; opacity:1; } 72%{ transform:translate(-10px, -6px) scale(.8); opacity:.8; } 100%{ transform:translate(-22px, -16px) scale(.4); opacity:0; } }
+.mascot > svg.pet.pr-shake{ animation:prShake .6s ease-in-out; }
+@keyframes prShake{ 0%,100%{ transform:none; } 15%{ transform:rotate(-12deg); } 30%{ transform:rotate(11deg); } 45%{ transform:rotate(-9deg); } 60%{ transform:rotate(7deg); } 75%{ transform:rotate(-4deg); } }
+.mascot.hr-shine > svg.mito{ animation:hrShine 1.6s ease; }
+@keyframes hrShine{ 0%,100%{ filter:none; } 35%{ filter:drop-shadow(0 0 10px #fff6c2) drop-shadow(0 0 18px rgba(255,214,90,.75)) brightness(1.12); } }
+.mascot.hr-shine > svg.mito .sparkles{ animation:sp 1s ease-out 2; }
+
+/* botones de la barra: el activo (Despertar, Listo) en menta; deshabilitado, apagado */
 .house-act.is-on{ background:linear-gradient(135deg, var(--mint), #5fd9b0); box-shadow:0 4px 0 0 var(--mint-deep), var(--shadow-mint); }
 .house-act[disabled]{ opacity:.45; cursor:default; filter:saturate(.6); }
 @container house (max-width: 420px){
@@ -1780,4 +1820,9 @@ body[data-view="house"] .mascot-side{ display:none; }   /* en la Casa ya está e
 @media (prefers-reduced-motion: reduce){
   .zzz i{ animation:none; opacity:.9; }
   .zzz i:nth-child(2){ transform:translate(.6em, -.9em); } .zzz i:nth-child(3){ transform:translate(1.2em, -1.9em); }
+  /* baño: la espuma aparece y se va con un desvanecido; sin burbujas flotando, sin gotas */
+  .bath-bubble, .rinse-drop{ display:none; }
+  .mito-foam .fc{ transform:none; transition:opacity .4s ease !important; }
+  .room.is-rinsing .mito-foam .fc{ transform:none; transition:opacity .6s ease !important; }
+  .pet-suds{ animation:none; opacity:0; }
 }

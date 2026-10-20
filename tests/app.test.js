@@ -155,12 +155,12 @@ test('casa: lo equipado se ve en Mito dentro de la Casa', ()=>{
   resetApp();
 });
 
-test('casa · fase 2: dormir desde la barra, y se guarda', ()=>{
+test('casa · fase 2: dormir y bañar desde la barra, y se guarda', ()=>{
   resetApp();
   document.querySelector('.navbtn[data-view="house"]').click();
   const room = document.getElementById('houseRoom');
-  const sleep = room.querySelector('[data-house-act="sleep"]');
-  assert.ok(sleep.textContent.includes('Dormir'));
+  const sleep = room.querySelector('[data-house-act="sleep"]'), bath = room.querySelector('[data-house-act="bath"]');
+  assert.ok(sleep.textContent.includes('Dormir') && bath.textContent.includes('Bañar'));
 
   // con la energía alta no tiene sueño: lo dice y no se duerme (el botón nunca está deshabilitado)
   assert.ok(!sleep.hasAttribute('disabled'));
@@ -173,6 +173,7 @@ test('casa · fase 2: dormir desde la barra, y se guarda', ()=>{
   assert.ok(room.classList.contains('is-asleep'), 'se apaga la luz');
   assert.ok(sleep.textContent.includes('Despertar'));
   assert.equal(store.getNeeds().asleep, true, 'el sueño queda guardado');
+  assert.ok(!bath.hasAttribute('disabled'));
   // salir de la Casa no lo despierta
   document.querySelector('.navbtn[data-view="home"]').click();
   assert.equal(store.getNeeds().asleep, true);
@@ -181,6 +182,12 @@ test('casa · fase 2: dormir desde la barra, y se guarda', ()=>{
   sleep.click();
   assert.ok(!room.classList.contains('is-asleep'));
   assert.equal(store.getNeeds().asleep, false);
+
+  bath.click();
+  assert.ok(room.classList.contains('is-bathing') && bath.textContent.includes('Listo'));
+  assert.ok(room.querySelector('.sponge') && !room.querySelector('.sponge').hidden, 'sale la esponja');
+  bath.click();
+  assert.ok(!room.classList.contains('is-bathing'));
   resetApp();
 });
 

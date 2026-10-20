@@ -10,7 +10,8 @@ const now = ()=> (typeof performance !== 'undefined' ? performance.now() : Date.
 const CENTER = { x: 75 / 150, y: 72 / 150 }, RADIUS = 52 / 150 * 1.15;
 
 // onGesture(g) recibe los gestos del clasificador; onPetTap() cuando se toca a la mascota.
-export function bindGestures(mascot, { onGesture, onPetTap }){
+// enabled(): si es falso (p. ej. durante el baño, cuando el dedo mueve la esponja), Mito no recibe gestos.
+export function bindGestures(mascot, { onGesture, onPetTap, enabled = ()=> true }){
   const classifier = createGestureClassifier();
   let pointer = null, longPress = 0;
 
@@ -23,7 +24,7 @@ export function bindGestures(mascot, { onGesture, onPetTap }){
   const emit = list => list.forEach(onGesture);
 
   mascot.addEventListener('pointerdown', e=>{
-    if(e.button > 0 || pointer !== null) return;
+    if(e.button > 0 || pointer !== null || !enabled()) return;
     if(e.target.closest('svg.pet')){ onPetTap(); return; }
     if(!e.target.closest('svg.mito')) return;
     e.preventDefault();   // sin selección de texto ni arrastre de imagen
@@ -54,7 +55,7 @@ export function bindGestures(mascot, { onGesture, onPetTap }){
 
   // Teclado: Enter o Espacio sobre Mito = picarlo en el centro.
   mascot.addEventListener('keydown', e=>{
-    if(e.key !== 'Enter' && e.key !== ' ') return;
+    if((e.key !== 'Enter' && e.key !== ' ') || !enabled()) return;
     e.preventDefault();
     const r = svg()?.getBoundingClientRect();
     onGesture({ type: 'poke', x: r ? r.left + r.width / 2 : 0, y: r ? r.top + r.height / 2 : 0, taps: 1 });

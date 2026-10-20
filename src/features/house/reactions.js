@@ -127,6 +127,7 @@ export function createReactions(room, mascot, speech){
   return {
     place,
     sayFrom,
+    petPlay,
 
     poke(px, py){
       const s = svg()?.getBoundingClientRect();

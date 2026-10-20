@@ -47,3 +47,9 @@ export const MITO_SLEEP = {
   peek: ['Mmm… ¿ya es de día? 😴', '¿Eh? Cinco minutitos más…', 'Mmm… ¿me llamabas? 💤'],
   notSleepy: ['¡Todavía no tengo sueño!', 'Aún tengo mucha energía ⚡', '¿Dormir? ¡Pero si quiero jugar!'],
 };
+
+export const MITO_BATH = {
+  start: ['¡Burbujas! 🫧', '¡A bañarnos! 🛁', 'Frota, frota… 🧽'],
+  rub: ['¡Jiji, hace cosquillas! 🫧', 'Mmm, qué espumita', '¡Ahí, ahí! ✨'],
+  done: ['¡Qué rico baño! ✨', '¡Rechinando de limpio! 🌟', '¡Gracias! Huelo a flores 🌸'],
+};

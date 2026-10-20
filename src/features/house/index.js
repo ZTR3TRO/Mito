@@ -1,6 +1,6 @@
 // La Casa de Mito: el cuarto a pantalla completa con Mito y su mascota, los gestos para jugar con él y la
 // barra de acciones. Se compone de: room.js (la escena), gestures.js (dedo y ratón), motion.js (arrastrar y
-// lanzar), reactions.js (cara, frases y mascota) y sleep.js (dormir). Guarda cuántas veces mostró la pista y las
+// lanzar), reactions.js (cara, frases y mascota), sleep.js (dormir) y bath.js (bañar). Guarda cuántas veces mostró la pista y las
 // necesidades de Mito (state/house.js).
 //
 // Avisa por el bus lo que pasa (house:poke, house:tickle, house:pet, house:grab, house:drop, house:land) para que
@@ -14,6 +14,7 @@ import { bindGestures } from './gestures.js';
 import { createMotion } from './motion.js';
 import { createReactions } from './reactions.js';
 import { createSleep } from './sleep.js';
+import { createBath } from './bath.js';
 
 const reducedMotion = ()=> !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 const WELCOME_MS = 450;
@@ -46,7 +47,19 @@ export function init(){
   const reactions = createReactions(room, mascot, speech);
   const act = name => room.querySelector(`[data-house-act="${name}"]`);
   const sleep = createSleep(room, mascot, reactions, { button: act('sleep') });
-  act('sleep')?.addEventListener('click', ()=>{ hideHint(); sleep.toggle(); });
+  const bath = createBath(room, mascot, reactions, { button: act('bath') });
+  // Los botones nunca se deshabilitan: cada uno responde. "Dormir" durante el baño lo termina primero; "Bañar"
+  // mientras duerme lo despierta con ternura (y luego ya se puede bañar).
+  act('sleep')?.addEventListener('click', ()=>{
+    hideHint();
+    if(bath.bathing){ bath.finish(); return; }
+    sleep.toggle();
+  });
+  act('bath')?.addEventListener('click', ()=>{
+    hideHint();
+    if(sleep.asleep){ sleep.touch(); return; }
+    bath.toggle();
+  });
   const motion = createMotion(room, mascot, {
     onPaint: reactions.place,
     onHit: (kind, impact)=> reactions.hit(kind, impact),
@@ -54,6 +67,7 @@ export function init(){
   });
 
   const cancelGesture = bindGestures(mascot, {
+    enabled: ()=> !bath.bathing,
     onPetTap: ()=>{ hideHint(); if(!sleep.asleep) reactions.petTap(); },
     onGesture: g=>{
       hideHint();
@@ -107,6 +121,7 @@ export function init(){
     } else {
       cancelGesture();
       motion.reset();
+      bath.leave();
       sleep.leave();
       reactions.clear();
       if(hint){ clearTimeout(hintTimer); hint.classList.remove('show'); hint.hidden = true; }
