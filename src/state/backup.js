@@ -7,6 +7,7 @@ import {
   state, commit, defaultState, fixEquipped, cleanPetNames, cleanPetLooks, cleanClaimedEggs,
   HISTORY_LIMIT, MISTAKES_LIMIT, num,
 } from './core.js';
+import { parseHouse } from './house.js';
 
 export function exportSave(){
   return JSON.stringify(state, null, 2);
@@ -78,6 +79,8 @@ export function parseSave(json){
     course: typeof s.course === 'string' ? s.course : d.course,
     // opcional: si el archivo no lo trae, se queda como estaba
     ...(Number.isFinite(s.houseHint) ? { houseHint: Math.max(0, Math.floor(s.houseHint)) } : {}),
+    // opcional: las necesidades de Mito en la Casa, validadas (sin el campo, todo empieza lleno)
+    ...(s.house != null ? { house: parseHouse(s.house) } : {}),
   };
 }
 
@@ -92,6 +95,7 @@ export function resetAll(){
   const prevTheme = state.theme;
   Object.assign(state, defaultState());
   delete state.houseHint;   // empezar de cero también vuelve a mostrar la pista de la Casa
+  delete state.house;       // y deja a Mito con todas sus necesidades llenas
   state.theme = prevTheme;
   commit();
 }

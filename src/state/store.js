@@ -22,4 +22,6 @@ export {
 
 export { getTheme, setTheme, getCourse, setCourse, getHouseHintCount, markHouseHintShown } from './preferences.js';
 
+export { NEEDS, topNeed, getNeeds, careMood, startSleep, wakeUp, addClean } from './house.js';
+
 export { exportSave, parseSave, importSave, resetAll } from './backup.js';

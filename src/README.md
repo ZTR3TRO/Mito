@@ -32,7 +32,8 @@ src/
     economy.js       chispas
     inventory.js     prendas compradas y equipadas
     progress.js      historial, fallos, racha
-    preferences.js   tema y materia activa
+    preferences.js   tema, materia activa y pista de la Casa
+    house.js         necesidades de Mito en la Casa (hambre, limpieza, energía, ánimo): cálculo con la hora y constantes NEEDS
     backup.js        exportar, importar y reiniciar
   features/        la lógica de la app. Una carpeta por dominio
     nav/router.js      cambia de vista y actualiza la barra lateral
@@ -86,5 +87,6 @@ un fichero suelto, un ciclo o un export muerto rompen `npm test`:
 | Cambiar lo que dice la mascota | `content/messages.js` |
 | Cambiar lo que dicen Mito y la mascota en la Casa | `content/house.js` |
 | Ajustar los umbrales de los gestos o la física | `core/gesture.js` (`GESTURE`), `core/physics.js` (`PHYSICS`) |
+| Ajustar cómo bajan y suben las necesidades de Mito | `state/house.js` (`NEEDS`) |
 | Cambiar cómo se cobra o se guarda | `state/economy.js`, `state/inventory.js` |
 | Añadir una vista nueva | carpeta en `features/`, un `init()` y un caso en `nav/router.js` |

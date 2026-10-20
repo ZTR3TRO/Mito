@@ -352,3 +352,95 @@ test('composición: tamaños raros no la rompen', ()=>{
     assert.ok(L.block.w > 0 && L.block.h > 0);
   }
 });
+
+/* ---------------- necesidades (Fase 2) ---------------- */
+
+import { NEEDS as N, needsAt, cleanHouse, topNeed, careMood, addClean, startSleep, wakeUp, getNeeds } from '../src/state/house.js';
+import { state } from '../src/state/core.js';
+import { parseSave } from '../src/state/backup.js';
+import { readFileSync } from 'node:fs';
+
+const HR = 3600e3;
+const FULL = { hunger: 100, clean: 100, energy: 100, mood: 100 };
+const house = (needs, extra = {}) => ({ at: 0, needs: { ...FULL, ...needs }, sleepSince: null, ...extra });
+
+test('necesidades: de llena a la mitad en un día, y el hambre todavía no baja', ()=>{
+  const n = needsAt(house({}), 24 * HR).needs;
+  for(const k of ['clean', 'energy', 'mood']) assert.ok(Math.abs(n[k] - 50) < .01, `${k}: ${n[k]}`);
+  assert.equal(n.hunger, 100);
+});
+
+test('necesidades: nunca bajan del piso, y lo que ya estaba debajo no sube solo', ()=>{
+  const n = needsAt(house({}), 30 * 24 * HR).needs;
+  for(const k of ['clean', 'energy', 'mood']) assert.equal(n[k], N.floor);
+  assert.equal(needsAt(house({ mood: 5 }), 10 * HR).needs.mood, 5);
+});
+
+test('necesidades: dormido con la app cerrada, la energía sube y despierta al llenarse', ()=>{
+  // 30 min: sigue dormido; la energía subió 50; el ánimo no bajó; la limpieza sí
+  const half = needsAt(house({ energy: 20, mood: 60 }, { sleepSince: 0 }), .5 * HR);
+  assert.ok(half.sleepSince !== null, 'debería seguir dormido');
+  assert.ok(Math.abs(half.needs.energy - 70) < .01);
+  assert.equal(half.needs.mood, 60);
+  assert.ok(half.needs.clean < 100);
+  // de vacía a llena en ~1 hora
+  assert.equal(needsAt(house({ energy: 0 }, { sleepSince: 0 }), HR).needs.energy, 100);
+  // dormido ya lleno: hace una siesta corta antes de despertar solo
+  assert.ok(needsAt(house({}, { sleepSince: 0 }), (N.minNapMinutes - 1) * 60e3).sleepSince !== null, 'siesta mínima');
+  assert.equal(needsAt(house({}, { sleepSince: 0 }), (N.minNapMinutes + 1) * 60e3).sleepSince, null);
+  // 2 h: despertó a los 48 min (de 20 a 100) y desde ahí todo baja normal
+  const later = needsAt(house({ energy: 20, mood: 60 }, { sleepSince: 0 }), 2 * HR);
+  assert.equal(later.sleepSince, null);
+  const awake = 2 - .8;
+  assert.ok(Math.abs(later.needs.energy - (100 - N.decayPerHour.energy * awake)) < .01);
+  assert.ok(Math.abs(later.needs.mood - (60 - N.decayPerHour.mood * awake)) < .01);
+});
+
+test('necesidades: relojes raros y datos dañados no la rompen', ()=>{
+  // una hora guardada en el futuro cuenta como ahora: no baja nada
+  assert.deepEqual(needsAt({ at: 10 * HR, needs: FULL, sleepSince: null }, 1 * HR).needs, FULL);
+  const c = cleanHouse({ at: 'x', needs: { hunger: 'mucha', clean: 250, energy: -40, mood: NaN }, sleepSince: 'ayer' }, 5);
+  assert.deepEqual(c, { at: 5, needs: { hunger: 100, clean: 100, energy: 0, mood: 100 }, sleepSince: null });
+  assert.deepEqual(cleanHouse(undefined, 7), { at: 7, needs: FULL, sleepSince: null });
+  assert.deepEqual(cleanHouse(null, 7).needs, FULL);
+});
+
+test('necesidades: la prioridad decide cómo se ve (sueño > hambre > limpieza > ánimo)', ()=>{
+  const low = N.low - 1;
+  assert.equal(topNeed(FULL), null);
+  assert.equal(topNeed({ ...FULL, mood: low, clean: low, energy: low }), 'sleepy');
+  assert.equal(topNeed({ ...FULL, mood: low, clean: low, hunger: low }), 'hungry');
+  assert.equal(topNeed({ ...FULL, mood: low, clean: low }), 'dirty');
+  assert.equal(topNeed({ ...FULL, mood: low }), 'sad');
+});
+
+test('necesidades: los cariños suben el ánimo con tope por minuto; el baño y el sueño se guardan', ()=>{
+  const t0 = 1e12;
+  state.house = house({ mood: 30 }, { at: t0 });
+  const gains = [0, 1, 2, 3, 4].map(i => careMood(t0 + i * 1000));
+  assert.deepEqual(gains, [4, 4, 4, 0, 0], 'tope de 12 por minuto');
+  assert.equal(careMood(t0 + 61e3), 4, 'al minuto siguiente vuelve a subir');
+  assert.ok(Math.abs(getNeeds(t0 + 61e3).mood - 46) < .1);
+
+  state.house = house({ clean: 30 }, { at: t0 });
+  assert.equal(addClean(500, t0), 100, 'la limpieza no pasa de 100');
+  assert.equal(addClean(-50, t0), 100, 'frotar nunca ensucia');
+
+  state.house = house({ energy: 30 }, { at: t0 });
+  startSleep(t0);
+  assert.equal(getNeeds(t0 + 10 * 60e3).asleep, true);
+  assert.ok(Math.abs(getNeeds(t0 + 30 * 60e3).energy - 80) < .01);
+  wakeUp(t0 + 30 * 60e3);
+  assert.equal(getNeeds(t0 + 31 * 60e3).asleep, false);
+  delete state.house;
+});
+
+test('necesidades: compatibles con partidas sin el campo y con respaldos dañados', ()=>{
+  const fixture = readFileSync(new URL('./fixtures/guardado-42c03de.json', import.meta.url), 'utf8');
+  const parsed = parseSave(fixture);
+  assert.equal('house' in parsed, false, 'una partida vieja no inventa el campo');
+  assert.deepEqual(needsAt(parsed.house, Date.now()).needs, FULL, 'sin el campo, todo lleno');
+  const withHouse = parseSave(JSON.stringify({ ...JSON.parse(fixture), house: { at: 'x', needs: { clean: 999 } } }));
+  assert.equal(withHouse.house.needs.clean, 100);
+  assert.ok(Number.isFinite(withHouse.house.at));
+});
