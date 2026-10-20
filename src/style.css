@@ -1740,9 +1740,23 @@ body[data-view="house"] .mascot-side{ display:none; }   /* en la Casa ya está e
 /* Todo depende de clases del cuarto (data-need, is-asleep, is-bathing): fuera de la Casa Mito se ve normal. */
 
 /* párpados (content/art/house.js): copia del cuerpo de Mito recortada, debajo de las gafas */
+.room[data-need="sleepy"] .mascot.face-normal .lid-half{ display:inline; }
 .room.is-asleep .mascot .lid-closed{ display:inline; }
 .room.is-asleep .mascot.peek .lid-r.lid-closed{ display:none; }          /* un gesto: abre un ojito */
 .room.is-asleep .mascot.peek .lid-r.lid-half{ display:inline; }
+
+/* con sueño: antenas un poco caídas y respiración lenta */
+.room[data-need="sleepy"] .mascot > svg.mito .ant{ animation:none; transform:rotate(calc(var(--d) * 16deg)); transition:transform .8s ease; }
+.room[data-need="sleepy"] .mascot > svg.mito .rig{ animation-duration:6s; }
+/* triste: su cara triste, pero sin lágrima (nunca se pone mal), y antenas caídas */
+.room[data-need="sad"] .mascot .tear{ display:none; }
+.room[data-need="sad"] .mascot.face-sad > svg.mito .ant{ animation:none; transform:rotate(calc(var(--d) * 26deg)); transition:transform .8s ease; }
+/* sucio: manchitas y polvito, más o menos según --dirt (needs.js) */
+.mascot > .mito-dirt{ position:absolute; inset:0; width:100%; height:100%; z-index:1; pointer-events:none; overflow:visible;
+  translate:var(--fly-x) var(--fly-y); opacity:var(--dirt, 0); transition:opacity .6s ease; }
+.mito-dirt .dust circle{ animation:ndDust 3.6s ease-in-out infinite; }
+.mito-dirt .dust circle:nth-child(2){ animation-delay:-1.2s; } .mito-dirt .dust circle:nth-child(3){ animation-delay:-2.4s; }
+@keyframes ndDust{ 0%,100%{ transform:translateY(0); opacity:.5; } 50%{ transform:translateY(-5px); opacity:.9; } }
 
 /* dormido: se apaga la luz, se cierran las cortinas, ojos cerrados y zzz; la mascota también duerme */
 .room-night{ inset:0; z-index:5; pointer-events:none; opacity:0; transition:opacity 1.2s ease;
@@ -1825,4 +1839,5 @@ body[data-view="house"] .mascot-side{ display:none; }   /* en la Casa ya está e
   .mito-foam .fc{ transform:none; transition:opacity .4s ease !important; }
   .room.is-rinsing .mito-foam .fc{ transform:none; transition:opacity .6s ease !important; }
   .pet-suds{ animation:none; opacity:0; }
+  .mito-dirt .dust circle{ animation:none; }
 }

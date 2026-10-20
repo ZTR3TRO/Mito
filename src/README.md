@@ -25,6 +25,7 @@ src/
       base.js         cuerpo y caras de Mito
       halloween.js    piezas de Halloween
       secrets.js      mascotas y auras secretas
+      house.js        piezas de la Casa: párpados (copia recortada del cuerpo), polvito y esponja
       skins.js        piezas por categoría de ropa
   state/           la partida guardada en localStorage. Solo se accede por store.js
     store.js         barril: la API pública
@@ -44,7 +45,8 @@ src/
     shop/              tienda y tienda de temporada: index, season
     house/             la Casa: index (cableado), layout (bloque aprobado escalado, piso y luz; puro),
                        room (dibuja la escena), gestures (dedo y ratón), motion (arrastrar y lanzar),
-                       reactions (cara, frases y mascota)
+                       reactions (cara, frases y mascota), needs (cómo se notan sus necesidades),
+                       sleep (dormir), bath (bañar)
     progress/          vista de progreso y copia de seguridad: view, backup
     mascot/            la mascota entera: avatar, auras, face, effects, speech
     pwa/update.js      service worker: registro y actualización segura (solo en producción)

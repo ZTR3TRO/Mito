@@ -31,11 +31,12 @@ export function createReactions(room, mascot, speech){
   const later = (key, ms, fn) => { clearTimeout(timers.get(key)); timers.set(key, setTimeout(fn, ms)); };
   const lastMsg = {}, lastAt = {};
   let petActAt = 0, petTurn = 0;
+  let baseFace = 'normal';     // la cara de reposo: la pone el estado de Mito (needs.js), p. ej. triste
 
   /* ---------- cara y clases ---------- */
   function face(f, ms){
     setFace(mascot, f);
-    if(ms) later('face', ms, ()=>{ timers.delete('face'); setFace(mascot, 'normal'); });
+    if(ms) later('face', ms, ()=>{ timers.delete('face'); setFace(mascot, baseFace); });
     else clearTimeout(timers.get('face'));
   }
   function play(cls, ms){
@@ -129,6 +130,12 @@ export function createReactions(room, mascot, speech){
     sayFrom,
     petPlay,
 
+    // La cara de reposo (normal o triste). Si hay una reacción en curso, se aplica al terminar.
+    setBase(f){
+      baseFace = f;
+      if(!timers.has('face')) setFace(mascot, f);
+    },
+
     poke(px, py){
       const s = svg()?.getBoundingClientRect();
       const dx = s && s.width ? (px - (s.left + s.width / 2)) / s.width : 0;
@@ -201,7 +208,7 @@ export function createReactions(room, mascot, speech){
       const el = petEl();
       if(el) stopPet(el);
       speech.classList.remove('show');
-      setFace(mascot, 'normal');
+      setFace(mascot, baseFace);
     },
 
     // Callar el globo (al dormirse, por ejemplo).

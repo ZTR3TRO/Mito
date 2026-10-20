@@ -22,6 +22,14 @@ export function lidsMarkup(id){
   return { defs, body };
 }
 
+// Polvito de cuando está sucio: manchitas suaves y unas motas que flotan. Su opacidad la da --dirt (0 a 1).
+export const DIRT = `<svg class="mito-dirt" viewBox="0 0 150 150" aria-hidden="true"><g fill="#8b6b55">
+  <ellipse cx="104" cy="99" rx="8" ry="4.5" opacity=".26"/><ellipse cx="44" cy="100" rx="5" ry="3" opacity=".18"/>
+  <circle cx="41" cy="58" r="3.4" opacity=".4"/><circle cx="46" cy="64" r="1.6" opacity=".28"/>
+  <circle cx="112" cy="66" r="2.6" opacity=".38"/><circle cx="54" cy="112" r="2.8" opacity=".34"/>
+  <circle cx="98" cy="116" r="1.8" opacity=".3"/><circle cx="83" cy="36" r="1.6" opacity=".25"/></g>
+  <g class="dust" fill="#b89a82"><circle cx="30" cy="96" r="1.3"/><circle cx="122" cy="88" r="1.1"/><circle cx="118" cy="42" r=".9"/></g></svg>`;
+
 // Esponja del baño (se arrastra sobre Mito).
 export const SPONGE = `<svg viewBox="0 0 64 48" aria-hidden="true">
   <rect x="4" y="8" width="56" height="34" rx="12" fill="#ffd23c" stroke="#e0a516" stroke-width="2.4"/>

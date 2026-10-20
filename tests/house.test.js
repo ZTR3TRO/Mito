@@ -359,6 +359,7 @@ import { NEEDS as N, needsAt, cleanHouse, topNeed, careMood, addClean, startSlee
 import { state } from '../src/state/core.js';
 import { parseSave } from '../src/state/backup.js';
 import { readFileSync } from 'node:fs';
+import { MITO_NEEDS, MITO_THANKS, MITO_SLEEP, MITO_BATH } from '../src/content/house.js';
 
 const HR = 3600e3;
 const FULL = { hunger: 100, clean: 100, energy: 100, mood: 100 };
@@ -443,4 +444,11 @@ test('necesidades: compatibles con partidas sin el campo y con respaldos dañado
   const withHouse = parseSave(JSON.stringify({ ...JSON.parse(fixture), house: { at: 'x', needs: { clean: 999 } } }));
   assert.equal(withHouse.house.needs.clean, 100);
   assert.ok(Number.isFinite(withHouse.house.at));
+});
+
+test('contenido: frases de necesidades, sueño y baño, cortas', ()=>{
+  const all = [MITO_NEEDS, MITO_THANKS, MITO_SLEEP, MITO_BATH].flatMap(o => Object.values(o).flat());
+  assert.ok(all.length > 20);
+  assert.deepEqual(all.filter(m => [...m].length > 34), []);
+  for(const need of ['sleepy', 'dirty', 'sad']) assert.ok(MITO_NEEDS[need].length >= 2);
 });

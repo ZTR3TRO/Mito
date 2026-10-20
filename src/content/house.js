@@ -41,6 +41,19 @@ export const PET_HOUSE = {
 
 /* ---------- Fase 2: necesidades, dormir y bañar ---------- */
 
+// Lo que pide Mito cuando una necesidad está baja (siempre con cariño, nunca como queja).
+export const MITO_NEEDS = {
+  sleepy: ['Uaaah… qué sueño 😪', '¿Apagamos la luz un ratito?', 'Se me cierran los ojitos… 😴'],
+  dirty: ['¿Me bañas? Tengo polvito 🫧', 'Creo que necesito un bañito', 'Tengo manchitas… ¿burbujas? 🛁'],
+  sad: ['¿Me haces un cariñito? 🥺', 'Me siento solito… ¿jugamos?', 'Un abrazo me vendría bien 💕'],
+  hungry: ['Tengo un poquito de hambre 🍓'],
+};
+
+// Cuando se cubre una necesidad.
+export const MITO_THANKS = {
+  mood: ['¡Eso me alegró el día! 💖', 'Ya me siento mejor 😊', '¡Gracias por los mimos! 🥰'],
+};
+
 export const MITO_SLEEP = {
   goodnight: ['Buenas noches 🌙', 'A dormir… 💤', 'Que sueñes bonito 🌙'],
   woke: ['¡Qué bien dormí! ☀️', '¡Buenos días! Qué rico descanso', '¡Lleno de energía! ⚡'],
