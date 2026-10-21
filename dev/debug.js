@@ -3,8 +3,11 @@
 //   - fijar las necesidades (hambre, limpieza, energía, ánimo) y atajos (todo lleno, muy sucio, con sueño, triste)
 //   - adelantar el tiempo: corre hacia atrás la hora guardada, como si hubiera pasado ese tiempo (con la app cerrada)
 //   - dormirlo desde hace un rato, para probar la recarga
+//   - la charola: añadir comida sin gastar chispas, o vaciarla
 import { state, commit } from '../src/state/core.js';
 import { needsAt, NEEDS } from '../src/state/house.js';
+import { getPantry } from '../src/state/pantry.js';
+import { FOODS, FOOD_MAX } from '../src/content/food.js';
 
 const KEYS = [['hunger', 'Hambre'], ['clean', 'Limpieza'], ['energy', 'Energía'], ['mood', 'Ánimo']];
 const MIN = 60e3, HOUR = 3600e3;
@@ -14,7 +17,7 @@ const current = ()=> needsAt(state.house, now());
 function save(h){ state.house = h; commit(); paint(); }
 function setNeeds(values, sleepSince){
   const h = current();
-  save({ at: now(), needs: { ...h.needs, ...values }, sleepSince: sleepSince === undefined ? h.sleepSince : sleepSince });
+  save({ ...h, at: now(), needs: { ...h.needs, ...values }, sleepSince: sleepSince === undefined ? h.sleepSince : sleepSince });
 }
 // Adelantar el tiempo: lo guardado pasa a ser de hace `ms`, así al leerlo "ahora" ya pasó ese tiempo.
 function advance(ms){
@@ -40,11 +43,14 @@ panel.innerHTML = `
   <h4>🛠️ Casa · depuración <button class="alt" data-x="min">—</button></h4>
   ${KEYS.map(([k, label]) => `<label>${label}<input type="range" min="0" max="100" step="1" data-k="${k}"><span data-v="${k}"></span></label>`).join('')}
   <div class="row"><button data-x="apply">Aplicar</button><button class="alt" data-x="full">Todo lleno</button>
-    <button class="alt" data-x="dirty">Muy sucio</button><button class="alt" data-x="sleepy">Con sueño</button><button class="alt" data-x="sad">Triste</button></div>
+    <button class="alt" data-x="dirty">Muy sucio</button><button class="alt" data-x="sleepy">Con sueño</button><button class="alt" data-x="hungry">Con hambre</button><button class="alt" data-x="sad">Triste</button></div>
   <div class="row"><b style="width:100%">Adelantar el tiempo</b>
     <button class="alt" data-t="10">+10 min</button><button class="alt" data-t="60">+1 h</button><button class="alt" data-t="360">+6 h</button><button class="alt" data-t="1440">+24 h</button></div>
   <div class="row"><button class="alt" data-x="sleep30">Dormido hace 30 min</button><button class="alt" data-x="wake">Despierto</button></div>
-  <div class="now" data-now></div>`;
+  <div class="row"><b style="width:100%">Charola</b>
+    <button class="alt" data-x="food5">+5 de cada alimento</button><button class="alt" data-x="food1">+1 manzana</button><button class="alt" data-x="foodClear">Vaciar</button></div>
+  <div class="now" data-now></div>
+  <div class="now" data-pantry></div>`;
 document.body.appendChild(panel);
 
 function paint(){
@@ -54,6 +60,8 @@ function paint(){
     if(document.activeElement !== input) input.value = Math.round(h.needs[k]);
     panel.querySelector(`[data-v="${k}"]`).textContent = Math.round(h.needs[k]);
   });
+  const p = getPantry();
+  panel.querySelector('[data-pantry]').textContent = 'Charola: ' + (Object.keys(p).length ? FOODS.filter(f => p[f.id]).map(f => `${f.short} ${p[f.id]}`).join(' · ') : 'vacía');
   panel.querySelector('[data-now]').textContent = h.sleepSince !== null
     ? `Dormido desde hace ${Math.round((now() - h.sleepSince) / MIN)} min` : 'Despierto';
 }
@@ -71,6 +79,13 @@ panel.addEventListener('click', e=>{
   if(x === 'dirty') return setNeeds({ clean: low });
   if(x === 'sleepy') return setNeeds({ energy: 25 });
   if(x === 'sad') return setNeeds({ mood: 25 });
+  if(x === 'hungry') return setNeeds({ hunger: 25 });
+  if(x === 'food5' || x === 'food1'){   // sin gastar chispas
+    const p = getPantry();
+    (x === 'food1' ? FOODS.slice(0, 1) : FOODS).forEach(f => { p[f.id] = Math.min(FOOD_MAX, (p[f.id] || 0) + (x === 'food1' ? 1 : 5)); });
+    state.pantry = p; commit(); return paint();
+  }
+  if(x === 'foodClear'){ delete state.pantry; commit(); return paint(); }
   if(x === 'sleep30'){ const h = current(); return save({ ...h, sleepSince: now() - 30 * MIN, at: now() - 30 * MIN }); }
   if(x === 'wake') return setNeeds({}, null);
 });

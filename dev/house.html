@@ -24,6 +24,111 @@
   .needs{ flex-wrap:wrap; }
   .sketch-speech{ left:50% !important; translate:-50% 0; top:22%; }
   .still .zzz i{ opacity:1; } .still .zzz i:nth-child(2){ transform:translate(.6em, -.9em); } .still .zzz i:nth-child(3){ transform:translate(1.2em, -1.9em); }
+
+  /* ===== Fase 3 · BOCETOS de la comida (propuesta; si se aprueba, pasa a style.css) ===== */
+  .food-sketch .pair{ gap:22px; }
+  /* barra con 4 botones: en angosto, icono arriba y texto abajo (como una barra de pestañas) para que quepa en 360 px */
+  .house-act.has-dot{ position:relative; }
+  .house-act.has-dot::after{ content:''; position:absolute; top:5px; right:7px; width:9px; height:9px; border-radius:50%;
+    background:var(--yellow); box-shadow:0 0 0 2px #fff; }
+  @container house (max-width: 460px){
+    .food-sketch .house-act{ flex-direction:column; gap:2px; padding:6px 10px 5px; font-size:11.5px; min-width:58px; justify-content:center; }
+    .food-sketch .house-act svg{ width:19px; height:19px; }
+    .food-sketch .house-bar{ gap:5px; padding:5px; }
+  }
+
+  /* charola: mientras está abierta ocupa el lugar de la barra (no tapa a Mito ni a la mascota) */
+  .house-bar.is-tray{ align-items:center; gap:8px; padding:6px; }
+  .house-act.ft-close{ flex-direction:column; gap:2px; padding:7px 12px 6px; font-size:12px; flex:none;
+    background:var(--card); color:var(--ink-dim); box-shadow:0 3px 0 0 var(--line); border:1.5px solid var(--line); }
+  .house-act.ft-close svg{ width:18px; height:18px; }
+  .ft-list{ display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; padding:2px; min-width:0; scroll-snap-type:x proximity;
+    -webkit-mask:linear-gradient(90deg, #000 calc(100% - 18px), transparent); mask:linear-gradient(90deg, #000 calc(100% - 18px), transparent); }
+  .ft-item{ all:unset; position:relative; flex:none; width:64px; box-sizing:border-box; display:grid; justify-items:center; gap:1px;
+    padding:6px 3px 5px; border-radius:14px; background:var(--card); border:2px solid var(--line); cursor:grab; touch-action:none; scroll-snap-align:start; }
+  .ft-item:focus-visible{ outline:3px solid var(--lilac); outline-offset:2px; }
+  .ft-art svg{ width:34px; height:34px; display:block; }
+  .ft-count{ position:absolute; top:3px; right:3px; min-width:12px; padding:0 5px; border-radius:999px; text-align:center;
+    font:800 10.5px/1.5 var(--font-body); color:#fff; background:linear-gradient(135deg,var(--pink),var(--lilac)); }
+  .ft-name{ max-width:58px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:10px; font-weight:800; color:var(--ink-dim); }
+  .ft-item.is-picked{ border-style:dashed; }
+  .ft-item.is-picked .ft-art{ opacity:.3; }
+  .ft-item.is-nope{ border-color:var(--pink); rotate:-5deg; }
+  .ft-empty{ display:flex; align-items:center; gap:10px; padding:0 6px 0 2px; min-width:0; }
+  .ft-empty > div{ display:grid; gap:1px; min-width:104px; }
+  .ft-empty b{ font-size:12.5px; line-height:1.2; color:var(--ink); } .ft-empty span{ font-size:11px; font-weight:700; color:var(--ink-faint); }
+  .ft-empty .btn-mini{ flex:none; padding:8px 11px; }
+  .ft-plate{ width:38px; height:38px; border-radius:50%; border:3px dashed var(--line); flex:none; box-sizing:border-box; }
+  @container house (max-width: 460px){ .ft-empty .ft-plate{ display:none; } .ft-empty span{ display:none; } }
+  @container house (min-width: 641px){ .ft-item{ width:74px; } .ft-name{ max-width:70px; } }
+
+  /* referencias dentro de la escena: la boca de Mito está a 0.193 de su ancho por encima de --home-y */
+  .food-sketch .scene{ --mouth-y:calc(var(--home-y) - var(--mito) * .193); }
+  .sk-ghost{ position:absolute; z-index:6; width:calc(var(--mito) * .34); left:calc(var(--home-x) + var(--mito) * .16); top:calc(var(--mouth-y) + var(--mito) * .03);
+    translate:-50% -50%; rotate:-14deg; filter:drop-shadow(0 10px 10px rgba(51,39,74,.3)); pointer-events:none; }
+  .sk-ghost svg, .sk-bite svg{ width:100%; height:auto; display:block; }
+  .sk-target{ position:absolute; z-index:5; width:calc(var(--mito) * .34); aspect-ratio:1; left:var(--home-x); top:var(--mouth-y); translate:-50% -50%;
+    border-radius:50%; border:2.5px dashed rgba(255,255,255,.9); background:rgba(255,93,162,.14); }
+  .sk-bite{ position:absolute; z-index:6; width:calc(var(--mito) * .2); left:calc(var(--home-x) + var(--mito) * .03); top:calc(var(--mouth-y) + var(--mito) * .07);
+    translate:-50% -50%; rotate:10deg;
+    -webkit-mask:radial-gradient(circle at 18% 22%, transparent 0 21%, #000 22%); mask:radial-gradient(circle at 18% 22%, transparent 0 21%, #000 22%); }
+  .sk-crumb{ position:absolute; z-index:6; width:6px; height:5px; border-radius:40%; background:#f7d9b0; box-shadow:0 0 0 1px #d9a873;
+    left:calc(var(--home-x) + var(--mito) * var(--x)); top:calc(var(--mouth-y) + var(--mito) * var(--y)); }
+  .sk-crumb.to-pet{ background:#ff8a9a; box-shadow:0 0 0 1px #d6435a; width:7px; height:7px; }
+  .room.sk-pet-near .mascot > svg.pet{ translate:14% 0; }
+
+  /* con hambre: nube de "pensando en comida" y la pancita que suena */
+  .hunger-think{ position:absolute; z-index:6; left:calc(var(--home-x) + var(--mito) * .5); top:calc(var(--home-y) - var(--mito) * 1.12); pointer-events:none; }
+  .hunger-think span{ display:grid; place-items:center; width:calc(var(--mito) * .3); aspect-ratio:1; border-radius:50%;
+    background:var(--card); box-shadow:0 6px 14px -4px rgba(51,39,74,.3); border:2px solid var(--line); }
+  .hunger-think span svg{ width:66%; height:66%; }
+  .hunger-think i{ position:absolute; border-radius:50%; background:var(--card); border:2px solid var(--line); }
+  .hunger-think i:nth-child(1){ width:8px; height:8px; left:-14px; top:calc(var(--mito) * .3 + 6px); }
+  .hunger-think i:nth-child(2){ width:12px; height:12px; left:-4px; top:calc(var(--mito) * .3 - 6px); }
+  .hunger-rumble{ inset:0; pointer-events:none; }
+  .hunger-rumble i{ position:absolute; z-index:6; width:calc(var(--mito) * .07); height:calc(var(--mito) * .16); top:calc(var(--home-y) - var(--mito) * .36);
+    border:3px solid transparent; border-left-color:color-mix(in srgb, var(--ink) 45%, transparent); border-radius:50%; }
+  .hunger-rumble i:nth-child(1){ left:calc(var(--home-x) - var(--mito) * .6); }
+  .hunger-rumble i:nth-child(2){ left:calc(var(--home-x) + var(--mito) * .53); rotate:180deg; }
+  /* dato de nutrición: tarjeta arriba del cuarto por unos segundos */
+  .food-fact{ position:absolute; z-index:9; top:14px; left:50%; translate:-50% 0; box-sizing:border-box; width:max-content; max-width:min(470px, calc(100% - 24px));
+    display:flex; align-items:center; gap:10px; padding:9px 14px 9px 9px; border-radius:18px;
+    background:color-mix(in srgb, var(--card) 94%, transparent); border:2px solid var(--mint); box-shadow:0 10px 24px -10px rgba(51,39,74,.4); }
+  .food-fact .ff-art{ flex:none; width:40px; height:40px; border-radius:12px; background:var(--mint-pale); display:grid; place-items:center; }
+  .food-fact .ff-art svg{ width:30px; height:30px; }
+  .food-fact b{ display:block; font-size:10.5px; letter-spacing:.05em; text-transform:uppercase; color:var(--mint-deep); }
+  .food-fact span{ display:block; font-size:13px; font-weight:700; line-height:1.35; color:var(--ink); }
+  [data-theme="dark"] .food-fact b{ color:var(--mint); }
+  @container house (orientation: portrait) or (max-width: 640px){ .food-fact{ left:12px; right:12px; translate:none; max-width:none; width:auto; } }
+  .sk-speech{ left:var(--home-x) !important; top:calc(var(--home-y) - var(--mito) * 1.0) !important; translate:-50% -100%; z-index:7; }
+  .room .mascot .sk-pet-bubble{ right:auto; left:-66%; bottom:52%; max-width:104px; }
+
+  /* Tienda · sección Comida */
+  .sk-shop{ box-sizing:border-box; padding:26px 30px 30px; border:2px dashed var(--line); border-radius:22px; position:relative; }
+  .sk-shop.is-mobile{ padding:18px 16px 230px; }
+  .sk-shop.is-mobile .page-head{ flex-direction:column; align-items:flex-start; gap:10px; }
+  .food-cat-sub{ display:block; margin-top:3px; font:700 12.5px/1.3 var(--font-body); color:var(--ink-dim); }
+  .food-item{ position:relative; }
+  .food-item .btn-mini{ white-space:nowrap; padding:8px 10px; }
+  .sk-shop .page-head{ display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:18px; }
+  .sk-shop .page-title{ font-size:30px; margin:0 0 6px; }
+  .sk-shop .page-sub{ margin:0; max-width:520px; }
+  .si-have{ position:absolute; top:8px; right:8px; padding:2px 8px; border-radius:999px; font-size:11.5px; font-weight:800; color:#04352a; background:var(--mint); }
+  .si-fill{ display:flex; align-items:center; justify-content:center; gap:6px; margin:-2px 0 9px; font-size:11.5px; font-weight:700; color:var(--ink-dim); }
+  .si-fill i{ width:30px; height:6px; border-radius:6px; background:linear-gradient(90deg, var(--mint) var(--p), var(--line) 0); }
+  .sk-more p{ color:var(--ink-faint); font-size:13px; margin:0; }
+  .sk-trial{ display:grid; grid-template-columns:128px minmax(0,1fr) auto; grid-template-areas:"mito text close" "mito act act";
+    column-gap:12px; row-gap:6px; align-items:center; position:absolute; left:12px; right:12px; bottom:14px; padding:10px;
+    background:var(--card); border:2px solid var(--line); border-radius:24px; box-shadow:0 12px 28px -10px rgba(51,39,74,.38), var(--shadow-soft); }
+  .sk-trial .tb-mito{ grid-area:mito; width:128px; height:100px; border-radius:20px; display:grid; place-items:center; box-sizing:border-box;
+    background:linear-gradient(150deg, var(--mint-pale), var(--pink-pale)); border:2px solid var(--line); }
+  .sk-trial .tb-food svg{ width:64px; height:64px; }
+  .sk-trial .tb-text{ grid-area:text; display:flex; flex-direction:column; gap:2px; align-self:end; }
+  .sk-trial .tb-name{ font-size:14px; font-weight:800; color:var(--ink); }
+  .sk-trial .tb-sub{ font-size:11.5px; font-weight:700; color:var(--ink-faint); }
+  .sk-trial .tb-act{ grid-area:act; justify-content:center; padding:10px 12px; font-size:13px; }
+  .sk-trial .tb-close{ all:unset; grid-area:close; align-self:start; width:30px; height:30px; border-radius:999px; display:grid; place-items:center;
+    font-size:22px; font-weight:900; color:var(--ink-faint); background:var(--pink-pale); border:2px solid var(--line); box-sizing:border-box; }
 </style>
 </head>
 <body>

@@ -21,11 +21,14 @@ src/
     wardrobe.js      catálogo de prendas (WARDROBE)
     messages.js      frases de la mascota
     house.js         frases de la Casa y reacciones de cada mascota
+    food.js          catálogo de comida de la Casa (precio, cuánto llena, frase)
+    nutrition.js     los datos de nutrición de cada alimento (en un solo lugar, para revisarlos)
     art/             SVG y piezas de dibujo
       base.js         cuerpo y caras de Mito
       halloween.js    piezas de Halloween
       secrets.js      mascotas y auras secretas
-      house.js        piezas de la Casa: párpados (copia recortada del cuerpo), polvito y esponja
+      house.js        piezas de la Casa: párpados y bocas (copia recortada del cuerpo), polvito, esponja y espuma
+      food.js         dibujos de la comida
       skins.js        piezas por categoría de ropa
   state/           la partida guardada en localStorage. Solo se accede por store.js
     store.js         barril: la API pública
@@ -33,8 +36,9 @@ src/
     economy.js       chispas
     inventory.js     prendas compradas y equipadas
     progress.js      historial, fallos, racha
-    preferences.js   tema, materia activa y pista de la Casa
+    preferences.js   tema, materia activa y pistas de la Casa y de la charola
     house.js         necesidades de Mito en la Casa (hambre, limpieza, energía, ánimo): cálculo con la hora y constantes NEEDS
+    pantry.js        la charola: comida comprada (se compra por unidad y se gasta al comer)
     backup.js        exportar, importar y reiniciar
   features/        la lógica de la app. Una carpeta por dominio
     nav/router.js      cambia de vista y actualiza la barra lateral
@@ -42,11 +46,11 @@ src/
     course/            materia activa y sus vistas: course, home, keys, notes
     quiz/              ronda, sesión, reparto y fallos: index, session,
                        view, review, counts
-    shop/              tienda y tienda de temporada: index, season
+    shop/              tienda (con la sección Comida) y tienda de temporada: index, season
     house/             la Casa: index (cableado), layout (bloque aprobado escalado, piso y luz; puro),
                        room (dibuja la escena), gestures (dedo y ratón), motion (arrastrar y lanzar),
                        reactions (cara, frases y mascota), needs (cómo se notan sus necesidades),
-                       sleep (dormir), bath (bañar)
+                       sleep (dormir), bath (bañar), food (la charola y comer)
     progress/          vista de progreso y copia de seguridad: view, backup
     mascot/            la mascota entera: avatar, auras, face, effects, speech
     pwa/update.js      service worker: registro y actualización segura (solo en producción)
@@ -90,5 +94,7 @@ un fichero suelto, un ciclo o un export muerto rompen `npm test`:
 | Cambiar lo que dicen Mito y la mascota en la Casa | `content/house.js` |
 | Ajustar los umbrales de los gestos o la física | `core/gesture.js` (`GESTURE`), `core/physics.js` (`PHYSICS`) |
 | Ajustar cómo bajan y suben las necesidades de Mito | `state/house.js` (`NEEDS`) |
+| Cambiar la comida (precio, cuánto llena) | `content/food.js` |
+| Revisar o corregir los datos de nutrición | `content/nutrition.js` |
 | Cambiar cómo se cobra o se guarda | `state/economy.js`, `state/inventory.js` |
 | Añadir una vista nueva | carpeta en `features/`, un `init()` y un caso en `nav/router.js` |
