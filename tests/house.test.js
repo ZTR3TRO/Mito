@@ -457,6 +457,7 @@ test('contenido: frases de necesidades, sueño y baño, cortas', ()=>{
 import { cleanPantry, getPantry, foodCount, buyFood, eatFood, parsePantry } from '../src/state/pantry.js';
 import { FOODS, FOOD_MAX, findFood } from '../src/content/food.js';
 import { FOOD_FACTS } from '../src/content/nutrition.js';
+import { FOOD_ART } from '../src/content/art/food.js';
 import { resetAll } from '../src/state/backup.js';
 
 const freshPantry = (chispas = 1000) => { delete state.pantry; state.chispas = chispas; };
@@ -542,6 +543,7 @@ test('contenido: catálogo de comida completo y datos de nutrición cortos', ()=
   for(const f of FOODS){
     assert.ok(f.cost >= 10 && f.cost <= 50, `${f.id}: precio`);
     assert.ok(f.fill >= 25 && f.fill <= 60, `${f.id}: cuánto llena`);
+    assert.ok(FOOD_ART[f.id], `${f.id}: dibujo`);
     assert.ok(typeof f.fact === 'string' && f.fact.length > 20 && [...f.fact].length <= 90, `${f.id}: dato (${f.fact})`);
     assert.ok([...f.say].length <= 34, `${f.id}: frase`);
     assert.equal(findFood(f.id), f);

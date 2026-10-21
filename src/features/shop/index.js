@@ -1,12 +1,14 @@
-// Tienda y armario: catálogo, tarjetas de producto, compra/equipar y la
-// tienda de temporada de Halloween.
+// Tienda y armario: catálogo, tarjetas de producto, compra/equipar, la sección Comida (se compra por unidad
+// y se gasta en la Casa) y la tienda de temporada de Halloween.
 
 import { clear, byId, delegate } from '../../core/dom.js';
 import { WARDROBE, findItem, findItemById, categoryOf, isSeasonalOpen } from '../../content/wardrobe.js';
 import {
   getChispas, getEquipped, owns, buyAndEquip, equipCategory,
-  getPetName, getPetDisplayName, renamePet, getPetLook, setPetLook,
+  getPetName, getPetDisplayName, renamePet, getPetLook, setPetLook, foodCount, buyFood,
 } from '../../state/store.js';
+import { FOODS, FOOD_MAX, findFood } from '../../content/food.js';
+import { FOOD_ART } from '../../content/art/food.js';
 import { on } from '../../core/bus.js';
 import { applyAvatar, previewAvatar, itemThumb } from '../mascot/avatar.js';
 import { sparkAt } from '../mascot/effects.js';
@@ -19,7 +21,9 @@ let petNameReturnFocus = null;
 
 // Móvil (≤ 880 px): tocar un objeto lo pone "en prueba" (vista previa grande + barra fija); comprar o equipar solo con el botón de la barra.
 const isMobile = ()=> !!window.matchMedia?.('(max-width: 880px)').matches;
-let trial = null;   // { cat, id } del objeto en prueba
+let trial = null;   // { cat, id } del objeto en prueba, o { food: true, id } para la comida
+let focusOnShow = null;   // 'food': al abrir la Tienda, ir a la sección Comida (desde la charola de la Casa)
+const reducedMotion = ()=> !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
 function displayName(cat, item, custom){
   return custom && cat === 'pet' ? getPetDisplayName(item.id) : item.name;
@@ -87,6 +91,10 @@ function renderCollection(hostId, shopping, seasonalOnly = false){
     host.innerHTML = '<div class="empty-state">Todavía no has comprado productos. Puedes usar las opciones básicas o <button class="btn-mini" data-nav="shop">Visitar tienda</button>.</div>';
   }
 
+  // La comida va primero: nunca se agota (la ropa comprada desaparece de la Tienda).
+  if(shopping && !seasonalOnly) host.appendChild(buildFoodSection());
+  let shown = 0;
+
   WARDROBE.forEach(cat=>{
     const items = cat.items.filter(item=>shopping
       ? item.cost > 0 && !item.secret && !owns(item.id) && !!item.seasonal === seasonalOnly
@@ -103,10 +111,11 @@ function renderCollection(hostId, shopping, seasonalOnly = false){
     heading.textContent = cat.label;
     section.append(heading, grid);
     host.appendChild(section);
+    shown++;
   });
 
-  if(shopping && !host.children.length){
-    host.innerHTML = `<div class="empty-state">${seasonalOnly ? '¡Ya tienes toda la colección de Halloween!' : '¡Ya tienes todos los productos del catálogo habitual!'} Disfruta tu colección en el <button class="btn-mini" data-nav="wardrobe">Armario</button>.</div>`;
+  if(shopping && !shown){
+    host.insertAdjacentHTML('beforeend', `<div class="empty-state">${seasonalOnly ? '¡Ya tienes toda la colección de Halloween!' : '¡Ya tienes todos los productos del catálogo habitual!'} Disfruta tu colección en el <button class="btn-mini" data-nav="wardrobe">Armario</button>.</div>`);
   }
   if(shopping && !seasonalOnly && isSeasonalOpen()){
     const season = buildSeasonSection();
@@ -178,6 +187,88 @@ function buildCard(cat, item, { shopping, equipped, previewId }){
   mini.addEventListener('focus', preview);
   mini.addEventListener('blur', restore);
   return card;
+}
+
+/* ---------- Comida: se compra por unidad (1 por toque) y se gasta en la Casa ---------- */
+function buildFoodSection(){
+  const section = document.createElement('div');
+  section.className = 'shop-cat food-cat';
+  section.id = 'shopFood';
+  section.innerHTML = '<h3>Comida <span class="food-cat-sub">Se compra por unidad y se gasta al dársela a Mito en la Casa.</span></h3>';
+  const grid = document.createElement('div');
+  grid.className = 'shop-items';
+  FOODS.forEach(f => grid.appendChild(buildFoodCard(f)));
+  section.appendChild(grid);
+  return section;
+}
+
+function buildFoodCard(f){
+  const card = document.createElement('div');
+  card.className = 'shop-item food-item' + (trial && trial.id === f.id ? ' is-trial' : '');
+  card.dataset.item = f.id;
+  card.innerHTML = `
+    <span class="si-have" aria-hidden="true"></span>
+    <div class="si-visual">${FOOD_ART[f.id]}</div>
+    <div class="si-name">${esc(f.name)}</div>
+    <div class="si-fill"><i style="--p:${f.fill}%" aria-hidden="true"></i>Llena ${f.fill} %</div>
+    <div class="si-actions"><button type="button" class="btn-mini"></button></div>`;
+  syncFoodCard(card, f);
+  return card;
+}
+
+// Botón de compra de comida: el precio, "Te faltan N ⚡" sin saldo, o "Máximo 99". `again`: "Comprar otra".
+function syncFoodButton(btn, f, again = false){
+  const have = foodCount(f.id), missing = f.cost - getChispas();
+  btn.dataset.buyFood = f.id;
+  btn.removeAttribute('disabled'); btn.removeAttribute('aria-disabled'); btn.removeAttribute('title');
+  if(have >= FOOD_MAX){
+    btn.textContent = `Máximo ${FOOD_MAX}`;
+    btn.setAttribute('disabled', '');
+  } else if(missing > 0){
+    btn.textContent = `Te faltan ${missing} ⚡`;
+    btn.setAttribute('aria-disabled', 'true');
+    btn.title = `Te faltan ${missing} chispas`;
+  } else btn.textContent = (again && have ? 'Comprar otra' : 'Comprar') + ` · ⚡ ${f.cost}`;
+  btn.setAttribute('aria-label', `${btn.textContent}: ${f.name}${have ? ` (tienes ${have})` : ''}`);
+}
+
+function syncFoodCard(card, f){
+  const have = foodCount(f.id);
+  const badge = card.querySelector('.si-have');
+  badge.hidden = !have;
+  badge.textContent = '×' + have;
+  syncFoodButton(card.querySelector('[data-buy-food], .si-actions .btn-mini'), f);
+}
+
+// Cuando cambian las chispas o la charola (comprar, comer en la Casa, el panel de depuración), sin repintar todo.
+function refreshFood(){
+  document.querySelectorAll('.food-item[data-item]').forEach(card=>{
+    const f = findFood(card.dataset.item);
+    if(f) syncFoodCard(card, f);
+  });
+}
+
+function handleFoodBuy(btn){
+  const notice = byId('shopNotice');
+  const f = findFood(btn.dataset.buyFood);
+  if(!f || btn.hasAttribute('disabled')) return;
+  if(btn.getAttribute('aria-disabled') === 'true'){
+    if(notice) notice.textContent = btn.title;
+    return;
+  }
+  const have = buyFood(f.id);
+  if(!have){
+    if(notice) notice.textContent = ACTION_FAILED;
+    refreshFood();
+    return;
+  }
+  sparkAt(byId('mascotPreview'), '🧺');
+  refreshFood();
+  updateBalance();
+  const card = document.querySelector(`.food-item[data-item="${f.id}"] .si-have`);
+  if(card){ card.classList.remove('pop'); void card.offsetWidth; card.classList.add('pop'); }
+  renderTrialBar();   // la barra de móvil sigue abierta: se puede comprar otra
+  if(notice) notice.textContent = `${f.name}: +1. Tienes ${have} en tu charola.`;
 }
 
 function closePetNameModal(){
@@ -302,6 +393,7 @@ function updateAffordability(){
     btn.textContent = buyLabel(item);
     btn.setAttribute('aria-label', `${btn.textContent}: ${item.name}`);
   });
+  refreshFood();
   renderTrialBar();
 }
 
@@ -314,6 +406,14 @@ function previewTargets(){
 
 function setTrial(card){
   const id = card.dataset.item;
+  if(findFood(id)){   // la comida no se prueba: la barra muestra el alimento en vez de Mito
+    if(trial && !trial.food) applyAvatar();
+    trial = { food: true, id };
+    document.querySelectorAll('.shop-item.is-trial').forEach(c=>c.classList.remove('is-trial'));
+    card.classList.add('is-trial');
+    renderTrialBar();
+    return;
+  }
   const cat = categoryOf(id);
   if(!id || !cat) return;
   trial = { cat, id };
@@ -326,9 +426,10 @@ function setTrial(card){
 
 function clearTrial(){
   if(!trial) return;
+  const wasFood = trial.food;
   trial = null;
   document.querySelectorAll('.shop-item.is-trial').forEach(c=>c.classList.remove('is-trial'));
-  applyAvatar();
+  if(!wasFood) applyAvatar();
   renderTrialBar();
 }
 
@@ -341,6 +442,25 @@ function syncTrial(){
 function renderTrialBar(){
   const name = byId('tbName'), sub = byId('tbSub'), act = byId('tbAct'), close = byId('tbClose');
   if(!name || !act) return;
+  const box = document.querySelector('.tb-mito');
+  const food = trial && trial.food ? findFood(trial.id) : null;
+  box?.classList.toggle('is-food', !!food);
+  if(food){
+    byId('trialBar').classList.add('is-open');
+    document.body.classList.add('trial-open');
+    let pic = box.querySelector('.tb-food');
+    if(!pic){ pic = document.createElement('div'); pic.className = 'tb-food'; pic.setAttribute('aria-hidden', 'true'); box.appendChild(pic); }
+    if(pic.dataset.food !== food.id){ pic.dataset.food = food.id; pic.innerHTML = FOOD_ART[food.id]; }
+    const have = foodCount(food.id);
+    name.textContent = food.name + (have ? ` · tienes ${have}` : '');
+    sub.textContent = `Comida · Llena ${food.fill} % · ⚡ ${food.cost}`;
+    close.hidden = act.hidden = false;
+    act.className = 'btn-mini tb-act';
+    ['buy', 'equip'].forEach(k=> delete act.dataset[k]);
+    syncFoodButton(act, food, true);
+    return;
+  }
+  delete act.dataset.buyFood;
   const item = trial && findItemById(trial.id);
   // La barra solo existe mientras hay un objeto en prueba; sin él, ni se ve ni reserva espacio abajo.
   byId('trialBar').classList.toggle('is-open', !!item);
@@ -354,7 +474,6 @@ function renderTrialBar(){
   // Composición de Mito en el recuadro: según lleve aura y/o mascota se escala para que quepa entera (ver .tb-mito en style.css)
   const mini = byId('mascotBar');
   const hasAura = !!mini.querySelector(':scope > .aura.on'), hasPet = !!mini.querySelector(':scope > svg.pet');
-  const box = document.querySelector('.tb-mito');
   box.dataset.comp = hasAura ? (hasPet ? 'aura-pet' : 'aura') : hasPet ? 'pet' : 'solo';
   box.dataset.aura = hasAura ? mini.querySelector(':scope > .aura.on').dataset.a : '';
   const shopping = currentCollectionIsShop();
@@ -446,6 +565,8 @@ export function init(){
       const card = e.target.closest('.shop-item');
       if(card && !e.target.closest('.rename-pet')){ setTrial(card); return; }
     }
+    const foodBtn = e.target.closest('[data-buy-food]');
+    if(foodBtn){ handleFoodBuy(foodBtn); return; }
     const btn = e.target.closest('[data-buy], [data-equip]');
     if(btn) handlePurchase(btn);
   });
@@ -463,9 +584,24 @@ export function init(){
   // El saldo decide qué se puede comprar, así que la tienda reacciona a los chispas.
   on('state:changed', updateAffordability);
   // Al cambiar de vista (Tienda ↔ Armario, etc.) no se arrastra la prueba.
-  on('nav:after', ()=>{
+  on('nav:after', view=>{
     trial = null;
     document.querySelectorAll('.shop-item.is-trial').forEach(c=>c.classList.remove('is-trial'));
     renderTrialBar();
+    if(view === 'shop' && focusOnShow === 'food') showFoodSection();
+    focusOnShow = null;
   });
+  // La charola de la Casa pide ir directo a la sección Comida.
+  on('shop:focus', section=>{ focusOnShow = section; });
+}
+
+// Lleva a la sección Comida y la resalta un momento. En escritorio ya está arriba (debajo de la vista previa fija).
+function showFoodSection(){
+  setTimeout(()=>{
+    const section = byId('shopFood');
+    if(!section) return;
+    if(isMobile()) section.scrollIntoView({ block: 'start', behavior: reducedMotion() ? 'auto' : 'smooth' });
+    section.classList.remove('is-flash'); void section.offsetWidth; section.classList.add('is-flash');
+    setTimeout(()=> section.classList.remove('is-flash'), 1800);
+  }, 120);
 }

@@ -1841,3 +1841,26 @@ body[data-view="house"] .mascot-side{ display:none; }   /* en la Casa ya está e
   .pet-suds{ animation:none; opacity:0; }
   .mito-dirt .dust circle{ animation:none; }
 }
+
+/* ================= CASA · FASE 3: la comida ================= */
+
+/* Tienda · sección Comida */
+.food-cat-sub{ display:block; margin-top:3px; font:700 12.5px/1.3 var(--font-body); color:var(--ink-dim); }
+.food-cat{ border-radius:18px; outline:4px solid transparent; outline-offset:10px; transition:outline-color .5s ease; scroll-margin-top:24px; }
+.food-cat.is-flash{ outline-color:rgba(22,201,141,.4); }
+.food-item{ position:relative; }
+.food-item .si-actions .btn-mini{ white-space:nowrap; padding:8px 10px; }
+.si-have{ position:absolute; top:8px; right:8px; padding:2px 8px; border-radius:999px; font-size:11.5px; font-weight:800; color:#04352a; background:var(--mint); }
+.si-have[hidden]{ display:none; }
+.si-have.pop{ animation:havePop .4s cubic-bezier(.3,1.6,.5,1); }
+@keyframes havePop{ 0%{ transform:scale(.6); } 60%{ transform:scale(1.25); } 100%{ transform:none; } }
+.si-fill{ display:flex; align-items:center; justify-content:center; gap:6px; margin:-2px 0 9px; font-size:11.5px; font-weight:700; color:var(--ink-dim); }
+.si-fill i{ width:30px; height:6px; border-radius:6px; background:linear-gradient(90deg, var(--mint) var(--p), var(--line) 0); }
+.tb-food{ display:none; }
+.tb-mito.is-food .mascot{ display:none; }
+.tb-mito.is-food .tb-food{ display:grid; place-items:center; }
+.tb-food svg{ width:64px; height:64px; }
+
+@media (prefers-reduced-motion: reduce){
+  .si-have.pop{ animation:none; }
+}

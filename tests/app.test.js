@@ -204,6 +204,34 @@ test('casa · fase 2: los párpados son parte del dibujo de Mito, debajo de las 
   resetApp();
 });
 
+test('casa · fase 3: la comida se compra por unidad en la Tienda', ()=>{
+  resetApp();
+  store.addChispas(30);
+  document.querySelector('.navbtn[data-view="shop"]').click();
+  const section = document.getElementById('shopFood');
+  assert.ok(section, 'falta la sección Comida');
+  assert.equal(section, document.querySelector('#shopHost .shop-cat'), 'la comida va primero');
+  assert.equal(section.querySelectorAll('.food-item').length, 8);
+  const card = section.querySelector('.food-item[data-item="f-apple"]');
+  assert.ok(card.querySelector('.si-have').hidden, 'sin unidades, sin insignia');
+  card.querySelector('[data-buy-food]').click();
+  card.querySelector('[data-buy-food]').click();
+  assert.equal(store.foodCount('f-apple'), 2);
+  assert.equal(store.getChispas(), 10);
+  assert.ok(!card.querySelector('.si-have').hidden && card.querySelector('.si-have').textContent === '×2');
+  assert.match(document.getElementById('shopNotice').textContent, /Tienes 2/);
+  // sin saldo: el botón lo dice y no compra
+  const plate = section.querySelector('[data-buy-food="f-plate"]');
+  assert.match(plate.textContent, /Te faltan 40/);
+  plate.click();
+  assert.equal(store.foodCount('f-plate'), 0);
+  assert.equal(JSON.parse(store.exportSave()).pantry['f-apple'], 2, 'la charola entra en la copia de seguridad');
+  // la comida no aparece en el Armario
+  document.querySelector('.navbtn[data-view="house"]').click();
+  assert.equal(document.querySelector('#wardrobeHost .food-item'), null);
+  resetApp();
+});
+
 test('arranque: apuntes, claves y contadores del quiz quedan pintados', ()=>{
   assert.equal(document.querySelectorAll('#courseTabs .course-pill').length, courses.length);
   assert.ok(document.querySelectorAll('#topicTabs .topic-pill').length > 0, 'sin pestañas de temas');
