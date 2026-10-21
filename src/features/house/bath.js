@@ -43,7 +43,7 @@ export function createBath(room, mascot, reactions, { button, onChange = ()=>{} 
   const level = new Float32Array(cells.length);
 
   let bathing = false, rinsing = false, pointer = null, last = null, pending = 0, rubbed = 0, sinceBubble = 0,
-    sincePetSuds = 0, flushTimer = 0, saidRub = false;
+    sincePetSuds = 0, flushTimer = 0, rinseTimer = 0, saidRub = false;
   const svg = ()=> mascot.querySelector(':scope > svg.mito');
 
   function paint(){
@@ -146,7 +146,7 @@ export function createBath(room, mascot, reactions, { button, onChange = ()=>{} 
         { '--delay': (Math.random() * .45).toFixed(2) + 's', '--fall': (s.height * .95).toFixed(0) + 'px' });
     }
     clearFoam();   // la espuma se desvanece (transición en style.css)
-    setTimeout(()=>{
+    rinseTimer = setTimeout(()=>{
       room.classList.remove('is-rinsing');
       rinsing = false;
       const shiny = rubbed > 0 && isClean(getNeeds().clean);
@@ -207,6 +207,7 @@ export function createBath(room, mascot, reactions, { button, onChange = ()=>{} 
     finish,
     // Al salir de la Casa: sin enjuague ni frases.
     leave(){
+      if(rinsing){ clearTimeout(rinseTimer); rinsing = false; room.classList.remove('is-rinsing'); }   // sin esperar al final del enjuague
       if(!bathing) return;
       bathing = false; pointer = null;
       flush();
