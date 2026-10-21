@@ -452,7 +452,50 @@ test('contenido: frases de necesidades, sueño y baño, cortas', ()=>{
   for(const need of ['sleepy', 'dirty', 'sad']) assert.ok(MITO_NEEDS[need].length >= 2);
 });
 
-/* ---------------- hambre (Fase 3) ---------------- */
+/* ---------------- comida (Fase 3) ---------------- */
+
+import { cleanPantry, getPantry, foodCount, buyFood, eatFood, parsePantry } from '../src/state/pantry.js';
+import { FOODS, FOOD_MAX, findFood } from '../src/content/food.js';
+import { FOOD_FACTS } from '../src/content/nutrition.js';
+import { resetAll } from '../src/state/backup.js';
+
+const freshPantry = (chispas = 1000) => { delete state.pantry; state.chispas = chispas; };
+
+test('comida: comprar suma una unidad y cobra; sin saldo o con el máximo, no', ()=>{
+  freshPantry(25);
+  assert.equal(buyFood('f-apple'), 1);
+  assert.equal(buyFood('f-apple'), 2);
+  assert.equal(state.chispas, 5);
+  assert.equal(buyFood('f-banana'), 0, 'sin saldo (cuesta 15)');
+  assert.equal(state.chispas, 5);
+  assert.equal(buyFood('f-nope'), 0, 'no existe');
+  state.chispas = 1000; state.pantry = { 'f-egg': FOOD_MAX };
+  assert.equal(buyFood('f-egg'), 0, 'máximo por alimento');
+  assert.equal(state.chispas, 1000);
+  freshPantry(0);
+});
+
+test('comida: comer gasta una unidad y llena; con Mito lleno no se gasta', ()=>{
+  const t0 = 2e12;
+  freshPantry();
+  state.house = { v: 3, at: t0, needs: { hunger: 30, clean: 100, energy: 100, mood: 100 }, sleepSince: null };
+  state.pantry = { 'f-apple': 2, 'f-plate': 1 };
+  assert.deepEqual(eatFood('f-banana', t0), { ok: false, reason: 'none' }, 'no tienes ese alimento');
+  const a = eatFood('f-apple', t0);
+  assert.equal(a.ok, true);
+  assert.equal(a.left, 1);
+  assert.ok(Math.abs(a.hunger - 55) < .01, 'la manzana llena 25');
+  const b = eatFood('f-plate', t0);
+  assert.ok(Math.abs(b.hunger - 100) < .01, 'no pasa de 100');
+  assert.deepEqual(getPantry(), { 'f-apple': 1 }, 'lo que llega a 0 sale de la charola');
+  assert.deepEqual(eatFood('f-apple', t0), { ok: false, reason: 'full' });
+  assert.equal(foodCount('f-apple'), 1, 'lleno: la comida no se gasta');
+  // justo debajo del umbral, sí come
+  state.house.needs.hunger = N.fullAbove - 1;
+  assert.equal(eatFood('f-apple', t0).ok, true);
+  assert.equal('pantry' in state, false, 'charola vacía: el campo no se guarda');
+  delete state.house;
+});
 
 test('comida: comer sube el hambre sin pasar de 100, y desde NEEDS.fullAbove está lleno', ()=>{
   const t0 = 4e12;
@@ -478,4 +521,30 @@ test('comida: el hambre baja con el tiempo, hasta el piso, y no baja de golpe en
   assert.equal(state.house.v, 3, 'se migra una sola vez');
   assert.ok(Math.abs(getNeeds(t0 + 24 * HR).hunger - 50) < .01);
   delete state.house;
+});
+
+test('comida: compatible con partidas sin el campo, con respaldos dañados y con reiniciar', ()=>{
+  const fixture = readFileSync(new URL('./fixtures/guardado-42c03de.json', import.meta.url), 'utf8');
+  assert.equal('pantry' in parseSave(fixture), false, 'una partida vieja no inventa el campo');
+  const old = JSON.parse(fixture);
+  const junk = parseSave(JSON.stringify({ ...old, pantry: { 'f-apple': 3.7, 'f-egg': -2, 'f-x': 5, 'f-rice': 500, 'f-oats': 'mucho' } }));
+  assert.deepEqual(junk.pantry, { 'f-apple': 3, 'f-rice': FOOD_MAX });
+  assert.equal('pantry' in parseSave(JSON.stringify({ ...old, pantry: { 'f-x': 1 } })), false, 'vacía: no se guarda');
+  assert.deepEqual(cleanPantry('nada'), {});
+  assert.equal(parsePantry(undefined), undefined);
+  state.pantry = { 'f-apple': 2 };
+  resetAll();
+  assert.equal('pantry' in state, false);
+});
+
+test('contenido: catálogo de comida completo y datos de nutrición cortos', ()=>{
+  assert.ok(FOODS.length >= 6 && FOODS.length <= 8);
+  for(const f of FOODS){
+    assert.ok(f.cost >= 10 && f.cost <= 50, `${f.id}: precio`);
+    assert.ok(f.fill >= 25 && f.fill <= 60, `${f.id}: cuánto llena`);
+    assert.ok(typeof f.fact === 'string' && f.fact.length > 20 && [...f.fact].length <= 90, `${f.id}: dato (${f.fact})`);
+    assert.ok([...f.say].length <= 34, `${f.id}: frase`);
+    assert.equal(findFood(f.id), f);
+  }
+  assert.deepEqual(Object.keys(FOOD_FACTS).sort(), FOODS.map(f => f.id).sort(), 'un dato por alimento, sin sobrantes');
 });

@@ -24,4 +24,6 @@ export { getTheme, setTheme, getCourse, setCourse, getHouseHintCount, markHouseH
 
 export { NEEDS, topNeed, getNeeds, careMood, startSleep, wakeUp, addClean } from './house.js';
 
+export { getPantry, foodCount, buyFood, eatFood } from './pantry.js';
+
 export { exportSave, parseSave, importSave, resetAll } from './backup.js';

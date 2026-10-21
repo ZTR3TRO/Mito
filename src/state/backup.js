@@ -8,6 +8,7 @@ import {
   HISTORY_LIMIT, MISTAKES_LIMIT, num,
 } from './core.js';
 import { parseHouse } from './house.js';
+import { parsePantry } from './pantry.js';
 
 export function exportSave(){
   return JSON.stringify(state, null, 2);
@@ -81,6 +82,8 @@ export function parseSave(json){
     ...(Number.isFinite(s.houseHint) ? { houseHint: Math.max(0, Math.floor(s.houseHint)) } : {}),
     // opcional: las necesidades de Mito en la Casa, validadas (sin el campo, todo empieza lleno)
     ...(s.house != null ? { house: parseHouse(s.house) } : {}),
+    // opcional: la comida de la charola, validada (sin el campo, o si queda vacía, la charola está vacía)
+    ...(parsePantry(s.pantry) ? { pantry: parsePantry(s.pantry) } : {}),
   };
 }
 
@@ -96,6 +99,7 @@ export function resetAll(){
   Object.assign(state, defaultState());
   delete state.houseHint;   // empezar de cero también vuelve a mostrar la pista de la Casa
   delete state.house;       // y deja a Mito con todas sus necesidades llenas
+  delete state.pantry;      // con la charola vacía
   state.theme = prevTheme;
   commit();
 }
