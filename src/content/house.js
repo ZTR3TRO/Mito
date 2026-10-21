@@ -46,7 +46,7 @@ export const MITO_NEEDS = {
   sleepy: ['Uaaah… qué sueño 😪', '¿Apagamos la luz un ratito?', 'Se me cierran los ojitos… 😴'],
   dirty: ['¿Me bañas? Tengo polvito 🫧', 'Creo que necesito un bañito', 'Tengo manchitas… ¿burbujas? 🛁'],
   sad: ['¿Me haces un cariñito? 🥺', 'Me siento solito… ¿jugamos?', 'Un abrazo me vendría bien 💕'],
-  hungry: ['Tengo un poquito de hambre 🍓'],
+  hungry: ['¿Comemos algo rico? 🍎', 'Mi pancita hace grrr…', 'Se me antoja una fruta 🍌', 'Tengo un poquito de hambre 🍓'],
 };
 
 // Cuando se cubre una necesidad.

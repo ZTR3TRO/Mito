@@ -551,7 +551,7 @@ test('contenido: catálogo de comida completo, datos de nutrición cortos y fras
     assert.equal(findFood(f.id), f);
   }
   assert.deepEqual(Object.keys(FOOD_FACTS).sort(), FOODS.map(f => f.id).sort(), 'un dato por alimento, sin sobrantes');
-  const phrases = [...Object.values(MITO_FOOD).flat(), ...Object.values(PET_EAT)];
+  const phrases = [...Object.values(MITO_FOOD).flat(), ...Object.values(PET_EAT), ...MITO_NEEDS.hungry];
   assert.deepEqual(phrases.filter(m => [...m].length > 34), []);
   assert.deepEqual(Object.keys(PET_EAT).sort(), Object.keys(PET_HOUSE).sort(), 'cada mascota tiene su frase al comer');
 });

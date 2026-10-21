@@ -1845,11 +1845,33 @@ body[data-view="house"] .mascot-side{ display:none; }   /* en la Casa ya está e
 
 /* ================= CASA · FASE 3: la comida ================= */
 
-/* bocas (content/art/house.js): abierta cuando le acercan comida; masticando al comer */
+/* bocas (content/art/house.js): con hambre se relame; abierta cuando le acercan comida; masticando al comer */
+.room[data-need="hungry"] .mascot.face-normal:not(.mouth-open):not(.is-chewing) .mouth-hungry{ display:inline; }
 .room .mascot.mouth-open:not(.is-chewing) .mouth-open{ display:inline; }
 .room .mascot.is-chewing .mouth-chew{ display:inline; }
 .mouth-chew .chew{ transform-box:fill-box; transform-origin:center; animation:chew .3s ease-in-out infinite alternate; }
 @keyframes chew{ from{ transform:scale(1.08, .7); } to{ transform:scale(.9, 1.15); } }
+
+/* con hambre: piensa en la comida que más tienes (nube) y le suena la pancita; puntito en "Comer" */
+.mascot > .hunger-think, .mascot > .hunger-rumble{ display:none; position:absolute; pointer-events:none; z-index:2; translate:var(--fly-x) var(--fly-y); }
+.room[data-need="hungry"]:not(.is-feeding) .mascot > .hunger-think, .room[data-need="hungry"] .mascot > .hunger-rumble{ display:block; }
+.hunger-think{ left:94%; top:-30%; width:30%; aspect-ratio:1; opacity:0; animation:thinkCycle 9s ease-in-out infinite 1.5s; }
+.hunger-think span{ display:grid; place-items:center; width:100%; height:100%; box-sizing:border-box; border-radius:50%;
+  background:var(--card); border:2px solid var(--line); box-shadow:0 6px 14px -4px rgba(51,39,74,.3); }
+.hunger-think span svg{ width:68%; height:68%; }
+.hunger-think i{ position:absolute; border-radius:50%; background:var(--card); border:2px solid var(--line); }
+.hunger-think i:nth-child(1){ width:7px; height:7px; left:-22%; top:104%; }
+.hunger-think i:nth-child(2){ width:11px; height:11px; left:-4%; top:84%; }
+@keyframes thinkCycle{ 0%,6%{ opacity:0; transform:scale(.6); } 14%,62%{ opacity:1; transform:none; } 72%,100%{ opacity:0; transform:scale(.92); } }
+.hunger-rumble{ inset:0; }
+.hunger-rumble i{ position:absolute; top:50%; width:7%; height:17%; box-sizing:border-box; border:3px solid transparent;
+  border-left-color:color-mix(in srgb, var(--ink) 42%, transparent); border-radius:50%; opacity:0; animation:rumble 5s ease-in-out infinite; }
+.hunger-rumble i:nth-child(1){ left:-5%; }
+.hunger-rumble i:nth-child(2){ right:-5%; rotate:180deg; }
+@keyframes rumble{ 0%,58%,100%{ opacity:0; transform:none; } 64%,86%{ opacity:1; } 68%,76%{ transform:translateX(-2px); } 72%,80%{ transform:translateX(2px); } }
+.house-act[data-house-act="eat"]{ position:relative; }
+.room[data-need="hungry"] .house-act[data-house-act="eat"]::after{ content:''; position:absolute; top:5px; right:7px; width:9px; height:9px;
+  border-radius:50%; background:var(--yellow); box-shadow:0 0 0 2px #fff; }
 
 /* charola: mientras está abierta ocupa el lugar de la barra (no tapa a Mito ni a la mascota) */
 .room.is-feeding .house-bar:not(.food-tray){ display:none; }
@@ -1944,6 +1966,10 @@ body[data-view="house"] .mascot-side{ display:none; }   /* en la Casa ya está e
 
 @media (prefers-reduced-motion: reduce){
   .mouth-chew .chew{ animation:none; }
+  .hunger-think{ animation-name:thinkFade; }
+  @keyframes thinkFade{ 0%,6%{ opacity:0; } 14%,62%{ opacity:1; } 72%,100%{ opacity:0; } }
+  .hunger-rumble i{ animation-name:rumbleFade; }
+  @keyframes rumbleFade{ 0%,58%,100%{ opacity:0; } 64%,86%{ opacity:1; } }
   .food-crumb{ display:none; }
   .food-fact.show{ animation:foodFade .3s ease both; }
   .ft-item.is-nope{ animation:none; }

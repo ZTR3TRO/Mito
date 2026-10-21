@@ -232,7 +232,7 @@ test('casa · fase 3: la comida se compra por unidad en la Tienda', ()=>{
   resetApp();
 });
 
-test('casa · fase 3: la charola, la charola vacía y Mito lleno', ()=>{
+test('casa · fase 3: la charola, la charola vacía, Mito lleno y con hambre', ()=>{
   resetApp();
   document.querySelector('.navbtn[data-view="house"]').click();
   const room = document.getElementById('houseRoom');
@@ -262,6 +262,12 @@ test('casa · fase 3: la charola, la charola vacía y Mito lleno', ()=>{
   tray.querySelector('[data-food-close]').click();
   assert.ok(tray.hidden && !room.classList.contains('is-feeding'));
 
+  // con hambre: se nota en el cuarto y piensa en la comida que más tiene
+  coreState.house = { v: 3, at: Date.now(), needs: { hunger: 30, clean: 100, energy: 100, mood: 100 }, sleepSince: null };
+  emit('state:changed');
+  assert.equal(room.dataset.need, 'hungry');
+  assert.equal(room.querySelector('.hunger-think span').dataset.food, 'f-egg');
+  assert.ok(document.querySelector('#mascotHouse > svg.mito .mouth-hungry'), 'la boca de hambre es parte del dibujo');
   resetApp();
 });
 

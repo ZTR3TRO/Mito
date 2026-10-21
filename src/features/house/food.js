@@ -337,3 +337,11 @@ export function createFood(room, mascot, reactions, { button, onChange = ()=>{} 
     },
   };
 }
+
+// Para needs.js: el alimento que más tienes (el que Mito "piensa" cuando tiene hambre), o la manzana.
+export function favoriteFood(){
+  const p = getPantry();
+  const best = Object.keys(p).sort((a, b) => p[b] - p[a])[0];
+  return best || 'f-apple';
+}
+export const hasFood = ()=> Object.keys(getPantry()).length > 0;

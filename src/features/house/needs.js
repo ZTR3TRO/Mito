@@ -1,7 +1,8 @@
 // Cómo se notan las necesidades de Mito en la Casa: su cara, su aspecto y lo que dice. Nada más: no hay barras
 // ni números, y fuera de la Casa Mito siempre se ve normal (todo esto son clases y variables del cuarto).
 //
-//   data-need="sleepy|dirty|sad" en el cuarto: la necesidad baja más importante (state/house.js, topNeed)
+//   data-need="sleepy|hungry|dirty|sad" en el cuarto: la necesidad baja más importante (state/house.js, topNeed)
+//   con hambre: se relame, piensa en la comida que más tienes (nube) y le suena la pancita; puntito en "Comer"
 //   --dirt (0 a 1): cuánto polvito se ve (aparece debajo de NEEDS.low de limpieza)
 //   is-asleep: dormido (lo maneja sleep.js con el mismo estado)
 //
@@ -10,22 +11,29 @@
 
 import { on } from '../../core/bus.js';
 import { getNeeds, topNeed, careMood, NEEDS } from '../../state/store.js';
-import { MITO_NEEDS, MITO_THANKS } from '../../content/house.js';
+import { MITO_NEEDS, MITO_THANKS, MITO_FOOD } from '../../content/house.js';
 import { DIRT } from '../../content/art/house.js';
+import { FOOD_ART } from '../../content/art/food.js';
+import { favoriteFood, hasFood } from './food.js';
 
 const PHRASE_GAP_MS = 60e3;      // una frase de necesidad por minuto, como mucho
 const QUIET_AFTER_GESTURE_MS = 10e3;
 const TICK_MS = 5e3;
 
 export function createNeeds(room, mascot, reactions, { busy }){
-  mascot.insertAdjacentHTML('beforeend', DIRT);
+  mascot.insertAdjacentHTML('beforeend', DIRT
+    + '<div class="hunger-think" aria-hidden="true"><i></i><i></i><span></span></div><div class="hunger-rumble" aria-hidden="true"><i></i><i></i></div>');
+  const think = mascot.querySelector(':scope > .hunger-think > span');
   let active = false, timer = 0, lastGesture = 0, lastPhrase = 0;
 
   function render(){
     const n = getNeeds();
     const need = n.asleep ? '' : topNeed(n);
-    // el hambre todavía no se ve (llega con la comida, en la Fase 3)
-    room.dataset.need = need && need !== 'hungry' ? need : '';
+    room.dataset.need = need || '';
+    if(need === 'hungry'){
+      const fav = favoriteFood();
+      if(think.dataset.food !== fav){ think.dataset.food = fav; think.innerHTML = FOOD_ART[fav]; }
+    }
     const dirt = Math.max(0, Math.min(1, (NEEDS.low - n.clean) / (NEEDS.low - NEEDS.floor)));
     room.style.setProperty('--dirt', dirt.toFixed(2));
     reactions.setBase(need === 'sad' ? 'sad' : 'normal');
@@ -40,7 +48,8 @@ export function createNeeds(room, mascot, reactions, { busy }){
     const { need } = render();
     if(!need || !MITO_NEEDS[need]) return false;
     lastPhrase = now;
-    reactions.sayFrom(MITO_NEEDS[need], 'need-' + need);
+    if(need === 'hungry' && !hasFood()) reactions.sayFrom(MITO_FOOD.hungryEmpty, 'need-hungry-empty');
+    else reactions.sayFrom(MITO_NEEDS[need], 'need-' + need);
     return true;
   }
 
