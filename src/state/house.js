@@ -2,24 +2,27 @@
 //
 // Son suaves: nunca afectan el estudio ni nada fuera de la Casa, y Mito nunca se enferma ni se va.
 // Se guardan en el campo opcional `house` (una partida sin él empieza con todo lleno):
-//   { at: ms en que se calcularon, needs: { hunger, clean, energy, mood }, sleepSince: ms o null }
+//   { v: 3, at: ms en que se calcularon, needs: { hunger, clean, energy, mood }, sleepSince: ms o null }
+// `v` marca los datos de la Fase 3 en adelante (desde entonces el hambre baja; ver current()).
 // No hay temporizadores que escriban: los valores de "ahora" se calculan con la hora (needsAt), también si la
-// app estuvo cerrada, y solo se guarda al hacer algo (un cariño, dormir, despertar, bañar).
+// app estuvo cerrada, y solo se guarda al hacer algo (un cariño, dormir, despertar, bañar, comer).
 
 import { state, commit, num } from './core.js';
 
 const HOUR = 3600e3;
 const KEYS = ['hunger', 'clean', 'energy', 'mood'];
+const VERSION = 3;
 
 // Todo lo ajustable, en un solo lugar.
 export const NEEDS = {
   max: 100,
   floor: 20,                      // con el tiempo no bajan de aquí
   low: 45,                        // por debajo, se nota en la cara y en lo que dice
-  decayPerHour: { hunger: 0, clean: 50 / 24, energy: 50 / 24, mood: 50 / 24 },   // de 100 a 50 en ~1 día (el hambre, desde la Fase 3)
+  decayPerHour: { hunger: 50 / 24, clean: 50 / 24, energy: 50 / 24, mood: 50 / 24 },   // de 100 a 50 en ~1 día
   sleepFillPerHour: 100,          // durmiendo, la energía va de 0 a 100 en ~1 hora
   minNapMinutes: 10,              // aunque ya tenga la energía llena, si se duerme, duerme al menos esto
   sleepBelow: 80,                 // con más energía que esto no tiene sueño: "Dormir" no lo duerme
+  fullAbove: 90,                  // con esta hambre o más está lleno: no come (y la comida no se gasta)
   moodPerCare: 4,                 // cada cariño
   moodCapPerMinute: 12,           // y no más que esto por minuto
   cleanPerWidth: 10,              // limpieza por cada ancho de Mito que se frota con la esponja (de 20 a 100: ~8 anchos)
@@ -37,19 +40,20 @@ export function cleanHouse(h, now = Date.now()){
   if(h.needs && typeof h.needs === 'object') KEYS.forEach(k=>{ if(Number.isFinite(h.needs[k])) needs[k] = clamp(h.needs[k]); });
   const at = Number.isFinite(h.at) && h.at <= now ? h.at : now;   // una hora futura o rara cuenta como "ahora"
   const sleepSince = Number.isFinite(h.sleepSince) && h.sleepSince <= now ? Math.min(h.sleepSince, now) : null;
-  return { at, needs, sleepSince };
+  return { ...(h.v === VERSION ? { v: VERSION } : {}), at, needs, sleepSince };
 }
 
 // Cómo están las necesidades en `now`, a partir de lo guardado (lógica pura).
 // Durmiendo: la energía sube, el ánimo no baja y lo demás baja igual; al llenarse la energía despierta solo,
 // en la hora exacta en que se llenó (aunque la app estuviera cerrada), y desde ahí todo baja normal. Si se durmió
 // ya lleno, hace al menos una siesta corta (minNapMinutes).
-export function needsAt(saved, now = Date.now()){
+// hungerFrozen: el hambre no baja en ese tramo (para los datos de antes de la Fase 3, ver current()).
+export function needsAt(saved, now = Date.now(), { hungerFrozen = false } = {}){
   const h = cleanHouse(saved, now);
   let t = Math.max(0, now - h.at) / HOUR;
   const n = { ...h.needs };
   let sleepSince = h.sleepSince;
-  const rate = NEEDS.decayPerHour;
+  const rate = hungerFrozen ? { ...NEEDS.decayPerHour, hunger: 0 } : NEEDS.decayPerHour;
   if(sleepSince !== null){
     const toFull = Math.max(0, NEEDS.max - n.energy) / NEEDS.sleepFillPerHour;
     const napLeft = Math.max(0, sleepSince + NEEDS.minNapMinutes * 60e3 - h.at) / HOUR;
@@ -61,7 +65,7 @@ export function needsAt(saved, now = Date.now()){
     if(slept >= Math.max(toFull, napLeft)){ sleepSince = null; n.energy = NEEDS.max; }   // ya durmió lo que le tocaba
   }
   if(sleepSince === null && t > 0) KEYS.forEach(k=>{ n[k] = decay(n[k], rate[k], t); });
-  return { at: now, needs: n, sleepSince };
+  return { v: VERSION, at: now, needs: n, sleepSince };
 }
 
 // La necesidad baja más importante, por prioridad: sueño > hambre > limpieza > ánimo. null si está todo bien.
@@ -73,7 +77,16 @@ export function topNeed(needs){
 
 /* ---------- con la partida guardada ---------- */
 
-const current = (now = Date.now()) => needsAt(state.house, now);
+// Antes de la Fase 3 el hambre no bajaba. Una partida con datos de entonces (sin `v`) no debe encontrarse a Mito
+// hambriento de golpe: se pasa a la versión nueva una sola vez, con el hambre quieta hasta ahora, y desde ahí baja.
+function current(now = Date.now()){
+  const raw = state.house;
+  if(raw && typeof raw === 'object' && raw.v !== VERSION){
+    state.house = needsAt(raw, now, { hungerFrozen: true });
+    commit();
+  }
+  return needsAt(state.house, now);
+}
 function save(h){ state.house = h; commit(); }
 
 export function getNeeds(now = Date.now()){
@@ -112,6 +125,17 @@ export function addClean(amount, now = Date.now()){
   h.needs.clean = clamp(h.needs.clean + Math.max(0, num(amount)));
   save(h);
   return h.needs.clean;
+}
+
+// Comer: ¿está lleno? (con NEEDS.fullAbove de hambre o más no come). La comida la gasta state/pantry.js.
+export const isFull = (now = Date.now()) => current(now).needs.hunger >= NEEDS.fullAbove;
+
+// Sube el hambre (lo que llena un alimento). Devuelve el hambre nueva.
+export function feed(amount, now = Date.now()){
+  const h = current(now);
+  h.needs.hunger = clamp(h.needs.hunger + Math.max(0, num(amount)));
+  save(h);
+  return h.needs.hunger;
 }
 
 // Para partidas importadas: el campo es opcional; si viene, se limpia.

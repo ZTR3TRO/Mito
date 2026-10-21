@@ -355,7 +355,7 @@ test('composición: tamaños raros no la rompen', ()=>{
 
 /* ---------------- necesidades (Fase 2) ---------------- */
 
-import { NEEDS as N, needsAt, cleanHouse, topNeed, careMood, addClean, startSleep, wakeUp, getNeeds } from '../src/state/house.js';
+import { NEEDS as N, needsAt, cleanHouse, topNeed, careMood, addClean, startSleep, wakeUp, getNeeds, isFull, feed } from '../src/state/house.js';
 import { state } from '../src/state/core.js';
 import { parseSave } from '../src/state/backup.js';
 import { readFileSync } from 'node:fs';
@@ -365,15 +365,14 @@ const HR = 3600e3;
 const FULL = { hunger: 100, clean: 100, energy: 100, mood: 100 };
 const house = (needs, extra = {}) => ({ at: 0, needs: { ...FULL, ...needs }, sleepSince: null, ...extra });
 
-test('necesidades: de llena a la mitad en un día, y el hambre todavía no baja', ()=>{
+test('necesidades: de llena a la mitad en un día (también el hambre, desde la Fase 3)', ()=>{
   const n = needsAt(house({}), 24 * HR).needs;
-  for(const k of ['clean', 'energy', 'mood']) assert.ok(Math.abs(n[k] - 50) < .01, `${k}: ${n[k]}`);
-  assert.equal(n.hunger, 100);
+  for(const k of ['hunger', 'clean', 'energy', 'mood']) assert.ok(Math.abs(n[k] - 50) < .01, `${k}: ${n[k]}`);
 });
 
 test('necesidades: nunca bajan del piso, y lo que ya estaba debajo no sube solo', ()=>{
   const n = needsAt(house({}), 30 * 24 * HR).needs;
-  for(const k of ['clean', 'energy', 'mood']) assert.equal(n[k], N.floor);
+  for(const k of ['hunger', 'clean', 'energy', 'mood']) assert.equal(n[k], N.floor);
   assert.equal(needsAt(house({ mood: 5 }), 10 * HR).needs.mood, 5);
 });
 
@@ -451,4 +450,32 @@ test('contenido: frases de necesidades, sueño y baño, cortas', ()=>{
   assert.ok(all.length > 20);
   assert.deepEqual(all.filter(m => [...m].length > 34), []);
   for(const need of ['sleepy', 'dirty', 'sad']) assert.ok(MITO_NEEDS[need].length >= 2);
+});
+
+/* ---------------- hambre (Fase 3) ---------------- */
+
+test('comida: comer sube el hambre sin pasar de 100, y desde NEEDS.fullAbove está lleno', ()=>{
+  const t0 = 4e12;
+  state.house = { v: 3, at: t0, needs: { hunger: 40, clean: 100, energy: 100, mood: 100 }, sleepSince: null };
+  assert.equal(isFull(t0), false);
+  assert.ok(Math.abs(feed(25, t0) - 65) < .01);
+  assert.equal(feed(-10, t0), 65, 'nunca baja al comer');
+  assert.equal(feed(500, t0), 100);
+  assert.equal(isFull(t0), true);
+  delete state.house;
+});
+
+test('comida: el hambre baja con el tiempo, hasta el piso, y no baja de golpe en partidas de antes', ()=>{
+  const t0 = 3e12;
+  state.house = { v: 3, at: t0, needs: { hunger: 100, clean: 100, energy: 100, mood: 100 }, sleepSince: null };
+  assert.ok(Math.abs(getNeeds(t0 + 12 * HR).hunger - 75) < .01);
+  assert.equal(getNeeds(t0 + 60 * 24 * HR).hunger, N.floor);
+  // datos de la Fase 2 (sin `v`) guardados hace 2 días: el hambre empieza a bajar desde ahora; lo demás, como siempre
+  state.house = { at: t0 - 48 * HR, needs: { hunger: 100, clean: 100, energy: 100, mood: 100 }, sleepSince: null };
+  const now = getNeeds(t0);
+  assert.equal(now.hunger, 100);
+  assert.equal(now.clean, N.floor);
+  assert.equal(state.house.v, 3, 'se migra una sola vez');
+  assert.ok(Math.abs(getNeeds(t0 + 24 * HR).hunger - 50) < .01);
+  delete state.house;
 });
