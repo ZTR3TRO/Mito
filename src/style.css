@@ -777,7 +777,7 @@ main{ padding:38px 46px 90px; max-width:1000px; }
 .blink{transform-origin:75px 82px;animation:blink 4.6s infinite}
 @keyframes blink{0%,93%,100%{transform:scaleY(1)}96%{transform:scaleY(.08)}}
 .f{display:none}
-.lid{display:none}   /* párpados de la Casa: solo los muestra la Casa según el estado de Mito */
+.lid,.mouth{display:none}   /* párpados y bocas de la Casa: solo los muestra la Casa según el estado de Mito */
 .mascot.face-normal .f-normal,.mascot.face-happy .f-happy,.mascot.face-sad .f-sad,.mascot.face-excited .f-excited{display:inline}
 .tear{animation:tear 1.6s ease-in infinite}
 @keyframes tear{0%{transform:translateY(0);opacity:0}15%{opacity:1}100%{transform:translateY(16px);opacity:0}}
@@ -1825,10 +1825,11 @@ body[data-view="house"] .mascot-side{ display:none; }   /* en la Casa ya está e
 /* botones de la barra: el activo (Despertar, Listo) en menta; deshabilitado, apagado */
 .house-act.is-on{ background:linear-gradient(135deg, var(--mint), #5fd9b0); box-shadow:0 4px 0 0 var(--mint-deep), var(--shadow-mint); }
 .house-act[disabled]{ opacity:.45; cursor:default; filter:saturate(.6); }
-@container house (max-width: 420px){
-  .house-act{ padding:8px 11px; font-size:13px; gap:6px; }
-  .house-act svg{ width:18px; height:18px; }
-  .house-bar{ gap:6px; padding:5px; }
+/* angosto (4 botones en 360 px): icono arriba y texto abajo, como una barra de pestañas */
+@container house (max-width: 460px){
+  .house-act{ flex-direction:column; justify-content:center; gap:2px; min-width:58px; padding:6px 10px 5px; font-size:11.5px; }
+  .house-act svg{ width:19px; height:19px; }
+  .house-bar{ gap:5px; padding:5px; }
 }
 
 @media (prefers-reduced-motion: reduce){
@@ -1843,6 +1844,86 @@ body[data-view="house"] .mascot-side{ display:none; }   /* en la Casa ya está e
 }
 
 /* ================= CASA · FASE 3: la comida ================= */
+
+/* bocas (content/art/house.js): abierta cuando le acercan comida; masticando al comer */
+.room .mascot.mouth-open:not(.is-chewing) .mouth-open{ display:inline; }
+.room .mascot.is-chewing .mouth-chew{ display:inline; }
+.mouth-chew .chew{ transform-box:fill-box; transform-origin:center; animation:chew .3s ease-in-out infinite alternate; }
+@keyframes chew{ from{ transform:scale(1.08, .7); } to{ transform:scale(.9, 1.15); } }
+
+/* charola: mientras está abierta ocupa el lugar de la barra (no tapa a Mito ni a la mascota) */
+.room.is-feeding .house-bar:not(.food-tray){ display:none; }
+.food-tray[hidden]{ display:none; }
+.food-tray{ align-items:center; gap:8px; padding:6px; width:max-content; box-sizing:border-box; }
+.house-act.ft-close{ flex-direction:column; justify-content:center; gap:2px; flex:none; padding:7px 12px 6px; font-size:12px;
+  background:var(--card); color:var(--ink-dim); border:1.5px solid var(--line); box-shadow:0 3px 0 0 var(--line); }
+.house-act.ft-close:active{ box-shadow:0 1px 0 0 var(--line); }
+.house-act.ft-close svg{ width:18px; height:18px; }
+.ft-list{ display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; padding:2px; min-width:0; scroll-snap-type:x proximity; overscroll-behavior-x:contain; }
+.ft-list::-webkit-scrollbar{ display:none; }
+.ft-list.is-scrollable{ -webkit-mask:linear-gradient(90deg, #000 calc(100% - 18px), transparent); mask:linear-gradient(90deg, #000 calc(100% - 18px), transparent); }
+.ft-item{ all:unset; position:relative; flex:none; width:64px; box-sizing:border-box; display:grid; justify-items:center; gap:1px;
+  padding:6px 3px 5px; border-radius:14px; background:var(--card); border:2px solid var(--line); cursor:grab;
+  touch-action:pan-x; scroll-snap-align:start; -webkit-tap-highlight-color:transparent; -webkit-touch-callout:none; user-select:none;
+  transition:transform .12s ease, border-color .15s ease; }
+@media (hover:hover){ .ft-item:hover{ transform:translateY(-2px); border-color:var(--pink); } }
+.ft-item:focus-visible{ outline:3px solid var(--lilac); outline-offset:2px; }
+.ft-art{ pointer-events:none; }
+.ft-art svg{ width:34px; height:34px; display:block; }
+.ft-count{ position:absolute; top:3px; right:3px; min-width:12px; padding:0 5px; border-radius:999px; text-align:center;
+  font:800 10.5px/1.5 var(--font-body); color:#fff; background:linear-gradient(135deg,var(--pink),var(--lilac)); }
+.ft-name{ max-width:58px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:10px; font-weight:800; color:var(--ink-dim); }
+.ft-item.is-picked{ border-style:dashed; }
+.ft-item.is-picked .ft-art{ opacity:.3; }
+.ft-item.is-nope{ border-color:var(--pink); animation:ftNope .5s ease; }
+@keyframes ftNope{ 0%,100%{ transform:none; } 20%{ transform:rotate(-8deg); } 40%{ transform:rotate(7deg); } 60%{ transform:rotate(-5deg); } 80%{ transform:rotate(3deg); } }
+.ft-empty{ display:flex; align-items:center; gap:10px; padding:0 6px 0 2px; min-width:0; }
+.ft-empty > div{ display:grid; gap:1px; min-width:96px; flex:1 1 auto; }
+.ft-empty b{ font-size:12.5px; line-height:1.2; color:var(--ink); }
+.ft-empty span{ font-size:11px; font-weight:700; color:var(--ink-faint); }
+.ft-empty .btn-mini{ flex:none; padding:8px 11px; }
+.ft-plate{ width:38px; height:38px; flex:none; box-sizing:border-box; border-radius:50%; border:3px dashed var(--line); }
+@container house (max-width: 460px){ .ft-empty .ft-plate, .ft-empty span{ display:none; } }
+@container house (min-width: 641px){ .ft-item{ width:74px; } .ft-name{ max-width:70px; } }
+
+/* la comida: en el dedo al arrastrarla, volando a la boca y mientras Mito la muerde */
+.food-bite{ z-index:8; translate:-50% -50%; pointer-events:none; filter:drop-shadow(0 6px 6px rgba(51,39,74,.25)); }
+.food-bite svg{ width:100%; height:auto; display:block; }
+.food-bite.is-ghost{ z-index:9; scale:1.12; rotate:-10deg; filter:drop-shadow(0 12px 12px rgba(51,39,74,.32)); }
+.food-bite.going-back{ opacity:.6; transition:opacity .3s ease; }
+.food-bite[data-bite="1"]{ -webkit-mask:radial-gradient(circle at 18% 18%, transparent 0 22%, #000 23%); mask:radial-gradient(circle at 18% 18%, transparent 0 22%, #000 23%); }
+.food-bite[data-bite="2"]{ -webkit-mask:radial-gradient(circle at 18% 18%, transparent 0 22%, #000 23%), radial-gradient(circle at 85% 30%, transparent 0 24%, #000 25%);
+  -webkit-mask-composite:source-in; mask:radial-gradient(circle at 18% 18%, transparent 0 22%, #000 23%), radial-gradient(circle at 85% 30%, transparent 0 24%, #000 25%); mask-composite:intersect; }
+.food-bite[data-bite="3"]{ opacity:0; scale:.5; transition:opacity .2s ease, scale .2s ease; }
+.food-bite.fade-in{ animation:foodFade .3s ease both; }
+.food-bite.fade-out{ opacity:0; transition:opacity .25s ease; }
+@keyframes foodFade{ from{ opacity:0; } to{ opacity:1; } }
+.food-crumb{ z-index:8; width:6px; height:5px; border-radius:40%; pointer-events:none; background:#f7d9b0; box-shadow:0 0 0 1px #d9a873;
+  animation:crumbFall .7s ease-in forwards; }
+@keyframes crumbFall{ 0%{ transform:none; opacity:1; } 30%{ transform:translate(calc(var(--dx) * .4), -8px); } 100%{ transform:translate(var(--dx), var(--dy)); opacity:0; } }
+.food-crumb.to-pet{ width:7px; height:7px; background:#ff8a9a; box-shadow:0 0 0 1px #d6435a; animation:crumbToPet .85s ease-in-out forwards; }
+@keyframes crumbToPet{ 0%{ transform:none; opacity:1; } 50%{ transform:translate(calc(var(--dx) * .5), calc(var(--dy) * .5 - 30px)); } 92%{ opacity:1; } 100%{ transform:translate(var(--dx), var(--dy)) scale(.6); opacity:0; } }
+
+/* el dato de nutrición: una tarjeta arriba del cuarto por unos segundos (se cierra con un toque) */
+.food-fact{ z-index:9; top:14px; left:50%; translate:-50% 0; box-sizing:border-box; width:max-content; max-width:min(480px, calc(100% - 24px));
+  display:flex; align-items:center; gap:10px; padding:9px 10px 9px 9px; border-radius:18px; cursor:pointer;
+  background:color-mix(in srgb, var(--card) 95%, transparent); border:2px solid var(--mint); box-shadow:0 10px 24px -10px rgba(51,39,74,.4);
+  -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px); }
+.food-fact[hidden]{ display:none; }
+.food-fact.show{ animation:factIn .35s cubic-bezier(.3,1.3,.5,1) both; }
+@keyframes factIn{ from{ opacity:0; transform:translateY(-10px); } to{ opacity:1; transform:none; } }
+.food-fact .ff-art{ flex:none; width:40px; height:40px; border-radius:12px; background:var(--mint-pale); display:grid; place-items:center; }
+.food-fact .ff-art svg{ width:30px; height:30px; }
+.food-fact b{ display:block; font-size:10.5px; letter-spacing:.04em; text-transform:uppercase; color:var(--mint-deep); }
+.food-fact span{ display:block; font-size:13px; font-weight:700; line-height:1.35; color:var(--ink); }
+.food-fact .ff-close{ all:unset; flex:none; align-self:flex-start; width:24px; height:24px; border-radius:50%; display:grid; place-items:center;
+  font-size:17px; font-weight:900; line-height:1; color:var(--ink-faint); cursor:pointer; }
+.food-fact .ff-close:focus-visible{ outline:3px solid var(--lilac); }
+[data-theme="dark"] .food-fact b{ color:var(--mint); }
+@container house (orientation: portrait) or (max-width: 640px){
+  .food-fact{ left:12px; right:12px; translate:none; width:auto; max-width:none; }
+  .food-fact span{ font-size:12.5px; }
+}
 
 /* Tienda · sección Comida */
 .food-cat-sub{ display:block; margin-top:3px; font:700 12.5px/1.3 var(--font-body); color:var(--ink-dim); }
@@ -1862,5 +1943,9 @@ body[data-view="house"] .mascot-side{ display:none; }   /* en la Casa ya está e
 .tb-food svg{ width:64px; height:64px; }
 
 @media (prefers-reduced-motion: reduce){
+  .mouth-chew .chew{ animation:none; }
+  .food-crumb{ display:none; }
+  .food-fact.show{ animation:foodFade .3s ease both; }
+  .ft-item.is-nope{ animation:none; }
   .si-have.pop{ animation:none; }
 }

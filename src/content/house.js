@@ -66,3 +66,19 @@ export const MITO_BATH = {
   rub: ['¡Jiji, hace cosquillas! 🫧', 'Mmm, qué espumita', '¡Ahí, ahí! ✨'],
   done: ['¡Qué rico baño! ✨', '¡Rechinando de limpio! 🌟', '¡Gracias! Huelo a flores 🌸'],
 };
+
+/* ---------- Fase 3: la comida ---------- */
+
+export const MITO_FOOD = {
+  full: ['¡Estoy llenito! Gracias 💕', 'Ya no me cabe nada 😊', 'Guárdalo para luego, ¿sí?'],
+  empty: ['¡Vamos por comida a la Tienda!', 'Mi charola está vacía 🥺'],
+  hungryEmpty: ['¿Vamos por fruta a la Tienda?', 'Tengo hambre… ¿vamos a la Tienda?'],
+};
+
+// Lo que dice la mascota cuando Mito come (una de cada dos veces). Clave de mascota = `k` en wardrobe.js.
+export const PET_EAT = {
+  chick: '¡Pío! ¿Me das un granito? 🐤', turtle: '¿Hay una hojita para mí? 🍃', fox: 'Yip, ¡huele riquísimo! 🦊',
+  otter: '¡Chii! ¿Compartimos? 🦦', dragon: 'Grrr… ¿te lo caliento? 🔥', unicorn: 'Comer rico da brillo ✨',
+  ufo: 'Bip: nutrientes detectados 🛸', pumpkin: 'Jiji, ¡qué rico se ve! 🎃', bat: 'Iii, ¿hay fruta para mí? 🦇',
+  bee: 'Bzz, ¿y un poco de miel? 🍯', ajolote: 'Glub, ¡buen provecho! 🫧',
+};

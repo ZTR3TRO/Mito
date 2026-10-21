@@ -1,7 +1,8 @@
 // La Casa de Mito: el cuarto a pantalla completa con Mito y su mascota, los gestos para jugar con él y la
 // barra de acciones. Se compone de: room.js (la escena), gestures.js (dedo y ratón), motion.js (arrastrar y
-// lanzar), reactions.js (cara, frases y mascota), needs.js (cómo se notan sus necesidades), sleep.js (dormir)
-// y bath.js (bañar). Guarda cuántas veces mostró la pista y las necesidades de Mito (state/house.js).
+// lanzar), reactions.js (cara, frases y mascota), needs.js (cómo se notan sus necesidades), sleep.js (dormir),
+// bath.js (bañar) y food.js (comer). Guarda cuántas veces mostró las pistas, las necesidades de Mito
+// (state/house.js) y la comida de la charola (state/pantry.js).
 //
 // Avisa por el bus lo que pasa (house:poke, house:tickle, house:pet, house:grab, house:drop, house:land) para que
 // las fases siguientes (necesidades, decoración) puedan reaccionar sin tocar los gestos.
@@ -16,6 +17,7 @@ import { createReactions } from './reactions.js';
 import { createNeeds } from './needs.js';
 import { createSleep } from './sleep.js';
 import { createBath } from './bath.js';
+import { createFood } from './food.js';
 
 const reducedMotion = ()=> !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 const WELCOME_MS = 450;
@@ -51,9 +53,16 @@ export function init(){
   const refresh = ()=> needs?.render();
   const sleep = createSleep(room, mascot, reactions, { button: act('sleep'), onChange: refresh });
   const bath = createBath(room, mascot, reactions, { button: act('bath'), onChange: refresh });
-  needs = createNeeds(room, mascot, reactions, { busy: ()=> sleep.asleep || bath.bathing });
-  // Los botones nunca se deshabilitan: cada uno responde. "Dormir" durante el baño lo termina primero; "Bañar"
-  // mientras duerme lo despierta con ternura (y luego ya se puede bañar).
+  const food = createFood(room, mascot, reactions, { button: act('eat'), onChange: refresh });
+  needs = createNeeds(room, mascot, reactions, { busy: ()=> sleep.asleep || bath.bathing || food.eating });
+  // Los botones nunca se deshabilitan: cada uno responde. "Dormir" o "Comer" durante el baño lo terminan primero;
+  // "Bañar" o "Comer" mientras duerme lo despiertan con ternura (y luego ya se puede).
+  act('eat')?.addEventListener('click', ()=>{
+    hideHint();
+    if(sleep.asleep){ sleep.touch(); return; }
+    if(bath.bathing){ bath.finish(); return; }
+    food.toggle();
+  });
   act('sleep')?.addEventListener('click', ()=>{
     hideHint();
     if(bath.bathing){ bath.finish(); return; }
@@ -71,7 +80,7 @@ export function init(){
   });
 
   const cancelGesture = bindGestures(mascot, {
-    enabled: ()=> !bath.bathing,
+    enabled: ()=> !bath.bathing && !food.eating,
     onPetTap: ()=>{ hideHint(); if(!sleep.asleep) reactions.petTap(); },
     onGesture: g=>{
       hideHint();
@@ -102,7 +111,7 @@ export function init(){
   on('theme:changed', ()=> requestFrame(relight));
   // Si la partida cambia por fuera (importar, reiniciar, el panel de depuración), la Casa se repinta con el estado nuevo.
   let inHouse = false;
-  on('state:changed', ()=>{ if(inHouse){ sleep.sync(); needs.render(); } });
+  on('state:changed', ()=>{ if(inHouse){ sleep.sync(); needs.render(); food.render(); } });
 
   // En móvil el cuarto llega justo hasta la barra de navegación fija: se mide su alto real (cambia con la zona segura).
   const measureNav = ()=>{
@@ -129,6 +138,7 @@ export function init(){
       cancelGesture();
       motion.reset();
       bath.leave();
+      food.leave();
       sleep.leave();
       needs.leave();
       reactions.clear();

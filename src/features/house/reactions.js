@@ -200,10 +200,22 @@ export function createReactions(room, mascot, speech){
 
     welcome(){ say('welcome'); },
 
+    // Comer (food.js): ojitos felices y la boca masticando mientras dura.
+    munch(ms){
+      face('happy', ms);
+      play('is-chewing', ms);
+    },
+
+    // "No, gracias" (ya está lleno, o no tiene sueño): se hace un poco a un lado.
+    nope(){
+      mascot.style.setProperty('--poke-dir', 1);
+      play('hr-side', 550);
+    },
+
     // Al salir de la Casa: todo a su estado de reposo.
     clear(){
       timers.forEach(clearTimeout); timers.clear();
-      ['hr-side', 'hr-puff', 'hr-tickle', 'hr-pet', 'hr-held', 'hr-squash'].forEach(c => mascot.classList.remove(c));
+      ['hr-side', 'hr-puff', 'hr-tickle', 'hr-pet', 'hr-held', 'hr-squash', 'is-chewing'].forEach(c => mascot.classList.remove(c));
       delete mascot.dataset.petting;
       const el = petEl();
       if(el) stopPet(el);

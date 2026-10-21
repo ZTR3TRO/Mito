@@ -338,8 +338,13 @@
           <div class="room-night" aria-hidden="true"></div>
           <div class="house-speech" id="houseSpeech" role="status" aria-live="polite"></div>
           <p class="house-hint" id="houseHint" hidden>Pícalo, hazle cosquillas, acarícialo o mantenlo presionado para lanzarlo.</p>
-          <!-- Barra de acciones: flota abajo, dentro del cuarto. Aquí entrarán Comer (Fase 3) y Decorar (Fase 4). -->
+          <!-- Barra de acciones: flota abajo, dentro del cuarto. Aquí entrará Decorar (Fase 4). Mientras la charola está
+               abierta, la charola ocupa su lugar (features/house/food.js). -->
           <div class="house-bar" role="toolbar" aria-label="Acciones de la Casa">
+            <button class="house-act" type="button" data-house-act="eat" aria-expanded="false">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h18a9 9 0 0 1-18 0Z"/><path d="M8 8c0-2 2-2 2-4M13 8c0-2 2-2 2-4"/></svg>
+              <span>Comer</span>
+            </button>
             <button class="house-act" type="button" data-house-act="bath" aria-pressed="false">Bañar</button>
             <button class="house-act" type="button" data-house-act="sleep" aria-pressed="false">Dormir</button>
             <button class="house-act" type="button" data-nav="wardrobe">

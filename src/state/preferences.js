@@ -1,4 +1,4 @@
-// Preferencias: tema, materia activa y cuántas veces se mostró la pista de la Casa.
+// Preferencias: tema, materia activa y cuántas veces se mostraron las pistas de la Casa y de la charola.
 
 import { state, commit, num } from './core.js';
 
@@ -32,5 +32,15 @@ export function getHouseHintCount(){
 
 export function markHouseHintShown(){
   state.houseHint = getHouseHintCount() + 1;
+  commit();
+}
+
+// Pista de la charola ("toca un alimento o arrástralo a su boca"): igual, solo las primeras veces. `foodHint` es opcional.
+export function getFoodHintCount(){
+  return Math.max(0, Math.floor(num(state.foodHint)));
+}
+
+export function markFoodHintShown(){
+  state.foodHint = getFoodHintCount() + 1;
   commit();
 }

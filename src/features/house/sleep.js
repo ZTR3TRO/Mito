@@ -66,9 +66,7 @@ export function createSleep(room, mascot, reactions, { button, onChange = ()=>{}
       if(peeking) return;
       if(asleep) return wake();
       if(getNeeds().energy >= NEEDS.sleepBelow){
-        mascot.style.setProperty('--poke-dir', 1);
-        mascot.classList.remove('hr-side'); void mascot.offsetWidth; mascot.classList.add('hr-side');
-        setTimeout(()=> mascot.classList.remove('hr-side'), 550);
+        reactions.nope();
         return reactions.sayFrom(MITO_SLEEP.notSleepy, 'not-sleepy');
       }
       sleep();

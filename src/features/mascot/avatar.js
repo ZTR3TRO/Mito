@@ -8,7 +8,7 @@ import { SECRET_PETS } from '../../content/art/secrets.js';
 import { HAT_ANTENNAS } from '../../content/art/hats.js';
 import { PET_KEEP } from '../../content/petColors.js';
 import { recolorPet } from './petRecolor.js';
-import { lidsMarkup } from '../../content/art/house.js';
+import { lidsMarkup, mouthsMarkup } from '../../content/art/house.js';
 
 const NS = 'http://www.w3.org/2000/svg';
 const AURA_HTML = '<div class="a-glow"></div><div class="a-neb"></div><div class="a-gal"></div><div class="a-rays"></div><div class="a-ring"></div><div class="a-parts"></div>';
@@ -43,7 +43,7 @@ const isFace = seg => !seg[0] && seg[1].includes('class="f ');
 export function mascotMarkup(keys, id, fx = ''){
   const sk = skinParts(fx, id);
   const hat = HAT_ANTENNAS[keys.find(k => HAT_ANTENNAS[k])];
-  const lids = lidsMarkup(id);
+  const lids = lidsMarkup(id), mouths = mouthsMarkup(id);
   const segs = avatarSegments.filter(([k])=>!k || keys.includes(k));
   const lastFace = segs.reduce((at, seg, i) => isFace(seg) ? i : at, -1);
   let open = false;
@@ -55,11 +55,11 @@ export function mascotMarkup(keys, id, fx = ''){
       if(open && isFace(s)){ out = '</g>'; open = false; }
       out += fitAntenna(s[1], hat);
     }
-    if(i === lastFace) out += lids.body;   // párpados: después de la cara y antes de la ropa (las gafas quedan delante)
+    if(i === lastFace) out += lids.body + mouths.body;   // párpados y bocas: después de la cara y antes de la ropa (las gafas quedan delante)
     return out;
   }).join('').replaceAll('id="vcol"', `id="vcol-${id}"`).replaceAll('href="#vcol"', `href="#vcol-${id}"`);
   const g = GBODY.replace('id="gBody"', `id="gBody-${id}"`);
-  return (`<defs>${g}${sk.defs}${lids.defs}</defs>${PRE}<g class="rig">${inner}${open ? '</g>' : ''}</g>`).split('url(#gBody)').join(`url(#gBody-${id})`);
+  return (`<defs>${g}${sk.defs}${lids.defs}${mouths.defs}</defs>${PRE}<g class="rig">${inner}${open ? '</g>' : ''}</g>`).split('url(#gBody)').join(`url(#gBody-${id})`);
 }
 // Mascota compañera: su dibujo base, o recoloreado si le elegiste un color en el armario.
 const petMarkup = (k, colorId = '', id = 'pet') => {

@@ -458,6 +458,7 @@ import { cleanPantry, getPantry, foodCount, buyFood, eatFood, parsePantry } from
 import { FOODS, FOOD_MAX, findFood } from '../src/content/food.js';
 import { FOOD_FACTS } from '../src/content/nutrition.js';
 import { FOOD_ART } from '../src/content/art/food.js';
+import { MITO_FOOD, PET_EAT } from '../src/content/house.js';
 import { resetAll } from '../src/state/backup.js';
 
 const freshPantry = (chispas = 1000) => { delete state.pantry; state.chispas = chispas; };
@@ -533,12 +534,13 @@ test('comida: compatible con partidas sin el campo, con respaldos dañados y con
   assert.equal('pantry' in parseSave(JSON.stringify({ ...old, pantry: { 'f-x': 1 } })), false, 'vacía: no se guarda');
   assert.deepEqual(cleanPantry('nada'), {});
   assert.equal(parsePantry(undefined), undefined);
-  state.pantry = { 'f-apple': 2 };
+  state.pantry = { 'f-apple': 2 }; state.foodHint = 2;
   resetAll();
   assert.equal('pantry' in state, false);
+  assert.equal('foodHint' in state, false);
 });
 
-test('contenido: catálogo de comida completo y datos de nutrición cortos', ()=>{
+test('contenido: catálogo de comida completo, datos de nutrición cortos y frases cortas', ()=>{
   assert.ok(FOODS.length >= 6 && FOODS.length <= 8);
   for(const f of FOODS){
     assert.ok(f.cost >= 10 && f.cost <= 50, `${f.id}: precio`);
@@ -549,4 +551,7 @@ test('contenido: catálogo de comida completo y datos de nutrición cortos', ()=
     assert.equal(findFood(f.id), f);
   }
   assert.deepEqual(Object.keys(FOOD_FACTS).sort(), FOODS.map(f => f.id).sort(), 'un dato por alimento, sin sobrantes');
+  const phrases = [...Object.values(MITO_FOOD).flat(), ...Object.values(PET_EAT)];
+  assert.deepEqual(phrases.filter(m => [...m].length > 34), []);
+  assert.deepEqual(Object.keys(PET_EAT).sort(), Object.keys(PET_HOUSE).sort(), 'cada mascota tiene su frase al comer');
 });

@@ -22,6 +22,20 @@ export function lidsMarkup(id){
   return { defs, body };
 }
 
+// Bocas de la Casa (Fase 3): abierta (le acercan comida), masticando y con hambre (se relame). Igual que los
+// párpados: una copia recortada del cuerpo tapa la boca de la cara y encima va la boca nueva, así funciona con
+// cualquier piel. Van justo después de los párpados (debajo de la ropa) y están ocultas por defecto (style.css).
+const MOUTHS = {
+  open: '<ellipse cx="75" cy="103" rx="8" ry="8.5" fill="#3a2247" stroke="#2b2140" stroke-width="3"/><ellipse cx="75" cy="108" rx="5" ry="2.8" fill="#ff8fa8"/>',
+  chew: '<path class="chew" d="M64 102q5.5-4 11 0t11 0" fill="none" stroke="#2b2140" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>',
+  hungry: '<path d="M64 100Q75 107 86 100" fill="none" stroke="#2b2140" stroke-width="3.6" stroke-linecap="round"/><path d="M80 103q4 0 5.5 3.6q-3 3.6-6.4.4z" fill="#ff8fa8" stroke="#e0607e" stroke-width="1.4" stroke-linejoin="round"/>',
+};
+export function mouthsMarkup(id){
+  const defs = `<clipPath id="mo-${id}"><rect x="54" y="91" width="42" height="24" rx="10"/></clipPath>`;
+  const body = Object.entries(MOUTHS).map(([k, m]) => `<g class="mouth mouth-${k}"><use href="#mb-${id}" clip-path="url(#mo-${id})"/>${m}</g>`).join('');
+  return { defs, body };
+}
+
 // Polvito de cuando está sucio: manchitas suaves y unas motas que flotan. Su opacidad la da --dirt (0 a 1).
 export const DIRT = `<svg class="mito-dirt" viewBox="0 0 150 150" aria-hidden="true"><g fill="#8b6b55">
   <ellipse cx="104" cy="99" rx="8" ry="4.5" opacity=".26"/><ellipse cx="44" cy="100" rx="5" ry="3" opacity=".18"/>

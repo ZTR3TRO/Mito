@@ -20,7 +20,9 @@ export {
   getMistakes, clearMistakes, getStreak,
 } from './progress.js';
 
-export { getTheme, setTheme, getCourse, setCourse, getHouseHintCount, markHouseHintShown } from './preferences.js';
+export {
+  getTheme, setTheme, getCourse, setCourse, getHouseHintCount, markHouseHintShown, getFoodHintCount, markFoodHintShown,
+} from './preferences.js';
 
 export { NEEDS, topNeed, getNeeds, careMood, startSleep, wakeUp, addClean } from './house.js';
 

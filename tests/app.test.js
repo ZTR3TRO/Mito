@@ -232,6 +232,39 @@ test('casa · fase 3: la comida se compra por unidad en la Tienda', ()=>{
   resetApp();
 });
 
+test('casa · fase 3: la charola, la charola vacía y Mito lleno', ()=>{
+  resetApp();
+  document.querySelector('.navbtn[data-view="house"]').click();
+  const room = document.getElementById('houseRoom');
+  const eat = room.querySelector('[data-house-act="eat"]');
+  assert.ok(eat && eat.textContent.includes('Comer'));
+  // vacía: lleva a la sección Comida de la Tienda
+  eat.click();
+  const tray = room.querySelector('.food-tray');
+  assert.ok(room.classList.contains('is-feeding') && !tray.hidden, 'la charola ocupa el lugar de la barra');
+  const go = tray.querySelector('[data-food-shop]');
+  assert.ok(go && go.dataset.nav === 'shop');
+  go.click();
+  assert.ok(document.getElementById('view-shop').classList.contains('active'));
+  assert.ok(!room.classList.contains('is-feeding'), 'al salir se cierra');
+
+  // lleno: lo dice y la comida no se gasta
+  coreState.pantry = { 'f-apple': 1, 'f-egg': 3 };
+  coreState.house = { v: 3, at: Date.now(), needs: { hunger: 100, clean: 100, energy: 100, mood: 100 }, sleepSince: null };
+  document.querySelector('.navbtn[data-view="house"]').click();
+  eat.click();
+  const items = tray.querySelectorAll('.ft-item');
+  assert.equal(items.length, 2);
+  assert.equal(items[1].querySelector('.ft-count').textContent, '3');
+  items[0].click();
+  assert.match(document.getElementById('houseSpeech').textContent, /llenito|cabe|luego/);
+  assert.equal(store.foodCount('f-apple'), 1);
+  tray.querySelector('[data-food-close]').click();
+  assert.ok(tray.hidden && !room.classList.contains('is-feeding'));
+
+  resetApp();
+});
+
 test('arranque: apuntes, claves y contadores del quiz quedan pintados', ()=>{
   assert.equal(document.querySelectorAll('#courseTabs .course-pill').length, courses.length);
   assert.ok(document.querySelectorAll('#topicTabs .topic-pill').length > 0, 'sin pestañas de temas');
