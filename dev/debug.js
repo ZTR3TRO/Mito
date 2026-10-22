@@ -5,12 +5,15 @@
 //   - dormirlo desde hace un rato, para probar la recarga
 //   - la charola: añadir comida sin gastar chispas, o vaciarla
 //   - los muebles: tenerlos todos sin gastar chispas, vaciar el cuarto (todo a la bandeja) o quitarlos todos
+//   - los cuartos (Fase 5): saltar a cada uno, añadir los muebles de un cuarto ya colocados en él (sin gastar
+//     chispas) y "Todo al Cuarto" (como una partida de la Fase 4: los muebles y Mito en el Cuarto)
 import { state, commit } from '../src/state/core.js';
 import { needsAt, NEEDS } from '../src/state/house.js';
 import { getPantry } from '../src/state/pantry.js';
 import { FOODS, FOOD_MAX } from '../src/content/food.js';
 import { getDecor } from '../src/state/decor.js';
 import { FURNITURE } from '../src/content/furniture.js';
+import { ROOMS } from '../src/content/rooms.js';
 
 const KEYS = [['hunger', 'Hambre'], ['clean', 'Limpieza'], ['energy', 'Energía'], ['mood', 'Ánimo']];
 const MIN = 60e3, HOUR = 3600e3;
@@ -54,6 +57,10 @@ panel.innerHTML = `
     <button class="alt" data-x="food5">+5 de cada alimento</button><button class="alt" data-x="food1">+1 manzana</button><button class="alt" data-x="foodClear">Vaciar</button></div>
   <div class="row"><b style="width:100%">Muebles</b>
     <button class="alt" data-x="furnAll">Todos los muebles</button><button class="alt" data-x="furnEmpty">Vaciar el cuarto</button><button class="alt" data-x="furnNone">Sin muebles</button></div>
+  <div class="row"><b style="width:100%">Cuartos</b>
+    ${ROOMS.map(r => `<button class="alt" data-go="${r.id}">${r.name}</button>`).join('')}</div>
+  <div class="row"><b style="width:100%">Muebles de un cuarto (ya colocados)</b>
+    ${ROOMS.map(r => `<button class="alt" data-room-furn="${r.id}">${r.name}</button>`).join('')}<button data-x="allHome">Todo al Cuarto</button></div>
   <div class="now" data-now></div>
   <div class="now" data-pantry></div>
   <div class="now" data-decor></div>`;
@@ -69,7 +76,8 @@ function paint(){
   const p = getPantry();
   panel.querySelector('[data-pantry]').textContent = 'Charola: ' + (Object.keys(p).length ? FOODS.filter(f => p[f.id]).map(f => `${f.short} ${p[f.id]}`).join(' · ') : 'vacía');
   const d = getDecor();
-  panel.querySelector('[data-decor]').textContent = `Muebles: ${d.owned.length} de ${FURNITURE.length} · en el cuarto ${Object.keys(d.placed).length}`;
+  const per = ROOMS.map(r => `${r.name} ${Object.values(d.placed).filter(p => (p.room || 'bedroom') === r.id).length}`).join(' · ');
+  panel.querySelector('[data-decor]').textContent = `Muebles: ${d.owned.length} de ${FURNITURE.length} · colocados: ${per}`;
   panel.querySelector('[data-now]').textContent = h.sleepSince !== null
     ? `Dormido desde hace ${Math.round((now() - h.sleepSince) / MIN)} min` : 'Despierto';
 }
@@ -77,8 +85,38 @@ panel.addEventListener('input', e=>{
   const k = e.target.dataset.k;
   if(k) panel.querySelector(`[data-v="${k}"]`).textContent = e.target.value;
 });
+// Dónde quedan los muebles de cada cuarto al añadirlos desde aquí (u, v; los de la pared, en la pared).
+const SPOTS = {
+  bedroom: { 'm-bed': [.2, .22], 'm-bookcase': [.92, .1], 'm-lamp': [.78, .26], 'm-desk': [.75, .7], 'm-picture': [.52, .38], 'm-lights': [.5, .02] },
+  bath: { 'm-tub': [.24, .2], 'm-toilet': [.86, .22], 'm-sink': [.68, .1], 'm-mirror': [.68, .42], 'm-towels': [.9, .5] },
+  living: { 'm-couch': [.32, .18], 'm-tv': [.84, .16], 'm-cushion': [.12, .86], 'm-plant': [.04, .4], 'm-sofa': [.8, .8], 'm-shelf': [.6, .3], 'm-art': [.56, .36], 'm-hanger': [.92, .06] },
+  kitchen: { 'm-fridge': [.93, .06], 'm-stove': [.75, .1], 'm-cupboard': [.74, .3], 'm-clock': [.5, .2] },
+};
 panel.addEventListener('click', e=>{
   const x = e.target.dataset.x, t = e.target.dataset.t;
+  if(e.target.dataset.go){ document.querySelector(`#houseRoom .rd[data-room="${e.target.dataset.go}"]`)?.click(); return; }
+  const rf = e.target.dataset.roomFurn;
+  if(rf){   // sin gastar chispas: los del cuarto, colocados en él (los que ya estaban colocados se quedan donde están)
+    const d = getDecor();
+    FURNITURE.filter(f => f.room === rf).forEach(f=>{
+      if(!d.owned.includes(f.id)) d.owned.push(f.id);
+      if(!d.placed[f.id]){
+        const [u, v] = SPOTS[rf][f.id] || (f.gift && f.gift !== 'mito' ? [f.gift.u, f.gift.v] : [.5, .5]);
+        d.placed[f.id] = { ...(rf !== 'bedroom' ? { room: rf } : {}), zona: f.zone, u, v };
+      }
+    });
+    state.decor = { v: 2, ...d };
+    commit(); return paint();
+  }
+  if(x === 'allHome'){   // como una partida de la Fase 4: todo en el Cuarto y Mito en su lugar de siempre
+    const d = getDecor();
+    Object.values(d.placed).forEach(p => { delete p.room; });
+    state.decor = { v: 2, ...d };
+    if(state.house) delete state.house.mito;
+    commit();
+    document.querySelector('#houseRoom .rd[data-room="bedroom"]')?.click();
+    return paint();
+  }
   const low = NEEDS.floor;
   if(t) return advance(Number(t) * MIN);
   if(x === 'min') return panel.classList.toggle('min');

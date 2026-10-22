@@ -184,6 +184,107 @@
   .fv-art.flat{ bottom:6% !important; }
   .fv-mini .fx-glow{ opacity:1; }
   .sk-trial .tb-furn{ padding:0; overflow:hidden; } .sk-trial .tb-furn .fv-mini{ border:0; border-radius:0; }
+
+  /* ===== Fase 5 · BOCETOS: varios cuartos y Mito libre (propuesta; si se aprueba, pasa a style.css) ===== */
+  /* paletas por cuarto: el Cuarto es el de siempre; los demás cambian pared, piso, cortinas y detalle de la pared */
+  .room[data-room="bath"]{ --wall-1:#e2f5ff; --wall-2:#f3fbff; --dot:#c6eafc; --vignette:rgba(40,110,160,.10); --wall-ao:rgba(40,110,160,.10);
+    --tile-1:#e3f6ff; --tile-2:#c7ebfb; --grout:#a9d9ef; --deco-1:#f8fdff; --deco-2:#d6f0fb; --deco-line:#a9d9ef;
+    --frame:#fff; --frame-in:#e4f3fb; --frame-line:#a9d4ea; --frame-shadow:rgba(40,110,160,.14); --sky-2:#e6f4ff;
+    --floor-near:rgba(30,90,130,.14); }
+  .room[data-room="living"]{ --wall-1:#efe5ff; --wall-2:#f8f3ff; --dot:transparent; --vignette:rgba(110,60,170,.10); --wall-ao:rgba(110,60,170,.10);
+    --plank-1:#f7e3c6; --plank-2:#efd4ad; --plank-3:#f3dbb9; --joint:#d8b384; --grain:rgba(160,110,50,.16); --bevel:rgba(255,255,255,.55); --floor-near:rgba(120,80,30,.14);
+    --deco-1:#fbf8ff; --deco-2:#ece2ff; --deco-line:#cdb6f5; --stripe:rgba(185,138,246,.13);
+    --cur-1:#c9a7ff; --cur-2:#e2d0ff; --cur-line:#8f6fd6; --frame-line:#d9c6f5; --frame-in:#f1e8fb; --frame-shadow:rgba(110,60,170,.14); }
+  .room[data-room="kitchen"]{ --wall-1:#fff1d9; --wall-2:#fffaf0; --dot:#ffe1ad; --vignette:rgba(170,110,30,.10); --wall-ao:rgba(170,110,30,.10);
+    --tile-1:#fff8ec; --tile-2:#ffd9a6; --grout:#efc790; --deco-1:#ffffff; --deco-2:#fff3e2; --deco-line:#f1cf9a;
+    --cur-1:#ffd23c; --cur-2:#ffe68a; --cur-line:#e0a516; --tie:var(--pink); --tie-line:#d6478a;
+    --frame-line:#f1d3a6; --frame-in:#fdf0dc; --frame-shadow:rgba(170,110,30,.14); --floor-near:rgba(150,90,20,.12); }
+  [data-theme="dark"] .room[data-room="bath"]{ --wall-1:#1e2a40; --wall-2:#19233a; --dot:#26354f; --vignette:rgba(0,0,0,.38); --wall-ao:rgba(0,0,0,.28);
+    --tile-1:#1f3247; --tile-2:#243a52; --grout:#142335; --deco-1:#24344c; --deco-2:#1f2d44; --deco-line:#162338;
+    --frame:#33435c; --frame-in:#2b3a52; --frame-line:#475a78; --frame-shadow:rgba(0,0,0,.35); --sky-2:#3a3570; --floor-near:rgba(0,0,0,.25); }
+  [data-theme="dark"] .room[data-room="living"]{ --wall-1:#2a2140; --wall-2:#231c36; --dot:transparent; --vignette:rgba(0,0,0,.38); --wall-ao:rgba(0,0,0,.28);
+    --plank-1:#3b2f2c; --plank-2:#33292a; --plank-3:#3e322e; --joint:#1f1817; --grain:rgba(255,220,180,.06); --bevel:rgba(255,220,180,.06); --floor-near:rgba(0,0,0,.25);
+    --deco-1:#30264a; --deco-2:#2a2142; --deco-line:#1c1530; --stripe:rgba(255,255,255,.035);
+    --cur-1:#6c4fa3; --cur-2:#7e61b8; --cur-line:#4a3478; --frame-line:#55466e; --frame-in:#332947; --frame-shadow:rgba(0,0,0,.35); }
+  [data-theme="dark"] .room[data-room="kitchen"]{ --wall-1:#33262e; --wall-2:#2b2029; --dot:#3f2f37; --vignette:rgba(0,0,0,.38); --wall-ao:rgba(0,0,0,.28);
+    --tile-1:#3a2f3a; --tile-2:#4a3a33; --grout:#241c22; --deco-1:#3a2e36; --deco-2:#33282f; --deco-line:#221a20;
+    --cur-1:#a8822a; --cur-2:#bf9636; --cur-line:#7a5d18; --tie:#9a3f72; --tie-line:#6e2c53;
+    --frame-line:#5a4650; --frame-in:#3a2d35; --frame-shadow:rgba(0,0,0,.35); --floor-near:rgba(0,0,0,.25); }
+  /* detalle de la pared: azulejo de cocina (franja baja), azulejo del baño (mitad baja), lambrín y rayas de la sala */
+  .wall-deco{ position:absolute; left:0; right:0; top:var(--horizon); pointer-events:none; }
+  .room[data-room="kitchen"] .wall-deco{ top:calc(var(--horizon) - var(--wb) * .3); height:calc(var(--wb) * .3);
+    background:linear-gradient(var(--deco-line) 0 0) 0 0 / 100% 3px no-repeat,
+      repeating-linear-gradient(90deg, var(--deco-line) 0 1.5px, transparent 1.5px 30px), repeating-linear-gradient(0deg, var(--deco-line) 0 1.5px, transparent 1.5px 30px),
+      linear-gradient(180deg, var(--deco-1), var(--deco-2)); }
+  .room[data-room="bath"] .wall-deco{ top:calc(var(--horizon) - var(--wb) * .46); height:calc(var(--wb) * .46);
+    background:linear-gradient(var(--deco-line) 0 0) 0 0 / 100% 4px no-repeat,
+      repeating-linear-gradient(90deg, var(--deco-line) 0 1.5px, transparent 1.5px 22px), repeating-linear-gradient(0deg, var(--deco-line) 0 1.5px, transparent 1.5px 22px),
+      linear-gradient(180deg, var(--deco-1), var(--deco-2)); }
+  .room[data-room="living"] .room-wall{ background:repeating-linear-gradient(90deg, transparent 0 26px, var(--stripe) 26px 40px), linear-gradient(180deg, var(--wall-1), var(--wall-2)); }
+  .room[data-room="living"] .wall-deco{ top:calc(var(--horizon) - var(--wb) * .26); height:calc(var(--wb) * .26);
+    background:linear-gradient(var(--deco-line) 0 0) 0 0 / 100% 4px no-repeat, linear-gradient(var(--deco-line) 0 0) 0 10px / 100% 1.5px no-repeat,
+      repeating-linear-gradient(90deg, transparent 0 18px, var(--deco-line) 18px 19.5px, transparent 19.5px 92px), linear-gradient(180deg, var(--deco-1), var(--deco-2)); opacity:.95; }
+  .room[data-window="round"] .room-light{ display:none; }
+  .room .furn{ pointer-events:none; }
+  /* Mito sobre un mueble: sin la sombra del piso; una sombra pequeña sobre la superficie */
+  .room-stage.on-furn .contact{ display:none; }
+  .rooms-sketch .room-stage.on-furn .mascot{ translate:-50% -88%; }
+  .seat-shadow{ position:absolute; z-index:3; height:10px; translate:-50% -50%; border-radius:50%; background:rgba(var(--shadow), .28); filter:blur(3px); pointer-events:none; }
+  .room[data-asleep] .zzz{ left:auto; }
+  /* flechas a los lados (con el nombre del cuarto que sigue en escritorio) */
+  .room-arrow{ all:unset; position:absolute; z-index:7; top:calc(var(--horizon) - 30px); width:44px; height:44px; box-sizing:border-box; display:grid; place-items:center; cursor:pointer;
+    border-radius:50%; color:var(--pink-deep, #c2387f); background:color-mix(in srgb, var(--card) 86%, transparent); border:1.5px solid color-mix(in srgb, var(--line) 80%, transparent);
+    box-shadow:0 6px 16px -8px rgba(51,39,74,.45); -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px); }
+  .room-arrow svg{ width:20px; height:20px; }
+  .room-arrow.left{ left:10px; } .room-arrow.right{ right:10px; }
+  .room-arrow span{ position:absolute; top:100%; margin-top:4px; font:800 11px/1 var(--font-body); color:var(--ink-dim); white-space:nowrap;
+    padding:3px 7px; border-radius:999px; background:color-mix(in srgb, var(--card) 80%, transparent); }
+  [data-theme="dark"] .room-arrow{ color:#ff9ac8; }
+  @container house (max-width: 640px){ .room-arrow{ width:38px; height:38px; } .room-arrow span{ display:none; } .room-arrow.left{ left:6px; } .room-arrow.right{ right:6px; } }
+  /* indicadores: un botón por cuarto, arriba de la barra; el actual con su nombre; puntito si Mito está en otro */
+  .room-dots{ position:absolute; z-index:7; left:50%; translate:-50% 0; bottom:calc(var(--bar-space) + 2px); display:flex; gap:6px; padding:4px; border-radius:999px;
+    background:color-mix(in srgb, var(--card) 70%, transparent); -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px); border:1.5px solid color-mix(in srgb, var(--line) 70%, transparent); }
+  .rd{ all:unset; position:relative; display:inline-flex; align-items:center; gap:5px; height:28px; min-width:28px; padding:0 7px; box-sizing:border-box; justify-content:center; border-radius:999px;
+    color:var(--ink-faint); cursor:pointer; font:800 11.5px/1 var(--font-body); }
+  .rd svg{ width:16px; height:16px; } .rd span{ display:none; }
+  .rd.is-here{ color:#fff; background:linear-gradient(135deg, var(--pink), var(--lilac)); padding:0 10px 0 8px; }
+  .rd.is-here span{ display:inline; }
+  .rd.has-mito::after{ content:''; position:absolute; top:1px; right:1px; width:8px; height:8px; border-radius:50%; background:var(--mint); box-shadow:0 0 0 2px var(--card); }
+  /* orilla: Mito en la mano junto al borde; el anillo se llena y la cámara avanza */
+  .edge-go{ position:absolute; z-index:8; top:0; bottom:var(--bar-space); width:76px; display:grid; place-content:center; justify-items:center; gap:6px; pointer-events:none;
+    background:linear-gradient(90deg, transparent, rgba(255,93,162,.22)); color:var(--pink-deep, #c2387f); }
+  .edge-go.right{ right:0; } .edge-go.left{ left:0; transform:scaleX(-1); }
+  .edge-go i{ width:44px; height:44px; border-radius:50%; background:conic-gradient(var(--pink) calc(var(--p) * 360deg), color-mix(in srgb, var(--card) 70%, transparent) 0);
+    -webkit-mask:radial-gradient(circle, transparent 15px, #000 16px); mask:radial-gradient(circle, transparent 15px, #000 16px); }
+  .edge-go svg{ position:absolute; width:18px; height:18px; translate:0 -15px; }
+  .edge-go b{ font:800 12px/1 var(--font-body); padding:4px 8px; border-radius:999px; background:var(--card); color:var(--ink); box-shadow:var(--shadow-soft); }
+  [data-theme="dark"] .edge-go{ color:#ff9ac8; }
+  /* aviso del cuarto al llegar */
+  .room-toast{ position:absolute; z-index:8; top:14px; left:50%; translate:-50% 0; display:flex; align-items:center; gap:6px; padding:7px 14px; border-radius:999px;
+    font:800 13px/1 var(--font-display); color:var(--ink); background:color-mix(in srgb, var(--card) 88%, transparent); box-shadow:var(--shadow-soft); }
+  .room-toast svg{ width:16px; height:16px; color:var(--pink); }
+  /* "ir a…" cuando la necesidad está en otro cuarto */
+  .house-act.go-chip{ background:linear-gradient(135deg, #ffd23c, #ffb03c); color:#5a3a00; box-shadow:0 4px 0 0 #d99a10; }
+  .sk-say{ left:50% !important; top:16% !important; translate:-50% 0; }
+  /* cámara: dos cuartos en fila; la pared, la ventana y lo colgado se quedan atrás (parallax) */
+  .cam{ position:relative; overflow:hidden; }
+  .track{ display:flex; height:100%; }
+  .track > .room{ flex:0 0 50%; height:100%; }
+  .track .room-wall, .track .wall-deco{ left:-30%; }
+  .track .room-wall, .track .wall-deco, .track .win, .track .furn.wall{ translate:var(--wall-shift) 0; }
+  .track .room-light{ display:none; }
+  .door-frame{ position:absolute; z-index:9; top:0; bottom:0; width:44px; pointer-events:none;
+    background:linear-gradient(90deg, rgba(0,0,0,.18), transparent 8px), linear-gradient(90deg, #f6d6e6, #ffeef6 40%, #f2c9dd);
+    box-shadow:-10px 0 24px -10px rgba(51,39,74,.45), 10px 0 24px -10px rgba(51,39,74,.45); border-left:2px solid #e8b6cf; border-right:2px solid #e8b6cf; }
+  [data-theme="dark"] .door-frame{ background:linear-gradient(90deg, #3e3254, #4a3d63 40%, #362b4a); border-color:#55466e; }
+  .door-frame::after{ content:''; position:absolute; left:-4px; right:-4px; bottom:0; height:14%; background:linear-gradient(180deg, var(--mint), var(--mint-deep)); border-radius:4px 4px 0 0; }
+  .cam-ui{ position:absolute; inset:0; z-index:9; pointer-events:none; }
+  .cam-ui > *{ position:absolute; pointer-events:auto; }
+  .room.no-mito .mascot{ display:none; }
+  /* la mascota en el piso, aparte, cuando Mito está sobre un mueble */
+  .room .mascot.pet-only > svg.mito, .room .mascot.pet-only > .aura, .room .mascot.pet-only > .house-blush{ visibility:hidden; }
+  .room-stage.on-furn .mascot:not(.pet-only) > svg.pet{ display:none; }
+  .cam-note{ position:absolute; z-index:10; left:8px; top:8px; font:700 10.5px/1.3 var(--font-body); color:#fff; background:rgba(30,22,48,.7); padding:4px 8px; border-radius:8px; }
 </style>
 </head>
 <body>
