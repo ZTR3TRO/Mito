@@ -45,8 +45,9 @@ const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 const inside = (e, el) => { const r = el.getBoundingClientRect(); return e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom; };
 
 // here(): el cuarto que se ve (nav.js). Decorar acomoda los muebles de ese cuarto; se dibujan los de todos.
-// mito(): { room, y } dónde apoya Mito (su línea de piso, o la base del mueble donde está; Infinity si está en la mano
-// o en el aire): los muebles del piso de su cuarto que quedan más al frente se dibujan delante de él.
+// mito(): { room, y, on } dónde apoya Mito (su línea de piso, o la base del mueble donde está; Infinity si está en la
+// mano o en el aire) y el mueble donde está: los muebles del piso de su cuarto que quedan más al frente se dibujan
+// delante de él, y también aquel donde está metido (la tina: se ve dentro de ella).
 export function createDecor(room, reactions, { button, here = ()=> 'bedroom', mito = ()=> null, canTalk = ()=> true, onChange = ()=>{} }){
   if(!document.getElementById('furnDefs')) document.body.insertAdjacentHTML('afterbegin', FURNITURE_DEFS);
   const layer = cls => { const el = document.createElement('div'); el.className = cls; el.setAttribute('aria-hidden', 'true'); return el; };
@@ -110,7 +111,8 @@ export function createDecor(room, reactions, { button, here = ()=> 'bedroom', mi
       l.wall.innerHTML = list.filter(e => e.item.zone === 'wall').map(e => piece(e, mine)).join('');
       const floor = depthOrder(list.filter(e => e.item.zone === 'floor' && !e.item.flat));
       const m = mito(), cut = m && m.room === roomId ? m.y : Infinity;
-      const isFront = e => furnitureBox(L, e.item, e.p).base > cut + .5;
+      const inside = m && m.room === roomId && m.on ? FURNITURE.find(f => f.id === m.on && f.seat?.some(st => st.kind === 'in'))?.id : null;
+      const isFront = e => e.item.id === inside || furnitureBox(L, e.item, e.p).base > cut + .5;
       l.furn.innerHTML = floor.filter(e => !isFront(e)).map(e => piece(e, mine)).join('');
       l.front.innerHTML = floor.filter(isFront).map(e => piece(e, mine)).join('');
       Object.values(l).forEach(el => mine ? el.removeAttribute('aria-hidden') : el.setAttribute('aria-hidden', 'true'));
@@ -492,22 +494,28 @@ export function createDecor(room, reactions, { button, here = ()=> 'bedroom', mi
     },
     toggle(){ setActive(!active); },
     open(){ setActive(true); },
-    // Al entrar a la Casa: pinta los muebles y entrega la alfombra de regalo (una vez), bajo los pies de Mito.
-    // Devuelve true si la acaba de entregar (para que Mito lo diga en vez de saludar).
+    // Al entrar a la Casa: pinta los muebles.
     enter(){
       L = roomLayout(room);
-      let gifted = false;
-      const rug = FURNITURE.find(f => f.gift);
-      if(L && rug && !getDecor().owned.includes(rug.id)){
-        const first = spotAt(L, rug, L.home.x, L.home.y);
-        const h = furnitureBox(L, rug, first).h;
-        gifted = grantGift(rug.room, spotAt(L, rug, L.home.x, L.home.y + h * .3)).length > 0;
-      }
       render();
       paintButton();
-      return gifted;
     },
-    thank(){ if(canTalk()) reactions.sayFrom(MITO_DECOR.gift, 'decor-gift'); },
+    // La primera vez que se entra a un cuarto: su regalo, ya colocado (la alfombra del Cuarto, bajo los pies de Mito).
+    // Devuelve true si lo acaba de entregar (para que Mito lo diga en vez de saludar).
+    gift(roomId){
+      L = roomLayout(room);
+      if(!L) return false;
+      const underMito = FURNITURE.find(f => f.gift === 'mito' && f.room === roomId);
+      let spot = {};
+      if(underMito && !getDecor().owned.includes(underMito.id)){
+        const h = furnitureBox(L, underMito, spotAt(L, underMito, L.home.x, L.home.y)).h;
+        spot = spotAt(L, underMito, L.home.x, L.home.y + h * .3);
+      }
+      const got = grantGift(roomId, spot).length > 0;
+      if(got){ render(); onChange(); }
+      return got;
+    },
+    thank(roomId){ if(canTalk() && MITO_DECOR.gift[roomId]) reactions.sayFrom(MITO_DECOR.gift[roomId], 'decor-gift-' + roomId); },
     leave(){ setActive(false, { focus: false }); },
   };
 }

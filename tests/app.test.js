@@ -995,22 +995,30 @@ test('casa · fase 4: la sección Muebles, comprar, "Colocar en la Casa" abre De
   document.querySelector('.navbtn[data-view="shop"]').click();
   const section = document.getElementById('shopFurniture');
   assert.ok(section, 'la sección Muebles existe');
-  assert.equal(section.querySelectorAll('.furn-item').length, 12);
+  assert.equal(section.querySelectorAll('.furn-item').length, 27, 'todos, agrupados por cuarto');
+  assert.deepEqual([...section.querySelectorAll('.furn-group h4')].map(h => h.textContent), ['Cuarto', 'Baño', 'Sala', 'Cocina']);
+  // filtro por cuarto
+  section.querySelector('[data-furn-room="kitchen"]').click();
+  let kitchen = document.getElementById('shopFurniture');
+  assert.deepEqual([...kitchen.querySelectorAll('.furn-item')].map(c => c.dataset.item), ['m-clock', 'm-table', 'm-fridge', 'm-stove', 'm-cupboard']);
+  assert.equal(kitchen.querySelector('[data-furn-room="kitchen"]').getAttribute('aria-pressed'), 'true');
+  kitchen.querySelector('[data-furn-room="all"]').click();
   // el regalo no se vende: lleva a la Casa
-  const rug = section.querySelector('.furn-item[data-item="m-rug"] .btn-mini');
+  const section2 = document.getElementById('shopFurniture');
+  const rug = section2.querySelector('.furn-item[data-item="m-rug"] .btn-mini');
   assert.equal(rug.dataset.nav, 'house');
   assert.equal(rug.dataset.buyFurn, undefined);
   // sin saldo para la cama (400 > 500 − 240 después de la lámpara)
-  section.querySelector('[data-buy-furn="m-lamp"]').click();
+  section2.querySelector('[data-buy-furn="m-lamp"]').click();
   assert.equal(store.getChispas(), 260);
   assert.deepEqual(store.getDecor().owned, ['m-lamp']);
   assert.match(document.getElementById('shopNotice').textContent, /Decorar/);
-  const bed = section.querySelector('[data-buy-furn="m-bed"]');
+  const bed = section2.querySelector('[data-buy-furn="m-bed"]');
   assert.match(bed.textContent, /Te faltan 140/);
   bed.click();
   assert.equal(store.getChispas(), 260, 'sin saldo no compra');
   // ya comprada: se coloca en la Casa (y no se puede volver a comprar)
-  const place = section.querySelector('.furn-item[data-item="m-lamp"] .btn-mini');
+  const place = section2.querySelector('.furn-item[data-item="m-lamp"] .btn-mini');
   assert.equal(place.dataset.placeFurn, 'm-lamp');
   assert.match(place.textContent, /Colocar en la Casa/);
   place.click();

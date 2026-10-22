@@ -92,6 +92,18 @@ export const MITO_DECOR = {
     'm-lamp': '¡De noche se ve preciosa! ✨', 'm-bookcase': '¡Cuántos libros! 📚', 'm-sofa': '¡Qué sillón tan cómodo! 💙',
     'm-desk': '¡Aquí estudiaremos juntos! ✏️', 'm-bed': '¡Una camita! Qué bonita 😴', 'm-picture': '¡Qué cuadro tan bonito! 🏔️',
     'm-clock': '¡Tic, tac! Ya sé la hora ⏰', 'm-shelf': '¡Mi repisa quedó genial!', 'm-lights': '¡Lucecitas! Me encantan 🌟',
+    'm-table': '¡A la mesa! 🍽️', 'm-fridge': '¡Fresquito por dentro! 🧊', 'm-stove': '¡Huele a comida rica! 🍲',
+    'm-cupboard': '¡Cuántos frascos! 🫙', 'm-bathmat': '¡Qué suavecito! 🫧', 'm-tub': '¡Una tina! ¿Hay burbujas? 🛁',
+    'm-toilet': '¡Todo listo en el baño! 🚽', 'm-sink': '¡A lavarse las manos! 🧼', 'm-mirror': '¡Hola, Mito! 🪞',
+    'm-towels': '¡Toallas esponjositas!', 'm-pouf': '¡Un puf para brincar! 💛', 'm-couch': '¡Un sofá para todos! 💜',
+    'm-tv': '¡Hora de una peli! 📺', 'm-art': '¡Qué colores tan bonitos! 🎨', 'm-hanger': '¡Una plantita colgante! 🌿',
   },
-  gift: ['¡Mira! Un regalo para mi cuarto 🎁', '¡Una alfombra nueva! Gracias 💜'],
+  // al entrar por primera vez a cada cuarto, con su regalo ya puesto
+  gift: {
+    bedroom: ['¡Mira! Un regalo para mi cuarto 🎁', '¡Una alfombra nueva! Gracias 💜'],
+    kitchen: ['¡Una mesa para comer juntos! 🍽️', '¡Mira, la cocina tiene mesa! 🎁'],
+    bath: ['¡Un tapete para el baño! 🫧', '¡Mira, un regalo! 🎁'],
+    living: ['¡Un puf para descansar! 💛', '¡Mira, un regalo en la Sala! 🎁'],
+  },
 };
+

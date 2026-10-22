@@ -25,7 +25,7 @@ const known = list => Array.isArray(list) ? FURNITURE.map(f => f.id).filter(id =
 // La conversión se calcula siempre desde los datos sin versión, así que leer varias veces da lo mismo; al guardar
 // se escribe v: 2 y ya no se vuelve a convertir (tampoco al importar una partida convertida).
 const VERSION = 2;
-const BASE_BEFORE = { 'm-bed': .25, 'm-sofa': .185 };
+const BASE_BEFORE = { 'm-bed': .25, 'm-sofa': .185, 'm-cushion': .075, 'm-desk': .195 };
 
 // El tamaño, acotado y con 2 decimales; el 1 no se guarda (es el de siempre).
 const cleanScale = s => Math.round(Math.min(FURNITURE_SCALE.max, Math.max(FURNITURE_SCALE.min, num(s, 1))) * 100) / 100;
@@ -125,13 +125,14 @@ export function storeFurniture(id){
   return true;
 }
 
-// El regalo de un cuarto (la alfombra en el Cuarto…): se entrega una vez, ya colocado en `spot` dentro de ese cuarto.
+// El regalo de un cuarto (la alfombra en el Cuarto, la mesa en la Cocina…): se entrega una vez, ya colocado en ese
+// cuarto, en su lugar del catálogo; el que va debajo de Mito (gift: 'mito'), en `mitoSpot`.
 // Devuelve los ids entregados ([] si ya los tenías).
-export function grantGift(room, spot){
+export function grantGift(room, mitoSpot){
   const d = getDecor();
   const fresh = FURNITURE.filter(f => f.gift && f.room === room && !d.owned.includes(f.id));
   if(!fresh.length) return [];
-  fresh.forEach(f=>{ d.placed[f.id] = cleanSpot(f, { ...spot, room }); d.seen.push(f.id); });
+  fresh.forEach(f=>{ d.placed[f.id] = cleanSpot(f, { ...(f.gift === 'mito' ? mitoSpot : f.gift), room }); d.seen.push(f.id); });
   d.owned = known([...d.owned, ...fresh.map(f => f.id)]);
   d.seen = known(d.seen);
   store(d);

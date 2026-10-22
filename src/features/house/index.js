@@ -77,6 +77,8 @@ export function init(){
     onArrive: to=>{
       // Mito llegó contigo: entra al lugar de siempre del cuarto (con la orilla, se guarda donde lo sueltes)
       if(nav.mitoRoom === to && getMito().room !== to && !motion.busy){ save({ room: to }); motion.place(getMito()); }
+      // la primera vez en este cuarto: su regalo, ya puesto (y Mito lo dice si está aquí y despierto)
+      if(decor.gift(to)) setTimeout(()=>{ if(!away()) decor.thank(to); }, 500);
       decor?.render();
       look();
     },
@@ -88,7 +90,7 @@ export function init(){
   // Los muebles de su cuarto que quedan más al frente que él se dibujan delante (en la mano o en el aire, ninguno).
   decor = createDecor(room, reactions, {
     button: act('decor'), here: ()=> nav.room, canTalk: ()=> !sleep.asleep && !away(), onChange: refresh,
-    mito: ()=> ({ room: nav.mitoRoom, y: motion?.busy || !motion?.rest ? Infinity : motion.rest.depth }),
+    mito: ()=> ({ room: nav.mitoRoom, y: motion?.busy || !motion?.rest ? Infinity : motion.rest.depth, on: motion?.busy ? null : motion?.rest?.on }),
   });
   needs = createNeeds(room, mascot, reactions, { busy: ()=> sleep.asleep || bath.bathing || food.eating || decor.active || away() });
   // Los botones nunca se deshabilitan: cada uno responde. "Dormir" o "Comer" durante el baño lo terminan primero;
@@ -237,12 +239,13 @@ export function init(){
       maybeShowHint();
       const asleep = sleep.enter();
       needs.enter();
-      const gifted = decor.enter();
+      decor.enter();
+      const gifted = decor.gift(nav.room);
       if(openDecor){ openDecor = false; decor.open(); }
       // un momento después: agradece el regalo, o si necesita algo lo pide; si no (y está despierto), saluda
       welcomeTimer = setTimeout(()=>{
         if(asleep) return;
-        if(gifted) decor.thank();
+        if(gifted) decor.thank(nav.room);
         else if(!decor.active && !needs.ask(true)) reactions.welcome();
       }, WELCOME_MS);
     } else {

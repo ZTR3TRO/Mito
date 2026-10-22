@@ -11,6 +11,7 @@ import {
 import { FOODS, FOOD_MAX, findFood } from '../../content/food.js';
 import { FOOD_ART } from '../../content/art/food.js';
 import { FURNITURE, findFurniture } from '../../content/furniture.js';
+import { ROOMS } from '../../content/rooms.js';
 import { FURNITURE_ART, FURNITURE_DEFS } from '../../content/art/furniture.js';
 import { on, emit } from '../../core/bus.js';
 import { applyAvatar, previewAvatar, itemThumb } from '../mascot/avatar.js';
@@ -277,18 +278,38 @@ function handleFoodBuy(btn){
 
 /* ---------- Muebles: se compran una sola vez y se colocan en la Casa ("Decorar") ---------- */
 const ZONE = { wall: 'Pared', floor: 'Piso' };
+// Filtro por cuarto: 'all' los muestra todos, agrupados por cuarto; o solo los de un cuarto (content/rooms.js).
+let furnRoom = 'all';
 
 function buildFurnitureSection(){
   if(!document.getElementById('furnDefs')) document.body.insertAdjacentHTML('afterbegin', FURNITURE_DEFS);
   const section = document.createElement('div');
   section.className = 'shop-cat furn-cat';
   section.id = 'shopFurniture';
-  section.innerHTML = '<h3>Muebles <span class="food-cat-sub">Se compran una sola vez. Colócalos donde quieras en la Casa, con “Decorar”.</span></h3>';
-  const grid = document.createElement('div');
-  grid.className = 'shop-items';
-  FURNITURE.forEach(f => grid.appendChild(buildFurnitureCard(f)));
-  section.appendChild(grid);
+  section.innerHTML = `<h3>Muebles <span class="food-cat-sub">Se compran una sola vez. Colócalos en cualquier cuarto de la Casa, con “Decorar”.</span></h3>
+    <div class="furn-filter" role="group" aria-label="Ver los muebles de">${[['all', 'Todos'], ...ROOMS.map(r => [r.id, r.name])].map(([id, name]) =>
+      `<button type="button" class="ff-chip" data-furn-room="${id}" aria-pressed="${id === furnRoom}">${name}</button>`).join('')}</div>`;
+  ROOMS.filter(r => furnRoom === 'all' || furnRoom === r.id).forEach(r=>{
+    const group = document.createElement('div');
+    group.className = 'furn-group';
+    if(furnRoom === 'all') group.innerHTML = `<h4>${r.name}</h4>`;
+    const grid = document.createElement('div');
+    grid.className = 'shop-items';
+    FURNITURE.filter(f => f.room === r.id).forEach(f => grid.appendChild(buildFurnitureCard(f)));
+    group.appendChild(grid);
+    section.appendChild(group);
+  });
   return section;
+}
+
+// Cambiar el filtro: se rehace solo la sección (el foco se queda en el filtro elegido).
+function filterFurniture(id){
+  furnRoom = id;
+  const old = byId('shopFurniture');
+  if(!old) return;
+  const fresh = buildFurnitureSection();
+  old.replaceWith(fresh);
+  fresh.querySelector(`[data-furn-room="${id}"]`)?.focus({ preventScroll: true });
 }
 
 // placed: en el cuarto · stored: comprado, en el inventario · gift: el regalo, aún sin entregar · shop: a la venta
@@ -712,6 +733,8 @@ export function init(){
     if(clear){ savePetName(clear.dataset.clearPetName, ''); return; }
     if(e.target.closest('[data-close-pet-modal]') || e.target.classList.contains('pet-modal-backdrop')){ closePetNameModal(); return; }
     if(e.target.closest('[data-trial-clear]')){ clearTrial(); return; }
+    const filter = e.target.closest('[data-furn-room]');
+    if(filter){ filterFurniture(filter.dataset.furnRoom); return; }
     if(isMobile()){
       // En móvil, tocar una tarjeta (o su botón) solo pone el objeto en prueba; la compra va en la barra.
       // (Los botones que llevan a otra vista, como "Colocar en la Casa", sí funcionan directo.)

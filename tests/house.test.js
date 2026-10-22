@@ -726,19 +726,29 @@ test('muebles: profundidad: la pared atrás y el piso por v (lo de más al frent
   assert.deepEqual(order, ['m-clock', 'm-picture', 'm-bed', 'm-plant', 'm-sofa']);
 });
 
-test('contenido: catálogo de muebles (10 a 12, pared y piso, 150–400), dibujos y frases cortas', ()=>{
-  assert.ok(FURNITURE.length >= 10 && FURNITURE.length <= 12);
+test('contenido: catálogo de muebles por cuarto, un regalo por cuarto, dibujos y frases cortas', ()=>{
+  assert.equal(FURNITURE.length, 27);
   assert.ok(FURNITURE.some(f => f.zone === 'wall') && FURNITURE.some(f => f.zone === 'floor'));
-  assert.deepEqual(FURNITURE.filter(f => f.gift).map(f => f.id), ['m-rug'], 'un solo regalo, gratis');
+  for(const r of HOUSE_ROOMS){
+    const mine = FURNITURE.filter(f => f.room === r.id);
+    assert.ok(mine.length >= 4, `${r.id}: tiene muebles`);
+    assert.deepEqual(mine.filter(f => f.gift).length, 1, `${r.id}: un regalo`);
+  }
+  assert.deepEqual(FURNITURE.filter(f => f.gift).map(f => f.id).sort(), ['m-bathmat', 'm-pouf', 'm-rug', 'm-table']);
   for(const f of FURNITURE){
-    if(!f.gift) assert.ok(f.cost >= 150 && f.cost <= 400, `${f.id}: precio`);
+    if(f.gift){
+      assert.equal(f.cost, 0, `${f.id}: el regalo es gratis`);
+      assert.ok(f.gift === 'mito' || (f.gift.u >= 0 && f.gift.u <= 1 && f.gift.v >= 0 && f.gift.v <= 1), `${f.id}: su lugar`);
+    } else assert.ok(f.cost >= 150 && f.cost <= 400, `${f.id}: precio`);
     assert.ok(['wall', 'floor'].includes(f.zone));
+    assert.equal(findFurniture(f.id), f);
     const vb = FURNITURE_ART[f.id]?.match(/viewBox="0 0 (\d+) (\d+)"/);
     assert.ok(vb, `${f.id}: dibujo`);
     assert.deepEqual([+vb[1], +vb[2]], f.box, `${f.id}: la proporción del dibujo es la del catálogo`);
     assert.ok(MITO_DECOR.placed[f.id], `${f.id}: lo que dice Mito al colocarlo`);
   }
-  const phrases = [...Object.values(MITO_DECOR.placed), ...MITO_DECOR.gift];
+  assert.deepEqual(Object.keys(MITO_DECOR.gift).sort(), HOUSE_ROOMS.map(r => r.id).sort(), 'un agradecimiento por cuarto');
+  const phrases = [...Object.values(MITO_DECOR.placed), ...Object.values(MITO_DECOR.gift).flat()];
   assert.deepEqual(phrases.filter(m => [...m].length > 34), []);
 });
 
@@ -918,12 +928,17 @@ test('cuartos: cada mueble guarda su cuarto (sin él, el Cuarto) y lo conserva a
   freshDecor(0);
 });
 
-test('cuartos: el regalo es por cuarto (la alfombra solo en el Cuarto) y se entrega una vez', ()=>{
+test('cuartos: cada cuarto tiene su regalo, que se entrega una vez, ya colocado en ese cuarto', ()=>{
   freshDecor(0);
-  assert.deepEqual(grantGift('kitchen', { u: .5, v: .5 }), [], 'la alfombra no es de la Cocina');
-  assert.deepEqual(grantGift('bedroom', { u: .5, v: .46 }), ['m-rug']);
+  assert.deepEqual(grantGift('bedroom', { u: .5, v: .46 }), ['m-rug'], 'la alfombra, debajo de Mito');
   assert.deepEqual(getDecor().placed['m-rug'], { zona: 'floor', u: .5, v: .46 });
-  assert.deepEqual(grantGift('bedroom', { u: .5, v: .46 }), []);
+  assert.deepEqual(grantGift('kitchen', { u: .9, v: .9 }), ['m-table'], 'la mesa, en su lugar del catálogo');
+  assert.deepEqual(getDecor().placed['m-table'], { room: 'kitchen', zona: 'floor', u: F('m-table').gift.u, v: F('m-table').gift.v });
+  assert.deepEqual(grantGift('bath'), ['m-bathmat']);
+  assert.deepEqual(grantGift('living'), ['m-pouf']);
+  assert.deepEqual(placedIn('living'), ['m-pouf']);
+  for(const r of ['bedroom', 'kitchen', 'bath', 'living']) assert.deepEqual(grantGift(r, { u: .5, v: .5 }), [], `${r}: ya lo tienes`);
+  assert.equal(state.chispas, 0, 'los regalos no cuestan');
   freshDecor(0);
 });
 
@@ -938,7 +953,8 @@ test('muebles para sentarse: más grandes, y el tamaño que eligió la usuaria s
     assert.ok(['sit', 'lie', 'in'].includes(seat.kind), f.id);
     assert.ok(seat.y > 0 && seat.y < 1 && seat.x[0] >= 0 && seat.x[1] <= 1 && seat.x[0] < seat.x[1], f.id);
   }
-  assert.deepEqual(FURNITURE.filter(f => f.seat).map(f => f.id).sort(), ['m-bed', 'm-cushion', 'm-desk', 'm-sofa']);
+  assert.deepEqual(FURNITURE.filter(f => f.seat).map(f => f.id).sort(), ['m-bed', 'm-couch', 'm-cushion', 'm-desk', 'm-pouf', 'm-sofa', 'm-table', 'm-toilet', 'm-tub']);
+  assert.equal(F('m-table').seat.length, 2, 'una superficie por silla');
 });
 
 test('Mito: sin posición guardada está en su lugar de siempre del Cuarto; se guarda en el piso, sobre un mueble o en otro cuarto', ()=>{
@@ -1079,7 +1095,7 @@ test('profundidad: Mito se ve más grande al frente; lo que está más al frente
   assert.equal(coverage(mitoBody(L, 100, y, k), []), 0);
 });
 
-test('"Traer a Mito": el lugar elegido no lo deja tapado, en todos los tamaños', ()=>{
+test('"Traer a Mito": el lugar elegido no lo deja tapado (en su mayoría, ni en un teléfono lleno), en todos los tamaños', ()=>{
   for(const L of ROOMS){
     const list = ['m-sofa', 'm-bed', 'm-bookcase', 'm-desk'].map((id, i) => ({ item: F(id), p: clampSpot(L, F(id), { u: .15 + i * .25, v: .55 + (i % 2) * .3 }) }));
     const to = clearSpot(L, list, L.W / 2);
@@ -1087,6 +1103,18 @@ test('"Traer a Mito": el lugar elegido no lo deja tapado, en todos los tamaños'
     assert.ok(to.y >= b0 - .5 && to.y <= b1 + .5, `${L.W}×${L.H}: en el piso, sin bajar a los indicadores`);
     assert.ok(b1 <= floorBand(L)[1] && b1 <= L.H - L.barSpace - 40);
     assert.ok(to.x > 0 && to.x < L.W);
-    assert.ok(coverage(mitoBody(L, to.x, to.y), inFront(L, list, to.y)) < .2, `${L.W}×${L.H}: se ve`);
+    // en escritorio hay sitio libre; en un teléfono angosto con cuatro muebles grandes, el que menos lo tapa
+    const cov = coverage(mitoBody(L, to.x, to.y), inFront(L, list, to.y));
+    assert.ok(L.kind === 'wide' ? cov === 0 : cov < .3, `${L.W}×${L.H}: se ve (tapado ${cov.toFixed(2)})`);
+  }
+});
+
+test('muebles para sentarse: la superficie tiene proporción real junto a Mito (al menos la mitad de su cuerpo)', ()=>{
+  for(const L of ROOMS) for(const item of FURNITURE.filter(f => f.seat)){
+    const p = clampSpot(L, item, { u: .5, v: .5 });
+    for(const st of seatSurfaces(L, item, p)){
+      const body = mitoBody(L, (st.x0 + st.x1) / 2, st.y, scaleAt(L, st.base));
+      assert.ok((st.x1 - st.x0) / body.w >= .5, `${item.id} ${L.W}×${L.H}: ${((st.x1 - st.x0) / body.w).toFixed(2)}`);
+    }
   }
 });

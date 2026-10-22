@@ -110,6 +110,19 @@ export function createMotion(room, mascot, { geometry = ()=> null, onHit = ()=>{
   }
 
   /* ---------- dónde está ---------- */
+  // Un mueble puede tener varias superficies (las dos sillas de la mesa): `s` va de la orilla izquierda de la primera
+  // a la derecha de la última, y la que cuenta es la que tiene debajo (o la más cercana).
+  function seatSpan(id){
+    const list = seats.filter(st => st.id === id);
+    return list.length ? { list, x0: Math.min(...list.map(st => st.x0)), x1: Math.max(...list.map(st => st.x1)) } : null;
+  }
+  function seatAt(id, s){
+    const span = seatSpan(id);
+    if(!span) return null;
+    const x = span.x0 + (span.x1 - span.x0) * (Number.isFinite(s) ? s : .5);
+    const st = span.list.find(q => x >= q.x0 && x <= q.x1) || span.list.slice().sort((a, b) => Math.abs((a.x0 + a.x1) / 2 - x) - Math.abs((b.x0 + b.x1) / 2 - x))[0];
+    return { st, x: clamp(x, st.x0, st.x1) };
+  }
   // Lo pone quieto en una posición guardada (state/house.js, getMito): { home } | { u, v } | { on, s }.
   // petInstant: la mascota aparece a su lado de una vez (al entrar, al cambiar de cuarto); si no, lo alcanza.
   function place(pos, { petInstant = true } = {}){
@@ -120,8 +133,8 @@ export function createMotion(room, mascot, { geometry = ()=> null, onHit = ()=>{
     const { L } = g, home = homeOf(L), [b0, b1] = mitoBand(L);
     let r = { x: home.x, y: home.y, on: null, depth: home.y };
     if(pos?.on){
-      const st = seats.find(x => x.id === pos.on);
-      if(st) r = { x: st.x0 + (st.x1 - st.x0) * (Number.isFinite(pos.s) ? pos.s : .5), y: st.y, on: pos.on, depth: st.base };
+      const at = seatAt(pos.on, pos.s);
+      if(at) r = { x: at.x, y: at.st.y, on: pos.on, depth: at.st.base };
     } else if(Number.isFinite(pos?.u) && Number.isFinite(pos?.v)){
       const y = b0 + pos.v * (b1 - b0);
       r = { x: pos.u * L.W, y, on: null, depth: y };
@@ -140,8 +153,8 @@ export function createMotion(room, mascot, { geometry = ()=> null, onHit = ()=>{
     if(!g || !r) return null;
     const { L } = g, [b0, b1] = mitoBand(L);
     if(r.on){
-      const st = seats.find(x => x.id === r.on);
-      if(st) return { on: r.on, s: clamp((r.x - st.x0) / Math.max(1, st.x1 - st.x0), 0, 1) };
+      const span = seatSpan(r.on);
+      if(span) return { on: r.on, s: clamp((r.x - span.x0) / Math.max(1, span.x1 - span.x0), 0, 1) };
     }
     return { u: r.x / L.W, v: clamp((r.y - b0) / Math.max(1, b1 - b0), 0, 1) };
   }
