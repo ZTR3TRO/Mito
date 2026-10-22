@@ -66,6 +66,7 @@ export function cleanPetLooks(looks){
 export function cleanClaimedEggs(claimed){
   const out = {};
   if(claimed && typeof claimed === 'object' && claimed.spark50 === true) out.spark50 = true;
+  if(claimed && typeof claimed === 'object' && claimed.seasonGift === true) out.seasonGift = true;
   return out;
 }
 

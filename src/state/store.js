@@ -7,6 +7,7 @@
 // pasar por aquí, y lo interno no se reexporta.
 
 export { PASSING_BONUS, SPARK_CLICK_EGG_REWARD, getChispas, addChispas, claimSparkClickEgg } from './economy.js';
+export { SEASON_GIFT_REWARD, hasClaimedSeasonGift, claimSeasonGift } from './economy.js';
 
 export {
   owns, getEquipped, equipCategory,

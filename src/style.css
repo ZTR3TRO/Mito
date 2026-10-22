@@ -2336,6 +2336,9 @@ body[data-view="shop"] main{ max-width:1280px; }
 .shop-done b, .shop-empty b{ font:800 18px/1.2 var(--font-display); color:var(--ink); }
 .shop-done span, .shop-empty span{ font-size:13.5px; font-weight:700; color:var(--ink-dim); }
 .shop-empty{ flex-direction:column; text-align:center; }
+.shop-season-gift{ display:flex; flex-direction:column; align-items:center; gap:10px; margin-top:24px; padding:20px 12px; border:2px dashed var(--mint); border-radius:18px; background:var(--mint-pale); text-align:center; }
+.shop-season-gift .btn-mini{ justify-content:center; padding:12px 18px; }
+.shop-season-gift > span{ font-size:12px; font-weight:700; color:var(--ink-dim); }
 @media (max-width:880px){
   body[data-view="shop"] .app{ grid-template-rows:auto 1fr; }
   body[data-view="shop"] .sidebar{ position:static; }

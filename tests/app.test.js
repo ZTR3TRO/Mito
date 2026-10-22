@@ -119,6 +119,41 @@ test('Tienda: pestaña inicial, persistencia, filtros de visita y accesos reales
   resetApp();
 });
 
+test('Tienda: regalo de 10 000 chispas, reclamo único y persistencia en el respaldo', ()=>{
+  resetApp();
+  store.addChispas(37);
+  assert.equal(store.hasClaimedSeasonGift(), false);
+  if(isSeasonalOpen()){
+    document.querySelector('.navbtn[data-view="shop"]').click();
+    document.querySelector('[data-shop-tab="season"]').click();
+    const section = document.getElementById('shopSec-season');
+    assert.ok(section.lastElementChild.classList.contains('shop-season-gift'), 'el regalo va debajo de los productos');
+    section.querySelector('[data-season-gift]').click();
+    assert.ok(document.querySelector('[data-season-gift]').disabled);
+    document.querySelector('[data-season-gift]').click();
+    assert.match(document.getElementById('shopNotice').textContent, /10 000 chispas/);
+  } else {
+    assert.equal(store.claimSeasonGift(), true);
+  }
+  assert.equal(store.getChispas(), 10037);
+  assert.equal(store.hasClaimedSeasonGift(), true);
+  assert.equal(store.claimSeasonGift(), false, 'ni un segundo llamado entrega más chispas');
+  assert.equal(store.getChispas(), 10037);
+  const backup = store.exportSave();
+  assert.equal(store.parseSave(backup).claimedEggs.seasonGift, true);
+  store.resetAll();
+  store.importSave(backup);
+  assert.equal(store.hasClaimedSeasonGift(), true);
+  assert.equal(store.claimSeasonGift(), false);
+  assert.equal(store.getChispas(), 10037);
+  assert.equal(store.claimSparkClickEgg(), true, 'el regalo no consume el premio existente');
+  assert.equal(store.getChispas(), 11037);
+  const invalid = JSON.parse(backup);
+  invalid.claimedEggs.seasonGift = 'true';
+  assert.equal(store.parseSave(JSON.stringify(invalid)).claimedEggs.seasonGift, undefined);
+  resetApp();
+});
+
 test('arranque: las 8 vistas existen y el router cambia entre ellas', ()=>{
   ['home','apuntes','claves','quiz','progreso','shop','house','wardrobe'].forEach(v=>{
     assert.ok(document.getElementById('view-' + v), 'falta la vista ' + v);

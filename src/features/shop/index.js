@@ -10,6 +10,7 @@ import {
   getChispas, getEquipped, owns, buyAndEquip, equipCategory,
   getPetName, getPetDisplayName, renamePet, getPetLook, setPetLook, foodCount, buyFood, getDecor, buyFurniture,
   getShopTab, setShopTab,
+  SEASON_GIFT_REWARD, hasClaimedSeasonGift, claimSeasonGift,
 } from '../../state/store.js';
 import { FOOD_MAX, findFood } from '../../content/food.js';
 import { FOOD_ART } from '../../content/art/food.js';
@@ -126,9 +127,27 @@ function renderStore(){
   renderTabs(tab);
   const furniture = new Set(getDecor().owned);
   const ctx = { owns, ownsFurniture: id => furniture.has(id), seasonOpen: isSeasonalOpen(), chispas: getChispas(), sort: store.sort, afford: store.afford };
-  tabsFor(ctx.seasonOpen).forEach(t => host.appendChild(buildSection(t, ctx, t.id === tab)));
+  tabsFor(ctx.seasonOpen).forEach(t => {
+    const section = buildSection(t, ctx, t.id === tab);
+    if(t.id === 'season'){
+      section.insertAdjacentHTML('beforeend', `<div class="shop-season-gift">
+        <button type="button" class="btn-mini" data-season-gift></button>
+        <span>Un regalo para ti · una sola vez por partida</span>
+      </div>`);
+    }
+    host.appendChild(section);
+  });
+  syncSeasonGift();
   if(again) host.querySelector(`.shop-sec:not([hidden]) ${again}`)?.focus({ preventScroll: true });
   renderSpot();
+}
+
+function syncSeasonGift(){
+  const button = document.querySelector('[data-season-gift]');
+  if(!button) return;
+  const claimed = hasClaimedSeasonGift();
+  button.disabled = claimed;
+  button.textContent = claimed ? '✓ Regalo reclamado · 10 000 ⚡' : `🎁 Recibir ${SEASON_GIFT_REWARD.toLocaleString('es-MX')} chispas ⚡`;
 }
 
 function renderTabs(active){
@@ -646,6 +665,7 @@ function visualFor(cat, item){
 // chispas hay que reajustarlos sin repintar todo el catálogo: se repinta en cada
 // respuesta del quiz y rehacer todos los SVG en cada una sería wasteful.
 function updateAffordability(){
+  syncSeasonGift();
   // con "Me alcanza", lo que se ve depende de las chispas: se vuelve a pintar la Tienda
   if(store.afford){ renderShop(); return; }
   const balance = getChispas();
@@ -862,6 +882,13 @@ export function init(){
     if(e.target.closest('[data-close-pet-modal]') || e.target.classList.contains('pet-modal-backdrop')){ closePetNameModal(); return; }
     if(e.target.closest('[data-trial-clear]')){ clearTrial(); return; }
     const tab = e.target.closest('[data-shop-tab]');
+    if(e.target.closest('[data-season-gift]')){
+      if(claimSeasonGift()){
+        const notice = byId('shopNotice');
+        if(notice) notice.textContent = '¡Recibiste 10 000 chispas de regalo! ⚡';
+      }
+      return;
+    }
     if(tab){ selectTab(tab.dataset.shopTab); return; }
     const sort = e.target.closest('[data-shop-sort]');
     if(sort){ store.sort = sort.dataset.shopSort; renderStore(); return; }
