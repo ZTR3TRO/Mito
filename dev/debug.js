@@ -4,10 +4,13 @@
 //   - adelantar el tiempo: corre hacia atrás la hora guardada, como si hubiera pasado ese tiempo (con la app cerrada)
 //   - dormirlo desde hace un rato, para probar la recarga
 //   - la charola: añadir comida sin gastar chispas, o vaciarla
+//   - los muebles: tenerlos todos sin gastar chispas, vaciar el cuarto (todo a la bandeja) o quitarlos todos
 import { state, commit } from '../src/state/core.js';
 import { needsAt, NEEDS } from '../src/state/house.js';
 import { getPantry } from '../src/state/pantry.js';
 import { FOODS, FOOD_MAX } from '../src/content/food.js';
+import { getDecor } from '../src/state/decor.js';
+import { FURNITURE } from '../src/content/furniture.js';
 
 const KEYS = [['hunger', 'Hambre'], ['clean', 'Limpieza'], ['energy', 'Energía'], ['mood', 'Ánimo']];
 const MIN = 60e3, HOUR = 3600e3;
@@ -49,8 +52,11 @@ panel.innerHTML = `
   <div class="row"><button class="alt" data-x="sleep30">Dormido hace 30 min</button><button class="alt" data-x="wake">Despierto</button></div>
   <div class="row"><b style="width:100%">Charola</b>
     <button class="alt" data-x="food5">+5 de cada alimento</button><button class="alt" data-x="food1">+1 manzana</button><button class="alt" data-x="foodClear">Vaciar</button></div>
+  <div class="row"><b style="width:100%">Muebles</b>
+    <button class="alt" data-x="furnAll">Todos los muebles</button><button class="alt" data-x="furnEmpty">Vaciar el cuarto</button><button class="alt" data-x="furnNone">Sin muebles</button></div>
   <div class="now" data-now></div>
-  <div class="now" data-pantry></div>`;
+  <div class="now" data-pantry></div>
+  <div class="now" data-decor></div>`;
 document.body.appendChild(panel);
 
 function paint(){
@@ -62,6 +68,8 @@ function paint(){
   });
   const p = getPantry();
   panel.querySelector('[data-pantry]').textContent = 'Charola: ' + (Object.keys(p).length ? FOODS.filter(f => p[f.id]).map(f => `${f.short} ${p[f.id]}`).join(' · ') : 'vacía');
+  const d = getDecor();
+  panel.querySelector('[data-decor]').textContent = `Muebles: ${d.owned.length} de ${FURNITURE.length} · en el cuarto ${Object.keys(d.placed).length}`;
   panel.querySelector('[data-now]').textContent = h.sleepSince !== null
     ? `Dormido desde hace ${Math.round((now() - h.sleepSince) / MIN)} min` : 'Despierto';
 }
@@ -86,6 +94,13 @@ panel.addEventListener('click', e=>{
     state.pantry = p; commit(); return paint();
   }
   if(x === 'foodClear'){ delete state.pantry; commit(); return paint(); }
+  if(x === 'furnAll'){   // sin gastar chispas: los que faltan van a la bandeja (los colocados se quedan donde están)
+    const d = getDecor();
+    state.decor = { ...d, owned: FURNITURE.map(f => f.id) };
+    commit(); return paint();
+  }
+  if(x === 'furnEmpty'){ const d = getDecor(); if(d.owned.length){ state.decor = { ...d, placed: {} }; commit(); } return paint(); }
+  if(x === 'furnNone'){ delete state.decor; commit(); return paint(); }   // la alfombra de regalo vuelve al entrar a la Casa
   if(x === 'sleep30'){ const h = current(); return save({ ...h, sleepSince: now() - 30 * MIN, at: now() - 30 * MIN }); }
   if(x === 'wake') return setNeeds({}, null);
 });

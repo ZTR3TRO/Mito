@@ -6,6 +6,7 @@
 //   ?pet=1|0   con o sin mascota      ?still   sin animaciones (capturas)      ?grid   zonas de la Fase 4
 //   ?needs     estados de la Fase 2: normal, con sueño, sucio, triste y dormido
 //   ?food      bocetos de la Fase 3: la comida (ver dev/food.js)
+//   ?decor     bocetos de la Fase 4: muebles y decoración (ver dev/furniture.js)
 import { previewAvatar } from '../src/features/mascot/avatar.js';
 import { buildRoom, layoutRoom } from '../src/features/house/room.js';
 import { DIRT } from '../src/content/art/house.js';
@@ -87,7 +88,8 @@ function renderNeeds(){
   }
 }
 
-if(q.has('food')) (await import('./food.js')).renderFood(root);
+if(q.has('decor')) (await import('./furniture.js')).renderDecor(root);
+else if(q.has('food')) (await import('./food.js')).renderFood(root);
 else if(q.has('needs')) renderNeeds();
 else for(const theme of themes){
   const panel = document.createElement('section');
@@ -103,11 +105,11 @@ else for(const theme of themes){
   panel.innerHTML = html;
   root.appendChild(panel);
 }
-document.querySelectorAll('.panel:not(.food-sketch) .room').forEach(r => buildRoom(r));
+document.querySelectorAll('.panel:not(.food-sketch):not(.decor-sketch) .room').forEach(r => buildRoom(r));
 for(const [id, look, st] of jobs){
   previewAvatar('color', look.color, id, look);
   if(st) document.getElementById(id).insertAdjacentHTML('beforeend', DIRT);
 }
 const ro = new ResizeObserver(entries => entries.forEach(e => layoutRoom(e.target)));
-document.querySelectorAll('.panel:not(.food-sketch) .room').forEach(r => ro.observe(r));
+document.querySelectorAll('.panel:not(.food-sketch):not(.decor-sketch) .room').forEach(r => ro.observe(r));
 requestAnimationFrame(()=> requestAnimationFrame(()=>{ document.body.dataset.ready = '1'; }));

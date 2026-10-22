@@ -23,12 +23,14 @@ src/
     house.js         frases de la Casa y reacciones de cada mascota
     food.js          catálogo de comida de la Casa (precio, cuánto llena, frase)
     nutrition.js     los datos de nutrición de cada alimento (en un solo lugar, para revisarlos)
+    furniture.js     catálogo de muebles de la Casa (zona pared/piso, precio, tamaño, si se voltea o se enciende)
     art/             SVG y piezas de dibujo
       base.js         cuerpo y caras de Mito
       halloween.js    piezas de Halloween
       secrets.js      mascotas y auras secretas
       house.js        piezas de la Casa: párpados y bocas (copia recortada del cuerpo), polvito, esponja y espuma
       food.js         dibujos de la comida
+      furniture.js    dibujos de los muebles y sus degradados (FURNITURE_DEFS, se monta una vez)
       skins.js        piezas por categoría de ropa
   state/           la partida guardada en localStorage. Solo se accede por store.js
     store.js         barril: la API pública
@@ -36,9 +38,10 @@ src/
     economy.js       chispas
     inventory.js     prendas compradas y equipadas
     progress.js      historial, fallos, racha
-    preferences.js   tema, materia activa y pistas de la Casa y de la charola
+    preferences.js   tema, materia activa y pistas de la Casa, de la charola y de Decorar
     house.js         necesidades de Mito en la Casa (hambre, limpieza, energía, ánimo): cálculo con la hora y constantes NEEDS
     pantry.js        la charola: comida comprada (se compra por unidad y se gasta al comer)
+    decor.js         los muebles: comprados (una vez cada uno), colocados ({ zona, u, v, flip }) y el regalo
     backup.js        exportar, importar y reiniciar
   features/        la lógica de la app. Una carpeta por dominio
     nav/router.js      cambia de vista y actualiza la barra lateral
@@ -46,11 +49,12 @@ src/
     course/            materia activa y sus vistas: course, home, keys, notes
     quiz/              ronda, sesión, reparto y fallos: index, session,
                        view, review, counts
-    shop/              tienda (con la sección Comida) y tienda de temporada: index, season
+    shop/              tienda (con las secciones Comida y Muebles) y tienda de temporada: index, season
     house/             la Casa: index (cableado), layout (bloque aprobado escalado, piso y luz; puro),
                        room (dibuja la escena), gestures (dedo y ratón), motion (arrastrar y lanzar),
                        reactions (cara, frases y mascota), needs (cómo se notan sus necesidades),
-                       sleep (dormir), bath (bañar), food (la charola y comer)
+                       sleep (dormir), bath (bañar), food (la charola y comer), decor (los muebles y el
+                       modo Decorar), furniture-layout (dónde y de qué tamaño va cada mueble; puro)
     progress/          vista de progreso y copia de seguridad: view, backup
     mascot/            la mascota entera: avatar, auras, face, effects, speech
     pwa/update.js      service worker: registro y actualización segura (solo en producción)

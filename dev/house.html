@@ -32,9 +32,9 @@
   .house-act.has-dot::after{ content:''; position:absolute; top:5px; right:7px; width:9px; height:9px; border-radius:50%;
     background:var(--yellow); box-shadow:0 0 0 2px #fff; }
   @container house (max-width: 460px){
-    .food-sketch .house-act{ flex-direction:column; gap:2px; padding:6px 10px 5px; font-size:11.5px; min-width:58px; justify-content:center; }
-    .food-sketch .house-act svg{ width:19px; height:19px; }
-    .food-sketch .house-bar{ gap:5px; padding:5px; }
+    .food-sketch .house-act, .decor-sketch .house-act{ flex-direction:column; gap:2px; padding:6px 6px 5px; font-size:11.5px; min-width:58px; justify-content:center; }
+    .food-sketch .house-act svg, .decor-sketch .house-act svg{ width:19px; height:19px; }
+    .food-sketch .house-bar, .decor-sketch .house-bar{ gap:5px; padding:5px; }
   }
 
   /* charola: mientras está abierta ocupa el lugar de la barra (no tapa a Mito ni a la mascota) */
@@ -129,6 +129,61 @@
   .sk-trial .tb-act{ grid-area:act; justify-content:center; padding:10px 12px; font-size:13px; }
   .sk-trial .tb-close{ all:unset; grid-area:close; align-self:start; width:30px; height:30px; border-radius:999px; display:grid; place-items:center;
     font-size:22px; font-weight:900; color:var(--ink-faint); background:var(--pink-pale); border:2px solid var(--line); box-sizing:border-box; }
+
+  /* ===== Fase 4 · BOCETOS de los muebles (propuesta; si se aprueba, pasa a style.css) ===== */
+  /* capas: alfombras (sobre el piso, bajo la luz) · muebles (sobre la luz, bajo Mito). Dentro, el orden del DOM es la profundidad (por v). */
+  .room-rugs, .room-furn{ inset:0; pointer-events:none; }
+  .room-rugs{ z-index:1; } .room-furn{ z-index:3; }
+  .furn{ position:absolute; }
+  .furn-art{ display:block; width:100%; height:100%; }
+  .furn-art svg{ width:100%; height:100%; display:block; overflow:visible; }
+  .furn.is-flip .furn-art{ transform:scaleX(-1); }
+  .furn-shadow{ display:none; }
+  /* de noche (modo oscuro) se encienden lámpara y guirnalda; dormido, se apagan */
+  .fx-glow{ opacity:0; transition:opacity .6s ease; }
+  [data-theme="dark"] .room .fx-glow{ opacity:1; }
+  [data-theme="dark"] .room.is-asleep .fx-glow{ opacity:0; }
+  [data-theme="dark"] .furn-art{ filter:brightness(.9) saturate(.96); }
+  /* Decorar */
+  .house-act.dc-done{ background:linear-gradient(135deg, var(--mint), #5fd9b0); color:#04352a; border-color:transparent; box-shadow:0 3px 0 0 var(--mint-deep); }
+  .dc-item{ cursor:pointer; touch-action:none; }
+  .dc-item .ft-art svg{ width:46px; height:34px; }
+  .dc-tag, .fi-tag{ font:800 9.5px/1 var(--font-body); letter-spacing:.04em; text-transform:uppercase; padding:2px 6px; border-radius:999px; }
+  .dc-tag.wall, .fi-tag.wall{ color:#5b3aa6; background:#e8dcff; } .dc-tag.floor, .fi-tag.floor{ color:#0b6a4d; background:#c9f5e4; }
+  [data-theme="dark"] .dc-tag.wall, [data-theme="dark"] .fi-tag.wall{ color:#e4d4ff; background:#4a3a73; } [data-theme="dark"] .dc-tag.floor, [data-theme="dark"] .fi-tag.floor{ color:#b9f5dd; background:#1d5a45; }
+  .is-decorating .mascot{ pointer-events:none; }
+  .furn.is-sel::before{ content:''; position:absolute; inset:-8px; border-radius:16px; border:2.5px dashed var(--lilac); background:rgba(185,138,246,.12); }
+  .furn.is-lift{ z-index:6; transform:translateY(-4px) scale(1.07); filter:drop-shadow(0 16px 12px rgba(51,39,74,.32)); }
+  .room-tools{ inset:0; z-index:8; pointer-events:none; }
+  .dc-tools{ position:absolute; translate:-50% -100%; display:flex; gap:6px; pointer-events:auto; }
+  .dc-tools button{ all:unset; display:inline-flex; align-items:center; gap:5px; padding:7px 11px; border-radius:999px; box-sizing:border-box; white-space:nowrap;
+    font:800 12.5px/1 var(--font-body); color:var(--ink); background:var(--card); border:2px solid var(--line); box-shadow:0 3px 0 0 var(--line), 0 8px 16px -8px rgba(51,39,74,.35); }
+  .dc-tools button svg{ width:16px; height:16px; } .dc-tools button:last-child{ color:#a02e6b; }
+  [data-theme="dark"] .dc-tools button:last-child{ color:#ff9ac8; }
+  .dc-zone{ position:absolute; z-index:2; pointer-events:none; border-radius:16px; border:2.5px dashed rgba(255,255,255,.7); box-sizing:border-box; }
+  .dc-zone b{ position:absolute; left:10px; top:6px; font:800 10.5px/1 var(--font-body); letter-spacing:.05em; text-transform:uppercase; color:#fff; text-shadow:0 1px 3px rgba(0,0,0,.4); }
+  .dc-zone.floor{ background:rgba(22,201,141,.18); border-color:#fff; } .dc-zone.wall{ background:rgba(0,0,0,.06); border-style:dotted; border-color:rgba(255,255,255,.45); }
+  .dc-zone.floor.is-target{ box-shadow:inset 0 0 0 2px rgba(22,201,141,.55); }
+  .house-bar.is-decor .dc-drop{ display:flex; align-items:center; gap:10px; padding:0 12px; height:100%; min-height:54px; color:var(--ink); border-radius:14px; border:2.5px dashed var(--pink); background:rgba(255,93,162,.1); }
+  .house-bar.is-decor .dc-drop svg{ width:24px; height:24px; color:var(--pink); } .house-bar.is-decor .dc-drop b{ font-size:13.5px; }
+  .house-bar.is-hot .ft-list{ flex:1; }
+  /* Tienda · Muebles */
+  .furn-item{ position:relative; }
+  .furn-item .fi-tag{ position:absolute; top:9px; left:9px; }
+  .furn-item .fi-art svg{ width:84px; height:64px; display:block; margin:0 auto; }
+  .furn-item .si-visual{ height:68px; }
+  .furn-item .fi-state{ display:block; margin:-2px 0 9px; font-size:11.5px; font-weight:700; color:var(--ink-dim); text-align:center; }
+  .furn-item .btn-mini{ white-space:nowrap; padding:8px 10px; }
+  .furn-item .si-have{ min-width:20px; text-align:center; padding:2px 6px; }
+  .fv-preview{ display:flex; gap:22px; align-items:center; margin-bottom:22px; }
+  .fv-mini{ flex:none; overflow:hidden; border-radius:18px; border:2px solid var(--line); position:relative; container-type:normal; --fb:100px; --wb:120px; --bw:300px; }
+  .fv-mini .room-floor{ background:repeating-linear-gradient(90deg, var(--plank-1) 0 30px, var(--plank-2) 30px 60px); }
+  .fv-mini .room-floor::after{ display:none; }
+  .fv-art{ position:absolute; display:block; }
+  .fv-art svg{ width:100%; height:100%; display:block; overflow:visible; }
+  .fv-art.flat{ bottom:6% !important; }
+  .fv-mini .fx-glow{ opacity:1; }
+  .sk-trial .tb-furn{ padding:0; overflow:hidden; } .sk-trial .tb-furn .fv-mini{ border:0; border-radius:0; }
 </style>
 </head>
 <body>
