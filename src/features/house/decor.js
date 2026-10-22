@@ -16,7 +16,7 @@
 // La lámpara y la guirnalda se encienden de noche (modo oscuro) y se apagan cuando Mito duerme: solo CSS (.fx-glow).
 
 import {
-  getDecor, placeFurniture, flipFurniture, storeFurniture, grantGift, getDecorHintCount, markDecorHintShown,
+  getDecor, placeFurniture, flipFurniture, storeFurniture, grantGift, getDecorHintCount, markDecorHintShown, spotRoom,
 } from '../../state/store.js';
 import { FURNITURE, FURNITURE_SCALE, findFurniture } from '../../content/furniture.js';
 import { FURNITURE_ART, FURNITURE_DEFS } from '../../content/art/furniture.js';
@@ -70,8 +70,10 @@ export function createDecor(room, reactions, { button, canTalk = ()=> true, onCh
   const announce = t => { status.textContent = t; };
 
   /* ---------- dibujar ---------- */
+  // Por ahora la Casa tiene un solo cuarto a la vista: el Cuarto. Lo que está en otro cuarto no se dibuja aquí.
+  const ROOM = 'bedroom';
   function placedList(d = getDecor()){
-    return FURNITURE.filter(f => d.placed[f.id]).map(item => ({ item, p: clampSpot(L, item, d.placed[item.id]) }));
+    return FURNITURE.filter(f => d.placed[f.id] && spotRoom(d.placed[f.id]) === ROOM).map(item => ({ item, p: clampSpot(L, item, d.placed[item.id]) }));
   }
   const boxStyle = b => `left:${px(b.x)};top:${px(b.y)};width:${px(b.w)};height:${px(b.h)}`;
   function piece({ item, p }){
@@ -472,7 +474,7 @@ export function createDecor(room, reactions, { button, canTalk = ()=> true, onCh
       if(L && rug && !getDecor().owned.includes(rug.id)){
         const first = spotAt(L, rug, L.home.x, L.home.y);
         const h = furnitureBox(L, rug, first).h;
-        gifted = grantGift(spotAt(L, rug, L.home.x, L.home.y + h * .3)).length > 0;
+        gifted = grantGift(ROOM, spotAt(L, rug, L.home.x, L.home.y + h * .3)).length > 0;
       }
       render();
       paintButton();

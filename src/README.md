@@ -23,7 +23,8 @@ src/
     house.js         frases de la Casa y reacciones de cada mascota
     food.js          catálogo de comida de la Casa (precio, cuánto llena, frase)
     nutrition.js     los datos de nutrición de cada alimento (en un solo lugar, para revisarlos)
-    furniture.js     catálogo de muebles de la Casa (zona pared/piso, precio, tamaño, si se voltea o se enciende)
+    furniture.js     catálogo de muebles de la Casa (zona pared/piso, precio, tamaño, cuarto, superficies para Mito)
+    rooms.js         los cuartos de la Casa, en orden (Cuarto, Baño, Sala, Cocina) y la acción de cada uno
     art/             SVG y piezas de dibujo
       base.js         cuerpo y caras de Mito
       halloween.js    piezas de Halloween
@@ -39,9 +40,10 @@ src/
     inventory.js     prendas compradas y equipadas
     progress.js      historial, fallos, racha
     preferences.js   tema, materia activa y pistas de la Casa, de la charola y de Decorar
-    house.js         necesidades de Mito en la Casa (hambre, limpieza, energía, ánimo): cálculo con la hora y constantes NEEDS
+    house.js         necesidades de Mito en la Casa (hambre, limpieza, energía, ánimo): cálculo con la hora y constantes NEEDS;
+                     y dónde está Mito (cuarto, piso o sobre un mueble)
     pantry.js        la charola: comida comprada (se compra por unidad y se gasta al comer)
-    decor.js         los muebles: comprados (una vez cada uno), colocados ({ zona, u, v, flip, scale }) y el regalo
+    decor.js         los muebles: comprados (una vez cada uno), colocados ({ room, zona, u, v, flip, scale }) y el regalo de cada cuarto
     backup.js        exportar, importar y reiniciar
   features/        la lógica de la app. Una carpeta por dominio
     nav/router.js      cambia de vista y actualiza la barra lateral

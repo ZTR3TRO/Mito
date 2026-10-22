@@ -93,7 +93,7 @@ test('una partida de antes de los muebles se lee sin muebles, y comprar y coloca
   assert.equal('decor' in saved, false, 'el fixture es de antes de la Fase 4');
   assert.deepEqual(store.getDecor(), { owned: [], placed: {}, seen: [] });
   assert.equal('decor' in JSON.parse(store.exportSave()), false, 'sin muebles no se inventa el campo');
-  assert.deepEqual(store.grantGift({ u: .5, v: .45 }), ['m-rug'], 'la alfombra de regalo se entrega');
+  assert.deepEqual(store.grantGift('bedroom', { u: .5, v: .45 }), ['m-rug'], 'la alfombra de regalo se entrega');
   store.addChispas(400);
   assert.equal(store.buyFurniture('m-bed'), true);
   assert.equal(store.placeFurniture('m-bed', { u: .2, v: .3 }).ok, true);

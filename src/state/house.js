@@ -2,12 +2,16 @@
 //
 // Son suaves: nunca afectan el estudio ni nada fuera de la Casa, y Mito nunca se enferma ni se va.
 // Se guardan en el campo opcional `house` (una partida sin él empieza con todo lleno):
-//   { v: 3, at: ms en que se calcularon, needs: { hunger, clean, energy, mood }, sleepSince: ms o null }
+//   { v: 3, at: ms en que se calcularon, needs: { hunger, clean, energy, mood }, sleepSince: ms o null, mito? }
+// `mito` (Fase 5, opcional) es dónde está Mito; sin él, en su lugar de siempre en el Cuarto (ver getMito).
 // `v` marca los datos de la Fase 3 en adelante (desde entonces el hambre baja; ver current()).
 // No hay temporizadores que escriban: los valores de "ahora" se calculan con la hora (needsAt), también si la
 // app estuvo cerrada, y solo se guarda al hacer algo (un cariño, dormir, despertar, bañar, comer).
 
 import { state, commit, num } from './core.js';
+import { DEFAULT_ROOM, findRoom } from '../content/rooms.js';
+import { findFurniture } from '../content/furniture.js';
+import { getDecor, spotRoom } from './decor.js';
 
 const HOUR = 3600e3;
 const KEYS = ['hunger', 'clean', 'energy', 'mood'];
@@ -40,7 +44,8 @@ export function cleanHouse(h, now = Date.now()){
   if(h.needs && typeof h.needs === 'object') KEYS.forEach(k=>{ if(Number.isFinite(h.needs[k])) needs[k] = clamp(h.needs[k]); });
   const at = Number.isFinite(h.at) && h.at <= now ? h.at : now;   // una hora futura o rara cuenta como "ahora"
   const sleepSince = Number.isFinite(h.sleepSince) && h.sleepSince <= now ? Math.min(h.sleepSince, now) : null;
-  return { ...(h.v === VERSION ? { v: VERSION } : {}), at, needs, sleepSince };
+  const mito = cleanMito(h.mito);
+  return { ...(h.v === VERSION ? { v: VERSION } : {}), at, needs, sleepSince, ...(mito ? { mito } : {}) };
 }
 
 // Cómo están las necesidades en `now`, a partir de lo guardado (lógica pura).
@@ -65,7 +70,7 @@ export function needsAt(saved, now = Date.now(), { hungerFrozen = false } = {}){
     if(slept >= Math.max(toFull, napLeft)){ sleepSince = null; n.energy = NEEDS.max; }   // ya durmió lo que le tocaba
   }
   if(sleepSince === null && t > 0) KEYS.forEach(k=>{ n[k] = decay(n[k], rate[k], t); });
-  return { v: VERSION, at: now, needs: n, sleepSince };
+  return { v: VERSION, at: now, needs: n, sleepSince, ...(h.mito ? { mito: h.mito } : {}) };
 }
 
 // La necesidad baja más importante, por prioridad: sueño > hambre > limpieza > ánimo. null si está todo bien.
@@ -136,6 +141,44 @@ export function feed(amount, now = Date.now()){
   h.needs.hunger = clamp(h.needs.hunger + Math.max(0, num(amount)));
   save(h);
   return h.needs.hunger;
+}
+
+/* ---------- dónde está Mito (Fase 5) ----------
+   Guardado en house.mito, de tres formas:
+     { room, u, v }    en el piso de ese cuarto (u, v como los muebles del piso: furniture-layout.js)
+     { room, on, s }   sobre un mueble que tiene superficie (seat); s = dónde, de 0 a 1 a lo largo de ella
+     { room }          en el lugar de siempre de ese cuarto (sin el campo: en el del Cuarto)
+   Se limpia al leer: un cuarto que no existe es el Cuarto; un mueble sin superficie, o que ya no está en ese cuarto
+   (guardado, movido a otro), deja a Mito en el lugar de siempre del cuarto. */
+const unit = n => Math.min(1, Math.max(0, num(n, .5)));
+
+// Solo la forma (sin mirar los muebles colocados). null = el lugar de siempre en el Cuarto.
+export function cleanMito(m){
+  if(!m || typeof m !== 'object') return null;
+  const room = findRoom(m.room) ? m.room : DEFAULT_ROOM;
+  if(typeof m.on === 'string' && findFurniture(m.on)?.seat) return { room, on: m.on, s: unit(m.s) };
+  if(Number.isFinite(m.u) && Number.isFinite(m.v)) return { room, u: unit(m.u), v: unit(m.v) };
+  return room === DEFAULT_ROOM ? null : { room };
+}
+
+// Dónde está ahora: { room, u, v } | { room, on, s } | { room, home: true }.
+export function getMito(){
+  const m = cleanMito(state.house?.mito);
+  if(!m) return { room: DEFAULT_ROOM, home: true };
+  if(m.on){
+    const p = getDecor().placed[m.on];
+    if(!p || spotRoom(p) !== m.room) return { room: m.room, home: true };
+  }
+  return m.on || 'u' in m ? m : { room: m.room, home: true };
+}
+
+// Guardarlo (al soltarlo, al cambiar de cuarto, al dormir en la cama…). Devuelve la posición limpia.
+export function setMito(pos, now = Date.now()){
+  const m = cleanMito(pos);
+  const h = current(now);
+  if(m) h.mito = m; else delete h.mito;
+  save(h);
+  return getMito();
 }
 
 // Para partidas importadas: el campo es opcional; si viene, se limpia.

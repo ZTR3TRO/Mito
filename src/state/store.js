@@ -25,10 +25,10 @@ export {
   getDecorHintCount, markDecorHintShown,
 } from './preferences.js';
 
-export { NEEDS, topNeed, getNeeds, careMood, startSleep, wakeUp, addClean } from './house.js';
+export { NEEDS, topNeed, getNeeds, careMood, startSleep, wakeUp, addClean, getMito, setMito } from './house.js';
 
 export { getPantry, foodCount, buyFood, eatFood } from './pantry.js';
 
-export { getDecor, buyFurniture, placeFurniture, flipFurniture, storeFurniture, grantGift } from './decor.js';
+export { getDecor, placedIn, spotRoom, buyFurniture, placeFurniture, flipFurniture, storeFurniture, grantGift } from './decor.js';
 
 export { exportSave, parseSave, importSave, resetAll } from './backup.js';

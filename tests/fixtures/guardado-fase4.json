@@ -1,0 +1,79 @@
+{
+  "chispas": 530,
+  "owned": {},
+  "petNames": {},
+  "petLooks": {},
+  "claimedEggs": {},
+  "equipped": {
+    "color": "c-mint",
+    "ropa": "r-none",
+    "accesorio": "ac-none",
+    "sombrero": "s-none",
+    "aura": "a-none",
+    "pet": "p-none"
+  },
+  "history": [],
+  "mistakes": {},
+  "streak": 0,
+  "lastDay": null,
+  "theme": "dark",
+  "course": "atp",
+  "decor": {
+    "owned": [
+      "m-rug",
+      "m-lamp",
+      "m-sofa",
+      "m-desk",
+      "m-bed",
+      "m-picture"
+    ],
+    "placed": {
+      "m-rug": {
+        "zona": "floor",
+        "u": 0.5,
+        "v": 0.46
+      },
+      "m-sofa": {
+        "zona": "floor",
+        "u": 0.78,
+        "v": 0.8,
+        "flip": true
+      },
+      "m-bed": {
+        "zona": "floor",
+        "u": 0.2,
+        "v": 0.25,
+        "scale": 1.2
+      },
+      "m-picture": {
+        "zona": "wall",
+        "u": 0.52,
+        "v": 0.38,
+        "scale": 0.8
+      },
+      "m-lamp": {
+        "zona": "floor",
+        "u": 0.8,
+        "v": 0.3
+      }
+    },
+    "seen": [
+      "m-rug",
+      "m-lamp",
+      "m-sofa",
+      "m-bed",
+      "m-picture"
+    ]
+  },
+  "house": {
+    "v": 3,
+    "at": 1792605600000,
+    "needs": {
+      "hunger": 100,
+      "clean": 100,
+      "energy": 100,
+      "mood": 100
+    },
+    "sleepSince": null
+  }
+}
