@@ -23,7 +23,7 @@ import { FURNITURE_ART, FURNITURE_DEFS } from '../../content/art/furniture.js';
 import { MITO_DECOR } from '../../content/house.js';
 import { emit } from '../../core/bus.js';
 import { roomLayout } from './room.js';
-import { furnitureBox, clampSpot, spotAt, freeSpot, depthOrder, snapScale, stepScale, resizeSpot, seatSurfaces, FURN } from './furniture-layout.js';
+import { furnitureBox, clampSpot, spotAt, freeSpot, depthOrder, snapScale, stepScale, resizeSpot, seatSurfaces, toolsSpot, FURN } from './furniture-layout.js';
 
 const DRAG_START_PX = 6;          // cuánto hay que mover el dedo para que un toque se vuelva arrastre
 const STEP = .01, STEP_BIG = .05; // flechas (con Mayús, más)
@@ -168,11 +168,10 @@ export function createDecor(room, reactions, { button, here = ()=> 'bedroom', mi
     bar.querySelector('.dc-pct').textContent = pct(s);
     bar.querySelector('[data-decor-smaller]').disabled = s <= FURNITURE_SCALE.min + 1e-6;
     bar.querySelector('[data-decor-bigger]').disabled = s >= FURNITURE_SCALE.max - 1e-6;
-    const w = bar.offsetWidth, h = bar.offsetHeight, M = FURN.margin;
-    let y = b.y - h - TOOLS_GAP;
-    if(y < M) y = Math.min(b.y + b.h + TOOLS_GAP, L.H - L.barSpace - h);
-    bar.style.left = px(Math.min(Math.max(M, b.x + b.w / 2 - w / 2), L.W - M - w));
-    bar.style.top = px(Math.max(M, y));
+    const w = bar.offsetWidth, h = bar.offsetHeight;
+    const at = toolsSpot(L, b, w, h, TOOLS_GAP);
+    bar.style.left = px(at.x);
+    bar.style.top = px(at.y);
     handle.style.left = px(b.x + b.w);
     handle.style.top = px(b.y + b.h);
   }
@@ -395,6 +394,11 @@ export function createDecor(room, reactions, { button, here = ()=> 'bedroom', mi
   const ours = e => drag && (e.pointerId === drag.pointer || (drag.kind === 'pinch' && drag.pts.has(e.pointerId)));
   room.addEventListener('pointerup', e=>{ if(ours(e)){ const d = endDrag(e); if(d && !d.moved && d.kind === 'move') renderTools(); } });
   room.addEventListener('pointercancel', e=>{ if(ours(e)) endDrag(e, true); });
+  // Con el dedo, Safari decide si un gesto es scroll al empezar; un touchmove no pasivo sobre el mueble (o con uno en
+  // la mano) asegura que no se lo lleve (si no, llega un pointercancel y el mueble no se mueve). La bandeja se desliza de lado.
+  room.addEventListener('touchmove', e=>{
+    if(active && e.cancelable && (drag || e.target.closest?.('.furn')) && !e.target.closest?.('.ft-list')) e.preventDefault();
+  }, { passive: false });
 
   room.addEventListener('click', e=>{
     if(!active) return;

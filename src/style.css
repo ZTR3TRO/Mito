@@ -2027,6 +2027,9 @@ body[data-view="house"] .app{ min-height:0; max-height:100vh; max-height:100dvh;
 /* Decorar: Mito deja pasar los toques (sus gestos están apagados) y los muebles se pueden tomar */
 .room.is-decorating .room-stage, .room.is-decorating .mascot{ pointer-events:none; }
 .room.is-decorating .furn{ pointer-events:auto; cursor:grab; touch-action:none; }
+/* nada flotante recibe el toque encima de un mueble: "Traer a Mito" se oculta y las burbujas, el aviso y la orilla dejan pasar el dedo */
+.room.is-decorating .bring-mito{ display:none; }
+.room.is-decorating :is(.house-speech, .pet-bubble, .food-fact, .zzz, .edge-go, .room-toast, .mito-ghost, .house-hint){ pointer-events:none; }
 .room.is-decorating .house-bar:not(.decor-tray), .room.is-decorating .house-hint:not(.decor-hint){ display:none; }
 .furn.is-sel::before, .furn:focus-visible::before{ content:''; position:absolute; inset:-7px; border-radius:16px; pointer-events:none;
   border:2.5px dashed var(--lilac); background:rgba(185,138,246,.12); }

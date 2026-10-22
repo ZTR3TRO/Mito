@@ -1029,7 +1029,7 @@ test('tamaño con la base nueva (Fase 5): solo se convierte lo ajustado, al mín
 
 /* ---------------- Mito libre (Fase 5): superficies, física y profundidad ---------------- */
 
-import { seatSurfaces, mitoBody, coverage, inFront, clearSpot, floorBand, mitoBand, scaleAt } from '../src/features/house/furniture-layout.js';
+import { seatSurfaces, mitoBody, coverage, inFront, clearSpot, floorBand, mitoBand, scaleAt, toolsSpot } from '../src/features/house/furniture-layout.js';
 
 const W1 = { width: 1.6, floor: .9, r: .1, h: .25 };
 const settleOn = (body, world) => { let b = body; for(let i = 0; i < 300 && !b.stopped; i++) b = advance(b, world, .05).body; return b; };
@@ -1130,4 +1130,27 @@ test('muebles para sentarse: la superficie tiene proporción real junto a Mito (
       assert.ok((st.x1 - st.x0) / body.w >= .5, `${item.id} ${L.W}×${L.H}: ${((st.x1 - st.x0) / body.w).toFixed(2)}`);
     }
   }
+});
+
+test('barrita del mueble: nunca queda encima del mueble, en todos los muebles, cuartos y tamaños', ()=>{
+  const W = 168, H = 40;
+  for(const L of ROOMS) for(const item of FURNITURE) for(const scale of [.6, 1, 1.6]) for(const [u, v] of [[.15, .1], [.5, .5], [.85, .9]]){
+    const p = clampSpot(L, item, { u, v, scale, flip: !!item.flip });
+    const b = furnitureBox(L, item, p), at = toolsSpot(L, b, W, H, 12);
+    assert.ok(at.x >= 0 && at.x + W <= L.W && at.y >= 0 && at.y + H <= L.H, `${item.id} dentro del cuarto`);
+    // solo puede tocar al mueble cuando no existe ningún hueco libre alrededor (el mueble ocupa casi todo el cuarto)
+    const free = b.y - 12 - H >= FURN.margin || b.y + b.h + 12 + H <= L.H - L.barSpace || b.x - 12 - W >= FURN.margin || b.x + b.w + 12 + W <= L.W - FURN.margin;
+    if(free) assert.ok(!overlap({ x: at.x, y: at.y, w: W, h: H }, b), `${item.id} ${L.W}×${L.H} ×${scale}: la barrita tapa el mueble`);
+  }
+});
+
+test('barrita del mueble: arriba si cabe, abajo si no, de lado si el mueble llena el alto', ()=>{
+  const L = sceneLayout(390, 714, 76);
+  const mid = { x: 120, y: 300, w: 100, h: 100 };
+  assert.ok(toolsSpot(L, mid, 150, 40).y + 40 <= mid.y, 'arriba');
+  const top = { x: 120, y: 20, w: 100, h: 100 };
+  assert.ok(toolsSpot(L, top, 150, 40).y >= top.y + top.h, 'abajo');
+  const tall = { x: 60, y: 10, w: 100, h: L.H - L.barSpace - 20 };
+  const side = toolsSpot(L, tall, 150, 40);
+  assert.ok(side.x >= tall.x + tall.w || side.x + 150 <= tall.x, 'a un lado');
 });

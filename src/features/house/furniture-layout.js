@@ -231,3 +231,22 @@ export function clearSpot(L, list, x = L.home.x){
   }
   return { x: best.x, y: best.y };
 }
+
+// Dónde va la barrita del mueble seleccionado (w × h px) para que nunca quede encima de él: arriba; si no cabe,
+// abajo (sin invadir la franja de la barra de acciones); si tampoco, a un lado (donde haya más espacio); y si el mueble
+// ocupa casi todo el cuarto, fija sobre la bandeja. box: la caja del mueble. Devuelve { x, y } (esquina de arriba).
+export function toolsSpot(L, box, w, h, gap = 12){
+  const M = FURN.margin, bottom = L.H - L.barSpace;
+  const cx = clamp(box.x + box.w / 2 - w / 2, M, Math.max(M, L.W - M - w));
+  const above = box.y - gap - h, below = box.y + box.h + gap;
+  if(above >= M) return { x: cx, y: above };
+  if(below + h <= bottom) return { x: cx, y: below };
+  const cy = clamp(box.y + box.h / 2 - h / 2, M, Math.max(M, bottom - h));
+  const left = box.x - gap - w, right = box.x + box.w + gap;
+  const roomLeft = left >= M, roomRight = right + w <= L.W - M;
+  if(roomLeft || roomRight){
+    const useRight = roomRight && (!roomLeft || L.W - (box.x + box.w) >= box.x);
+    return { x: useRight ? right : left, y: cy };
+  }
+  return { x: cx, y: Math.max(M, bottom - h - 4) };
+}
