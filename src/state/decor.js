@@ -1,22 +1,27 @@
 // Muebles de la Casa: los que compraste y dónde los pusiste. Cada mueble se compra una sola vez.
 //
 // Se guarda en el campo opcional `decor`:
-//   { owned: [ids], placed: { id: { zona: 'wall' | 'floor', u, v, flip? } }, seen: [ids] }
+//   { owned: [ids], placed: { id: { zona: 'wall' | 'floor', u, v, flip?, scale? } }, seen: [ids] }
 //   owned   comprados (o regalados)
 //   placed  los que están en el cuarto: u y v van de 0 a 1 dentro de su zona (ver features/house/furniture-layout.js);
-//           los comprados que no están aquí están en el inventario (la bandeja de Decorar)
+//           los comprados que no están aquí están en el inventario (la bandeja de Decorar);
+//           scale: tamaño elegido en Decorar (× el base, de FURNITURE_SCALE.min a .max); sin él, 1
 //   seen    los que Mito ya comentó al colocarlos la primera vez
 // Una partida sin el campo no tiene muebles; la alfombra de regalo se entrega al entrar a la Casa (grantGift).
 // Solo cuentan los muebles del catálogo (content/furniture.js), y la zona siempre es la del catálogo.
 
-import { FURNITURE, findFurniture } from '../content/furniture.js';
+import { FURNITURE, FURNITURE_SCALE, findFurniture } from '../content/furniture.js';
 import { state, commit, num } from './core.js';
 
 const unit = n => Math.min(1, Math.max(0, num(n, .5)));
 const known = list => Array.isArray(list) ? FURNITURE.map(f => f.id).filter(id => list.includes(id)) : [];
 
+// El tamaño, acotado y con 2 decimales; el 1 no se guarda (es el de siempre).
+const cleanScale = s => Math.round(Math.min(FURNITURE_SCALE.max, Math.max(FURNITURE_SCALE.min, num(s, 1))) * 100) / 100;
+
 function cleanSpot(item, p){
-  return { zona: item.zone, u: unit(p.u), v: unit(p.v), ...(p.flip === true && item.flip ? { flip: true } : {}) };
+  const scale = cleanScale(p.scale);
+  return { zona: item.zone, u: unit(p.u), v: unit(p.v), ...(p.flip === true && item.flip ? { flip: true } : {}), ...(scale !== 1 ? { scale } : {}) };
 }
 
 // Deja un `decor` guardado (o importado) en un estado válido.
@@ -61,8 +66,9 @@ export function placeFurniture(id, spot){
   const item = findFurniture(id);
   const d = getDecor();
   if(!item || !d.owned.includes(id) || !spot || typeof spot !== 'object') return { ok: false, first: false };
-  // lo que no venga en `spot` (posición, volteo) se queda como estaba
-  d.placed[id] = cleanSpot(item, { ...d.placed[id], ...spot });
+  const prev = d.placed[id];
+  // lo que no venga en `spot` (posición, volteo, tamaño) se queda como estaba
+  d.placed[id] = cleanSpot(item, { ...prev, ...spot });
   const first = !d.seen.includes(id);
   if(first) d.seen = known([...d.seen, id]);
   store(d);

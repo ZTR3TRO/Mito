@@ -2019,6 +2019,27 @@ body[data-view="house"] .mascot-side{ display:none; }   /* en la Casa ya está e
 [data-theme="dark"] .dc-tools button[data-decor-store]{ color:#ff9ac8; }
 .dc-tools button:focus-visible{ outline:3px solid var(--lilac); outline-offset:2px; }
 .dc-tools button:active{ transform:translateY(2px); box-shadow:0 1px 0 0 var(--line); }
+.dc-tools button[disabled]{ opacity:.4; cursor:default; transform:none; }
+/* tamaño: − 100 % + (tocar el % lo devuelve al original) */
+.dc-size{ display:inline-flex; align-items:center; gap:2px; padding:2px; border-radius:999px; background:var(--card); border:2px solid var(--line);
+  box-shadow:0 3px 0 0 var(--line), 0 8px 16px -8px rgba(51,39,74,.35); }
+.dc-size button{ padding:5px 7px; border:0; box-shadow:none; background:none; }
+.dc-size button:active{ box-shadow:none; }
+.dc-size .dc-pct{ min-width:46px; justify-content:center; padding:5px 4px; font-variant-numeric:tabular-nums; color:var(--lilac-deep, #7d4fd6); }
+[data-theme="dark"] .dc-size .dc-pct{ color:#cdb4ff; }
+/* en angosto, Voltear y Guardar solo con icono (su nombre va en aria-label y title) */
+@container house (max-width: 460px){
+  .dc-tools{ gap:4px; }
+  .dc-tools .lbl{ display:none; }
+  .dc-tools > button{ padding:7px 9px; }
+}
+/* manija de tamaño (ratón): esquina de abajo a la derecha del seleccionado; en pantallas táctiles se pellizca */
+.dc-handle{ position:absolute; width:18px; height:18px; translate:-50% -50%; box-sizing:border-box; border-radius:50%; pointer-events:auto;
+  background:var(--card); border:3px solid var(--lilac); box-shadow:0 2px 6px rgba(51,39,74,.35); cursor:nwse-resize; touch-action:none; }
+.dc-handle::after{ content:''; position:absolute; inset:-10px; border-radius:50%; }   /* más fácil de atinar */
+@media (pointer: coarse){ .dc-handle{ display:none; } }
+/* en Decorar el cuarto no hace zoom ni se desplaza con dos dedos: pellizcar cambia el tamaño del mueble */
+.room.is-decorating{ touch-action:none; }
 
 /* zonas: al arrastrar se ve dónde puede ir (la del mueble, resaltada) */
 .dc-zone{ position:absolute; display:none; border-radius:16px; box-sizing:border-box; border:2.5px dotted rgba(255,255,255,.5); background:rgba(0,0,0,.05); }

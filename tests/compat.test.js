@@ -99,6 +99,10 @@ test('una partida de antes de los muebles se lee sin muebles, y comprar y coloca
   assert.equal(store.placeFurniture('m-bed', { u: .2, v: .3 }).ok, true);
   const out = store.exportSave();
   store.importSave(out);
-  assert.deepEqual(store.getDecor().placed['m-bed'], { zona: 'floor', u: .2, v: .3 });
+  assert.deepEqual(store.getDecor().placed['m-bed'], { zona: 'floor', u: .2, v: .3 }, 'sin tamaño guardado: el de siempre');
   assert.equal(store.getChispas(), JSON.parse(out).chispas);
+  // el tamaño (Fase 4.5) es opcional y viaja en el respaldo
+  store.placeFurniture('m-bed', { scale: 1.4 });
+  store.importSave(store.exportSave());
+  assert.deepEqual(store.getDecor().placed['m-bed'], { zona: 'floor', u: .2, v: .3, scale: 1.4 });
 });

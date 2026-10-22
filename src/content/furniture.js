@@ -10,6 +10,9 @@
 //   glow      se enciende de noche (modo oscuro) y se apaga cuando Mito duerme
 
 export const FURNITURE_SIZE = { wide: 1, tall: 2.1 };   // ajuste del tamaño según el bloque (el alto es el del teléfono)
+// Tamaño ajustable en Decorar (× el tamaño base): de min a max, con botones de step en step, y "se pega" al 100 %
+// cuando queda a menos de snap (al estirar con la manija o al pellizcar).
+export const FURNITURE_SCALE = { min: .6, max: 1.6, step: .1, snap: .05 };
 
 const M = (id, name, short, zone, cost, size, box, extra = {}) => ({ id, name, short, zone, cost, size, box, ...extra });
 

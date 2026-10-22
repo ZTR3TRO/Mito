@@ -41,7 +41,7 @@ src/
     preferences.js   tema, materia activa y pistas de la Casa, de la charola y de Decorar
     house.js         necesidades de Mito en la Casa (hambre, limpieza, energía, ánimo): cálculo con la hora y constantes NEEDS
     pantry.js        la charola: comida comprada (se compra por unidad y se gasta al comer)
-    decor.js         los muebles: comprados (una vez cada uno), colocados ({ zona, u, v, flip }) y el regalo
+    decor.js         los muebles: comprados (una vez cada uno), colocados ({ zona, u, v, flip, scale }) y el regalo
     backup.js        exportar, importar y reiniciar
   features/        la lógica de la app. Una carpeta por dominio
     nav/router.js      cambia de vista y actualiza la barra lateral
@@ -54,7 +54,7 @@ src/
                        room (dibuja la escena), gestures (dedo y ratón), motion (arrastrar y lanzar),
                        reactions (cara, frases y mascota), needs (cómo se notan sus necesidades),
                        sleep (dormir), bath (bañar), food (la charola y comer), decor (los muebles y el
-                       modo Decorar), furniture-layout (dónde y de qué tamaño va cada mueble; puro)
+                       modo Decorar), furniture-layout (dónde y de qué tamaño va cada mueble, límites y escala; puro)
     progress/          vista de progreso y copia de seguridad: view, backup
     mascot/            la mascota entera: avatar, auras, face, effects, speech
     pwa/update.js      service worker: registro y actualización segura (solo en producción)

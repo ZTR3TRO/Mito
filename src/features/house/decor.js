@@ -5,9 +5,12 @@
 // la charola) con "Listo" y los muebles guardados (el inventario), y los gestos de Mito se apagan.
 //   - mover: arrastrar el mueble (dedo o ratón); se resalta su zona (pared o piso) y no puede salir de ella;
 //   - colocar: tocar uno guardado lo pone en un lugar libre, o arrastrarlo desde la bandeja hasta donde quieras;
-//   - tocar uno lo selecciona: encima sale "Voltear" (si se puede) y "Guardar" (vuelve a la bandeja);
-//     también se guarda soltándolo sobre la bandeja;
-//   - teclado: Tab los recorre; flechas mueven (con Mayús, más), F voltea, Supr guarda y Esc deselecciona o sale.
+//   - tocar uno lo selecciona: encima sale "Voltear" (si se puede), el tamaño (− 100 % +; tocar el % lo devuelve
+//     al original) y "Guardar" (vuelve a la bandeja); también se guarda soltándolo sobre la bandeja;
+//   - tamaño: además de los botones, con la manija de la esquina (ratón) o pellizcando con dos dedos sobre el mueble;
+//     de 60 % a 160 %, y se pega al 100 % al pasar cerca (furniture-layout.js: snapScale, stepScale, resizeSpot);
+//   - teclado: Tab los recorre; flechas mueven (con Mayús, más), + y − cambian el tamaño, 0 lo devuelve al original,
+//     F voltea, Supr guarda y Esc deselecciona o sale.
 // Todo se guarda al soltar (state/decor.js). La primera vez que se coloca un mueble, Mito lo comenta.
 // La colocación, los límites y la profundidad son lógica pura: furniture-layout.js.
 // La lámpara y la guirnalda se encienden de noche (modo oscuro) y se apagan cuando Mito duerme: solo CSS (.fx-glow).
@@ -15,12 +18,12 @@
 import {
   getDecor, placeFurniture, flipFurniture, storeFurniture, grantGift, getDecorHintCount, markDecorHintShown,
 } from '../../state/store.js';
-import { FURNITURE, findFurniture } from '../../content/furniture.js';
+import { FURNITURE, FURNITURE_SCALE, findFurniture } from '../../content/furniture.js';
 import { FURNITURE_ART, FURNITURE_DEFS } from '../../content/art/furniture.js';
 import { MITO_DECOR } from '../../content/house.js';
 import { emit } from '../../core/bus.js';
 import { roomLayout } from './room.js';
-import { furnitureBox, clampSpot, spotAt, freeSpot, depthOrder, FURN } from './furniture-layout.js';
+import { furnitureBox, clampSpot, spotAt, freeSpot, depthOrder, snapScale, stepScale, resizeSpot, FURN } from './furniture-layout.js';
 
 const DRAG_START_PX = 6;          // cuánto hay que mover el dedo para que un toque se vuelva arrastre
 const STEP = .01, STEP_BIG = .05; // flechas (con Mayús, más)
@@ -30,11 +33,15 @@ const TOOLS_GAP = 12;
 const ICONS = {
   done: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7"/></svg>',
   flip: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v18" stroke-dasharray="2.5 3"/><path d="M9 7 3 17h6zM15 7l6 10h-6z"/></svg>',
+  minus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M6 12h12"/></svg>',
+  plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M6 12h12M12 6v12"/></svg>',
   store: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h16v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1Z"/><path d="M3 4h18v4H3zM10 13h4"/></svg>',
 };
 const ZONE = { wall: 'Pared', floor: 'Piso' };
 const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const px = n => n.toFixed(1) + 'px';
+const pct = s => Math.round((s || 1) * 100) + ' %';
+const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 const inside = (e, el) => { const r = el.getBoundingClientRect(); return e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom; };
 
 export function createDecor(room, reactions, { button, canTalk = ()=> true, onChange = ()=>{} }){
@@ -69,7 +76,7 @@ export function createDecor(room, reactions, { button, canTalk = ()=> true, onCh
   const boxStyle = b => `left:${px(b.x)};top:${px(b.y)};width:${px(b.w)};height:${px(b.h)}`;
   function piece({ item, p }){
     const attrs = active
-      ? ` tabindex="0" role="button" aria-label="${esc(item.name)} (${ZONE[item.zone].toLowerCase()}). Flechas para moverlo${item.flip ? ', F para voltearlo' : ''}, Supr para guardarlo"`
+      ? ` tabindex="0" role="button" aria-label="${esc(item.name)} (${ZONE[item.zone].toLowerCase()}, ${pct(p.scale)}). Flechas para moverlo, + y − para cambiar su tamaño${item.flip ? ', F para voltearlo' : ''}, Supr para guardarlo"`
       : '';
     return `<div class="furn ${item.zone}${item.flat ? ' flat' : ''}${p.flip ? ' is-flip' : ''}${sel === item.id ? ' is-sel' : ''}" data-furn="${item.id}" style="${boxStyle(furnitureBox(L, item, p))}"${attrs}>
       <span class="furn-art">${FURNITURE_ART[item.id]}</span></div>`;
@@ -116,21 +123,36 @@ export function createDecor(room, reactions, { button, canTalk = ()=> true, onCh
     }
   }
 
-  // La barrita del mueble seleccionado: arriba de él (o abajo, si no cabe), siempre dentro del cuarto.
-  function renderTools(){
-    tools.innerHTML = '';
-    if(!active || !sel || drag || !L) return;
-    const item = findFurniture(sel), p = getDecor().placed[sel];
+  // La barrita del mueble seleccionado (arriba de él, o abajo si no cabe; siempre dentro del cuarto) y la manija de
+  // tamaño en su esquina de abajo a la derecha. `spot`: mientras se cambia el tamaño, la colocación que se está viendo.
+  const resizing = ()=> drag && (drag.kind === 'resize' || drag.kind === 'pinch');
+  function renderTools(spot){
+    if(!active || !sel || (drag && !resizing()) || !L){ tools.innerHTML = ''; return; }
+    const item = findFurniture(sel), p = spot || getDecor().placed[sel];
     if(!item || !p) return;
-    const b = furnitureBox(L, item, clampSpot(L, item, p));
-    tools.innerHTML = `<div class="dc-tools" role="toolbar" aria-label="${esc(item.name)}">
-      ${item.flip ? `<button type="button" data-decor-flip>${ICONS.flip}<span>Voltear</span></button>` : ''}
-      <button type="button" data-decor-store>${ICONS.store}<span>Guardar</span></button></div>`;
-    const bar = tools.firstElementChild, w = bar.offsetWidth, h = bar.offsetHeight, M = FURN.margin;
+    const q = clampSpot(L, item, p), b = furnitureBox(L, item, q), s = q.scale || 1;
+    if(!tools.querySelector(`.dc-tools[data-for="${sel}"]`)){
+      tools.innerHTML = `<div class="dc-tools" role="toolbar" aria-label="${esc(item.name)}" data-for="${sel}">
+        ${item.flip ? `<button type="button" data-decor-flip aria-label="Voltear" title="Voltear">${ICONS.flip}<span class="lbl">Voltear</span></button>` : ''}
+        <span class="dc-size" role="group" aria-label="Tamaño">
+          <button type="button" data-decor-smaller aria-label="Más chico" title="Más chico (−)">${ICONS.minus}</button>
+          <button type="button" class="dc-pct" data-decor-reset aria-label="Tamaño original" title="Volver al tamaño original (0)"></button>
+          <button type="button" data-decor-bigger aria-label="Más grande" title="Más grande (+)">${ICONS.plus}</button>
+        </span>
+        <button type="button" data-decor-store aria-label="Guardar" title="Guardar">${ICONS.store}<span class="lbl">Guardar</span></button></div>
+        <span class="dc-handle" data-decor-handle aria-hidden="true"></span>`;
+    }
+    const bar = tools.querySelector('.dc-tools'), handle = tools.querySelector('.dc-handle');
+    bar.querySelector('.dc-pct').textContent = pct(s);
+    bar.querySelector('[data-decor-smaller]').disabled = s <= FURNITURE_SCALE.min + 1e-6;
+    bar.querySelector('[data-decor-bigger]').disabled = s >= FURNITURE_SCALE.max - 1e-6;
+    const w = bar.offsetWidth, h = bar.offsetHeight, M = FURN.margin;
     let y = b.y - h - TOOLS_GAP;
     if(y < M) y = Math.min(b.y + b.h + TOOLS_GAP, L.H - L.barSpace - h);
     bar.style.left = px(Math.min(Math.max(M, b.x + b.w / 2 - w / 2), L.W - M - w));
     bar.style.top = px(Math.max(M, y));
+    handle.style.left = px(b.x + b.w);
+    handle.style.top = px(b.y + b.h);
   }
 
   function select(id){
@@ -169,6 +191,17 @@ export function createDecor(room, reactions, { button, canTalk = ()=> true, onCh
     render();
     announce(`${item.name}: volteado.`);
   }
+  // Cambiar el tamaño (botones, teclado): se guarda al momento.
+  function resize(id, scale){
+    const item = findFurniture(id), p = getDecor().placed[id];
+    if(!item || !p || !L) return;
+    hideHint();
+    const spot = resizeSpot(L, item, p, scale);
+    placeFurniture(id, { ...spot, scale: spot.scale || 1 });
+    render();
+    announce(`${item.name}: ${pct(spot.scale)}.`);
+  }
+  const currentScale = id => getDecor().placed[id]?.scale || 1;
   function putAway(id){
     const item = findFurniture(id);
     if(!item || !storeFurniture(id)) return;
@@ -190,7 +223,7 @@ export function createDecor(room, reactions, { button, canTalk = ()=> true, onCh
     if(kind === 'move'){
       const p = clampSpot(L, item, getDecor().placed[id]);
       const b = furnitureBox(L, item, p);
-      Object.assign(d, { flip: !!p.flip, cx: b.x + b.w / 2, y0: item.zone === 'wall' ? b.y : b.base });
+      Object.assign(d, { keep: { flip: !!p.flip, scale: p.scale }, cx: b.x + b.w / 2, y0: item.zone === 'wall' ? b.y : b.base });
     }
     drag = d;
   }
@@ -220,16 +253,75 @@ export function createDecor(room, reactions, { button, canTalk = ()=> true, onCh
       cx = px0;
       y = d.item.zone === 'wall' ? py0 - h / 2 - lift : py0 + h / 2 - lift;
     }
-    d.spot = spotAt(L, d.item, cx, y, d.flip);
+    d.spot = spotAt(L, d.item, cx, y, d.keep);
     const b = furnitureBox(L, d.item, d.spot);
     d.el.setAttribute('style', boxStyle(b));
     d.over = d.kind === 'move' && inside(e, tray);
     tray.classList.toggle('is-hot', d.over);
     d.el.classList.toggle('is-leaving', d.over);
   }
+  // Cambiar el tamaño de forma continua: con la manija (ratón) o pellizcando (dos dedos). La escala sale de cuánto
+  // se aleja la manija del ancla del mueble (la base del piso o el centro en la pared), o de la distancia entre los
+  // dedos; se pega al 100 % al pasar cerca.
+  function anchorOf(item, p){
+    const b = furnitureBox(L, item, clampSpot(L, item, p));
+    return item.zone === 'wall' ? { x: b.x + b.w / 2, y: b.y + b.h / 2 } : { x: b.x + b.w / 2, y: b.base };
+  }
+  const roomPoint = e => { const r = room.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
+  function startResize(e){
+    const item = findFurniture(sel), p = getDecor().placed[sel];
+    if(!item || !p || !L) return;
+    const b = furnitureBox(L, item, clampSpot(L, item, p)), a = anchorOf(item, p);
+    const h0 = { x: b.x + b.w, y: b.y + b.h };
+    drag = { kind: 'resize', id: sel, item, el: pieceEl(sel), p0: p, s0: currentScale(sel), a, dir: { x: h0.x - a.x, y: h0.y - a.y }, pointer: e.pointerId, moved: true, spot: null };
+    try{ e.target.setPointerCapture(e.pointerId); }catch{}
+    e.preventDefault();
+    hideHint();
+  }
+  // El segundo dedo sobre el cuarto mientras el primero tiene un mueble: se vuelve pellizco (el mueble vuelve a su lugar).
+  function startPinch(e){
+    const d = drag, p = getDecor().placed[d.id];
+    if(!p) return;
+    if(d.moved){ d.el.classList.remove('is-lift', 'is-leaving'); room.classList.remove('is-dragging-furn'); tray.classList.remove('is-dragging', 'is-hot'); zones.querySelectorAll('.is-target').forEach(z => z.classList.remove('is-target')); }
+    const pts = new Map([[d.pointer, d.last || { x: d.x, y: d.y }], [e.pointerId, { x: e.clientX, y: e.clientY }]]);
+    const [a, b] = [...pts.values()];
+    drag = { kind: 'pinch', id: d.id, item: d.item, el: d.el, p0: p, s0: currentScale(d.id), pts, d0: Math.max(20, dist(a, b)), pointer: d.pointer, moved: true, spot: null };
+    try{ d.el.setPointerCapture(e.pointerId); }catch{}
+    hideHint();
+    preview(drag, p);
+  }
+  function resizeTo(e){
+    const d = drag;
+    let s;
+    if(d.kind === 'pinch'){
+      d.pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      const [a, b] = [...d.pts.values()];
+      s = d.s0 * dist(a, b) / d.d0;
+    } else {
+      const q = roomPoint(e), len2 = d.dir.x ** 2 + d.dir.y ** 2 || 1;
+      s = d.s0 * Math.max(0, ((q.x - d.a.x) * d.dir.x + (q.y - d.a.y) * d.dir.y) / len2);
+    }
+    preview(d, resizeSpot(L, d.item, d.p0, snapScale(s)));
+  }
+  function preview(d, spot){
+    d.spot = spot;
+    d.el?.setAttribute('style', boxStyle(furnitureBox(L, d.item, spot)));
+    renderTools(spot);
+  }
+
   function endDrag(e, cancel = false){
     const d = drag;
     drag = null;
+    if(d && (d.kind === 'resize' || d.kind === 'pinch')){
+      suppressClick = true;
+      setTimeout(()=>{ suppressClick = false; }, 0);
+      if(!cancel && d.spot){
+        placeFurniture(d.id, { ...d.spot, scale: d.spot.scale || 1 });
+        announce(`${d.item.name}: ${pct(d.spot.scale)}.`);
+      }
+      render();
+      return d;
+    }
     room.classList.remove('is-dragging-furn');
     zones.querySelectorAll('.is-target').forEach(z => z.classList.remove('is-target'));
     tray.classList.remove('is-dragging', 'is-hot');
@@ -244,7 +336,13 @@ export function createDecor(room, reactions, { button, canTalk = ()=> true, onCh
   }
 
   room.addEventListener('pointerdown', e=>{
-    if(!active || e.button > 0 || drag) return;
+    if(!active || e.button > 0) return;
+    if(drag){
+      // un segundo dedo mientras el primero tiene un mueble del cuarto: pellizco
+      if(drag.kind === 'move' && e.pointerType === 'touch' && e.pointerId !== drag.pointer) startPinch(e);
+      return;
+    }
+    if(e.target.closest('[data-decor-handle]') && sel){ startResize(e); return; }
     const el = e.target.closest('.furn');
     if(el){ select(el.dataset.furn); startDrag(e, 'move', el.dataset.furn, el); return; }
     const chip = e.target.closest('.dc-item');
@@ -253,7 +351,13 @@ export function createDecor(room, reactions, { button, canTalk = ()=> true, onCh
   });
   room.addEventListener('pointermove', e=>{
     const d = drag;
-    if(!d || e.pointerId !== d.pointer) return;
+    if(!d) return;
+    if(d.kind === 'pinch' || d.kind === 'resize'){
+      if(d.kind === 'pinch' ? d.pts.has(e.pointerId) : e.pointerId === d.pointer){ e.preventDefault(); resizeTo(e); }
+      return;
+    }
+    if(e.pointerId !== d.pointer) return;
+    d.last = { x: e.clientX, y: e.clientY };
     if(!d.moved){
       const dx = e.clientX - d.x, dy = e.clientY - d.y;
       // desde la bandeja, con el dedo, el arrastre es hacia arriba (de lado se desliza la bandeja)
@@ -264,8 +368,10 @@ export function createDecor(room, reactions, { button, canTalk = ()=> true, onCh
     e.preventDefault();
     dragTo(e);
   });
-  room.addEventListener('pointerup', e=>{ if(drag && e.pointerId === drag.pointer){ const d = endDrag(e); if(d && !d.moved && d.kind === 'move') renderTools(); } });
-  room.addEventListener('pointercancel', e=>{ if(drag && e.pointerId === drag.pointer) endDrag(e, true); });
+  // Al levantar cualquiera de los dos dedos termina el pellizco (el otro ya no mueve nada hasta volver a tocar).
+  const ours = e => drag && (e.pointerId === drag.pointer || (drag.kind === 'pinch' && drag.pts.has(e.pointerId)));
+  room.addEventListener('pointerup', e=>{ if(ours(e)){ const d = endDrag(e); if(d && !d.moved && d.kind === 'move') renderTools(); } });
+  room.addEventListener('pointercancel', e=>{ if(ours(e)) endDrag(e, true); });
 
   room.addEventListener('click', e=>{
     if(!active) return;
@@ -273,6 +379,9 @@ export function createDecor(room, reactions, { button, canTalk = ()=> true, onCh
     if(e.target.closest('[data-decor-shop]')) return emit('shop:focus', 'furniture');   // la navegación la hace data-nav
     if(e.target.closest('[data-decor-flip]')) return sel && flip(sel);
     if(e.target.closest('[data-decor-store]')) return sel && putAway(sel);
+    if(e.target.closest('[data-decor-smaller]')) return sel && resize(sel, stepScale(currentScale(sel), -1));
+    if(e.target.closest('[data-decor-bigger]')) return sel && resize(sel, stepScale(currentScale(sel), 1));
+    if(e.target.closest('[data-decor-reset]')) return sel && resize(sel, 1);
     const chip = e.target.closest('.dc-item');
     if(chip && !suppressClick) placeFromTray(chip.dataset.furnItem);
   });
@@ -298,7 +407,10 @@ export function createDecor(room, reactions, { button, canTalk = ()=> true, onCh
       hideHint();
       placeFurniture(id, clampSpot(L, item, { ...p, u: p.u + move[0], v: p.v + move[1] }));
       render();
-    } else if(e.key === 'f' || e.key === 'F'){ e.preventDefault(); flip(id); }
+    } else if(e.key === '+' || e.key === '='){ e.preventDefault(); resize(id, stepScale(currentScale(id), 1)); }
+    else if(e.key === '-' || e.key === '_'){ e.preventDefault(); resize(id, stepScale(currentScale(id), -1)); }
+    else if(e.key === '0'){ e.preventDefault(); resize(id, 1); }
+    else if(e.key === 'f' || e.key === 'F'){ e.preventDefault(); flip(id); }
     else if(e.key === 'Delete' || e.key === 'Backspace'){ e.preventDefault(); putAway(id); }
   });
 

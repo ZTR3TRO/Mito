@@ -559,11 +559,11 @@ test('contenido: catálogo de comida completo, datos de nutrición cortos y fras
 /* ---------------- muebles y decoración (Fase 4) ---------------- */
 
 import { cleanDecor, getDecor, buyFurniture, placeFurniture, flipFurniture, storeFurniture, grantGift, parseDecor } from '../src/state/decor.js';
-import { FURNITURE, findFurniture, FURNITURE_SIZE } from '../src/content/furniture.js';
+import { FURNITURE, findFurniture, FURNITURE_SIZE, FURNITURE_SCALE } from '../src/content/furniture.js';
 import { FURNITURE_ART } from '../src/content/art/furniture.js';
 import { MITO_DECOR } from '../src/content/house.js';
 import { importSave, exportSave } from '../src/state/backup.js';
-import { FURN, furnitureBox, clampSpot, spotAt, freeSpot, depthOrder, windowRect } from '../src/features/house/furniture-layout.js';
+import { FURN, furnitureBox, clampSpot, spotAt, freeSpot, depthOrder, windowRect, snapScale, stepScale, resizeSpot } from '../src/features/house/furniture-layout.js';
 
 const freshDecor = (chispas = 5000) => { delete state.decor; state.chispas = chispas; };
 const F = id => findFurniture(id);
@@ -691,7 +691,7 @@ test('muebles: de una posición en px a { u, v } y de vuelta', ()=>{
   const p = spotAt(L, lamp, L.W * .3, L.horizon + 120);
   const b = furnitureBox(L, lamp, p);
   assert.ok(Math.abs(b.x + b.w / 2 - L.W * .3) < .5 && Math.abs(b.base - (L.horizon + 120)) < .5);
-  assert.equal(spotAt(L, lamp, L.W * .3, L.horizon + 120, true).flip, true, 'conserva el volteo');
+  assert.equal(spotAt(L, lamp, L.W * .3, L.horizon + 120, { flip: true }).flip, true, 'conserva el volteo');
   const far = spotAt(L, lamp, -500, 99999);
   assert.ok(far.u > 0 && far.v === 1, 'fuera del cuarto: al borde más cercano');
 });
@@ -759,4 +759,111 @@ test('muebles: cambiar solo una parte de la colocación conserva lo demás (no v
   placeFurniture('m-sofa', { v: .4 });
   assert.deepEqual(getDecor().placed['m-sofa'], { zona: 'floor', u: .3, v: .4, flip: true });
   freshDecor(0);
+});
+
+/* ---------------- tamaño ajustable de los muebles (Fase 4.5) ---------------- */
+
+test('tamaño: guardado opcional (sin él, 1), acotado a 60–160 % y compatible con muebles guardados sin scale', ()=>{
+  freshDecor();
+  buyFurniture('m-bed'); buyFurniture('m-clock');
+  placeFurniture('m-bed', { u: .3, v: .4 });
+  assert.equal('scale' in getDecor().placed['m-bed'], false, 'el 100 % no se guarda');
+  placeFurniture('m-bed', { u: .3, v: .4, scale: 1.25 });
+  assert.equal(getDecor().placed['m-bed'].scale, 1.25);
+  placeFurniture('m-bed', { u: .5, v: .5 });
+  assert.equal(getDecor().placed['m-bed'].scale, 1.25, 'moverlo conserva el tamaño');
+  flipFurniture('m-bed');
+  assert.equal(getDecor().placed['m-bed'].scale, 1.25, 'voltearlo también');
+  placeFurniture('m-clock', { u: .7, v: .3, scale: 9 });
+  assert.equal(getDecor().placed['m-clock'].scale, FURNITURE_SCALE.max);
+  placeFurniture('m-clock', { scale: .1 });
+  assert.equal(getDecor().placed['m-clock'].scale, FURNITURE_SCALE.min);
+  placeFurniture('m-clock', { scale: 1 });
+  assert.equal('scale' in getDecor().placed['m-clock'], false, 'volver al original lo quita');
+  assert.equal(getDecor().placed['m-clock'].u, .7, 'cambiar solo el tamaño no mueve el mueble');
+  // datos guardados: sin scale (Fase 4) y con valores raros
+  const clean = cleanDecor({ owned: ['m-bed', 'm-sofa', 'm-lamp', 'm-plant'], placed: {
+    'm-bed': { u: .2, v: .3 }, 'm-sofa': { u: .5, v: .5, scale: 'grande' }, 'm-lamp': { u: .5, v: .5, scale: 0 }, 'm-plant': { u: .5, v: .5, scale: 1.333333 },
+  } });
+  assert.deepEqual(clean.placed['m-bed'], { zona: 'floor', u: .2, v: .3 }, 'sin scale: tamaño de siempre, sin inventar el campo');
+  assert.equal('scale' in clean.placed['m-sofa'], false, 'no es número: 1');
+  assert.equal(clean.placed['m-lamp'].scale, FURNITURE_SCALE.min);
+  assert.equal(clean.placed['m-plant'].scale, 1.33, 'con 2 decimales');
+  // exportar e importar lo conserva
+  const saved = getDecor();
+  importSave(exportSave());
+  assert.deepEqual(getDecor(), saved);
+  freshDecor(0);
+});
+
+test('tamaño: se pega al 100 % al pasar cerca, y los pasos de los botones caen en múltiplos de 10 %', ()=>{
+  const { min, max, snap } = FURNITURE_SCALE;
+  assert.equal(snapScale(1 + snap * .8), 1);
+  assert.equal(snapScale(1 - snap * .8), 1);
+  assert.equal(snapScale(1 + snap * 1.2), Math.round((1 + snap * 1.2) * 100) / 100, 'fuera del margen, no se pega');
+  assert.equal(snapScale(5), max);
+  assert.equal(snapScale(-1), min);
+  assert.equal(snapScale(NaN), 1);
+  assert.equal(stepScale(1, 1), 1.1);
+  assert.equal(stepScale(1, -1), .9);
+  assert.equal(stepScale(1.37, 1), 1.4, 'al siguiente múltiplo');
+  assert.equal(stepScale(1.37, -1), 1.3);
+  assert.equal(stepScale(max, 1), max);
+  assert.equal(stepScale(min, -1), min);
+  let s = 1; for(let i = 0; i < 20; i++) s = stepScale(s, 1);
+  assert.equal(s, max);
+});
+
+test('tamaño: se combina con la perspectiva del piso (al 120 % sigue creciendo al acercarse)', ()=>{
+  for(const L of ROOMS){
+    const sofa = F('m-sofa');
+    const back = furnitureBox(L, sofa, { u: .5, v: 0, scale: 1.2 }), front = furnitureBox(L, sofa, { u: .5, v: 1, scale: 1.2 });
+    assert.ok(front.w > back.w * 1.05);
+    const plain = furnitureBox(L, sofa, { u: .5, v: .5 });
+    assert.ok(Math.abs(furnitureBox(L, sofa, { u: .5, v: .5, scale: 1.2 }).w - plain.w * 1.2) < .01, 'en el mismo lugar, 1.2 veces');
+  }
+});
+
+test('tamaño: al cambiarlo, el mueble del piso conserva su base y el de la pared su centro', ()=>{
+  const L = ROOMS[0];
+  const bed = F('m-bed'), p = clampSpot(L, bed, { u: .4, v: .5 });
+  const b0 = furnitureBox(L, bed, p), b1 = furnitureBox(L, bed, resizeSpot(L, bed, p, 1.3));
+  assert.ok(Math.abs(b1.base - b0.base) < .5 && Math.abs((b1.x + b1.w / 2) - (b0.x + b0.w / 2)) < .5, 'la base no se mueve');
+  const clock = F('m-clock'), c = clampSpot(L, clock, { u: .7, v: .5 });
+  const c0 = furnitureBox(L, clock, c), c1 = furnitureBox(L, clock, resizeSpot(L, clock, c, 1.5));
+  assert.ok(Math.abs((c1.y + c1.h / 2) - (c0.y + c0.h / 2)) < .5 && Math.abs((c1.x + c1.w / 2) - (c0.x + c0.w / 2)) < .5, 'el centro no se mueve');
+  assert.equal(resizeSpot(L, bed, { ...p, flip: true }, 1.2).flip, true, 'conserva el volteo');
+});
+
+test('tamaño: a cualquier tamaño, el mueble queda dentro del cuarto, arriba de la barra y fuera de la ventana', ()=>{
+  for(const L of ROOMS) for(const item of FURNITURE) for(const scale of [FURNITURE_SCALE.min, 1.3, FURNITURE_SCALE.max]) for(const [u, v] of [[0, 0], [1, 1], [.5, .5], [0, 1], [1, 0]]){
+    const p = clampSpot(L, item, { u, v, scale });
+    const b = furnitureBox(L, item, p);
+    const tag = `${item.id} ${L.W}×${L.H} ${scale} (${u}, ${v})`;
+    assert.ok(b.x >= FURN.margin - .5 && b.x + b.w <= L.W - FURN.margin + .5, `${tag}: dentro a lo ancho`);
+    assert.ok(b.y >= FURN.margin - .5, `${tag}: no sale por arriba`);
+    assert.ok((p.scale || 1) >= FURNITURE_SCALE.min && (p.scale || 1) <= scale + 1e-9, `${tag}: el tamaño solo baja si no cabe`);
+    if(item.zone === 'floor') assert.ok(b.base <= L.H - L.barSpace - FURN.barGap + .5, `${tag}: arriba de la barra`);
+    else {
+      assert.ok(b.y + b.h <= L.horizon - FURN.margin + .5, `${tag}: arriba del zócalo`);
+      assert.ok(!overlap(b, windowRect(L)), `${tag}: no tapa la ventana`);
+    }
+  }
+  // en el escritorio, todo cabe a 160 %: el tamaño no se recorta
+  const L = ROOMS[0];
+  for(const item of FURNITURE) assert.equal(clampSpot(L, item, { u: .5, v: .5, scale: FURNITURE_SCALE.max }).scale, FURNITURE_SCALE.max, item.id);
+  // agrandar un cuadro junto a la ventana: se corre al lado libre, no la tapa
+  const R = windowRect(L), pic = F('m-picture');
+  const beside = clampSpot(L, pic, spotAt(L, pic, R.x + R.w + 60, R.y + 40));
+  const big = resizeSpot(L, pic, beside, FURNITURE_SCALE.max);
+  assert.ok(!overlap(furnitureBox(L, pic, big), R));
+  assert.equal(big.scale, FURNITURE_SCALE.max);
+});
+
+test('arte: los muebles son vectoriales puros (sin imágenes, filtros ni trazos que no escalen)', ()=>{
+  for(const [id, svg] of Object.entries(FURNITURE_ART)){
+    assert.doesNotMatch(svg, /<image|<foreignObject|filter=|<filter|vector-effect|data:image/i, id);
+    assert.match(svg, /^<svg viewBox="0 0 \d+ \d+"/, `${id}: escala con su viewBox (los contornos crecen en proporción)`);
+    assert.doesNotMatch(svg, /\b(width|height)="\d+(px)?"\s[^>]*viewBox|<svg[^>]*\b(width|height)=/, `${id}: sin tamaño fijo en px`);
+  }
 });
