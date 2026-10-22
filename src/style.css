@@ -1786,6 +1786,7 @@ body[data-view="house"] .mascot-side{ display:none; }   /* en la Casa ya está e
 .zzz{ display:none; z-index:6; left:calc(50% + var(--mito) * .3); top:calc(var(--home-y) - var(--mito) * .78);
   font:800 calc(var(--mito) * .13)/1 var(--font-display); color:#e9e2ff; text-shadow:0 0 8px rgba(185,138,246,.9); pointer-events:none; }
 .room.is-asleep .zzz{ display:block; }
+.zzz{ translate:var(--fly-x, 0px) var(--fly-y, 0px); }   /* junto a Mito, donde esté dormido (la cama, el piso…) */
 .zzz i{ position:absolute; font-style:normal; opacity:0; animation:zzz 3s ease-in infinite; }
 .zzz i:nth-child(2){ animation-delay:1s; font-size:1.25em; } .zzz i:nth-child(3){ animation-delay:2s; font-size:1.55em; }
 @keyframes zzz{ 0%{ transform:translate(0, 0); opacity:0; } 20%{ opacity:1; } 100%{ transform:translate(1.4em, -2.6em); opacity:0; } }
@@ -2257,3 +2258,17 @@ body[data-view="house"] .mascot-side{ display:none; }   /* en la Casa ya está e
 @media (prefers-reduced-motion: reduce){
   .room .mascot > svg.mito, .room .mascot > .aura, .room .mascot > .house-blush{ transition:none; }
 }
+
+/* ================= CASA · FASE 5: cada cuarto con su acción ================= */
+/* Comer en la Cocina, Bañar en el Baño, Dormir en el Cuarto; Decorar y Armario en todos (nav.js escribe data-cam) */
+.room:not([data-cam="kitchen"]) .house-act[data-house-act="eat"],
+.room:not([data-cam="bath"]) .house-act[data-house-act="bath"],
+.room:not([data-cam="bedroom"]) .house-act[data-house-act="sleep"]{ display:none; }
+/* lo que necesita está en otro cuarto: un botón amarillo que los lleva a los dos */
+.house-act.go-chip{ background:linear-gradient(135deg, #ffd23c, #ffb03c); color:#5a3a00; box-shadow:0 4px 0 0 #d99a10, 0 8px 18px -8px rgba(217,154,16,.6); }
+.house-act.go-chip:active{ box-shadow:0 2px 0 0 #d99a10; }
+.house-act.go-chip[hidden]{ display:none; }
+/* dormido en la cama: se acurruca un poco de lado */
+.room.is-asleep.on-lie .mascot > svg.mito{ rotate:-9deg; }
+@media (prefers-reduced-motion: reduce){ .room.is-asleep.on-lie .mascot > svg.mito{ rotate:none; } }
+

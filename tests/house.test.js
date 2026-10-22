@@ -1109,6 +1109,19 @@ test('"Traer a Mito": el lugar elegido no lo deja tapado (en su mayoría, ni en 
   }
 });
 
+test('necesidades: cada cuarto atiende la suya, y si está en otro, Mito invita a ir', async ()=>{
+  const { roomForNeed } = await import('../src/content/rooms.js');
+  const { MITO_INVITE } = await import('../src/content/house.js');
+  assert.equal(roomForNeed('hungry').id, 'kitchen');
+  assert.equal(roomForNeed('dirty').id, 'bath');
+  assert.equal(roomForNeed('sleepy').id, 'bedroom');
+  assert.equal(roomForNeed('sad'), null, 'los cariños, en cualquier cuarto');
+  for(const need of ['hungry', 'dirty', 'sleepy']){
+    assert.ok(MITO_INVITE[need].length >= 2);
+    assert.ok(MITO_INVITE[need].every(m => [...m].length <= 34 && m.includes(roomForNeed(need).name) || /camita/.test(m)), need);
+  }
+});
+
 test('muebles para sentarse: la superficie tiene proporción real junto a Mito (al menos la mitad de su cuerpo)', ()=>{
   for(const L of ROOMS) for(const item of FURNITURE.filter(f => f.seat)){
     const p = clampSpot(L, item, { u: .5, v: .5 });

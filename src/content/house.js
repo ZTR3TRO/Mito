@@ -107,3 +107,9 @@ export const MITO_DECOR = {
   },
 };
 
+// Cuando lo que necesita está en otro cuarto, invita a ir (con el botón que los lleva a los dos).
+export const MITO_INVITE = {
+  hungry: ['¿Vamos a la Cocina? 🍎', 'Tengo hambre… ¿a la Cocina?'],
+  dirty: ['¿Vamos al Baño? 🫧', 'Tengo polvito… ¿al Baño?'],
+  sleepy: ['Uaaah… ¿vamos al Cuarto? 😴', 'Tengo sueño… ¿a mi camita?'],
+};

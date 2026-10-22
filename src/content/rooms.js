@@ -6,15 +6,19 @@
 //   action   la acción que vive solo en ese cuarto ('sleep' | 'bath' | 'eat'; la Sala no tiene: es para estar)
 //   floor    el piso: 'planks' (duela) | 'tiles' (mosaico chico) | 'checker' (ajedrez); los colores van en style.css
 //   window   la ventana: 'rect' (la de siempre, con cortinas y haz de luz) | 'round' (redonda, esmerilada)
+//   need     la necesidad de Mito que se atiende ahí (state/house.js, topNeed): si está en otro cuarto, invita a ir
 
 export const ROOMS = [
-  { id: 'bedroom', name: 'Cuarto', action: 'sleep', floor: 'planks',  window: 'rect' },
-  { id: 'bath',    name: 'Baño',   action: 'bath',  floor: 'tiles',   window: 'round' },
+  { id: 'bedroom', name: 'Cuarto', action: 'sleep', floor: 'planks',  window: 'rect',  need: 'sleepy' },
+  { id: 'bath',    name: 'Baño',   action: 'bath',  floor: 'tiles',   window: 'round', need: 'dirty' },
   { id: 'living',  name: 'Sala',   action: null,    floor: 'planks',  window: 'rect' },
-  { id: 'kitchen', name: 'Cocina', action: 'eat',   floor: 'checker', window: 'rect' },
+  { id: 'kitchen', name: 'Cocina', action: 'eat',   floor: 'checker', window: 'rect',  need: 'hungry' },
 ];
 
 // El cuarto de las partidas de antes de la Fase 5: ahí quedan los muebles sin cuarto y Mito, si no se sabe dónde está.
 export const DEFAULT_ROOM = 'bedroom';
 
 export const findRoom = id => ROOMS.find(r => r.id === id) || null;
+
+// El cuarto donde se atiende una necesidad (null si se atiende en cualquiera, como el ánimo).
+export const roomForNeed = need => ROOMS.find(r => r.need && r.need === need) || null;

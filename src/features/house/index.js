@@ -13,9 +13,10 @@
 
 import { byId } from '../../core/dom.js';
 import { on, emit } from '../../core/bus.js';
-import { getHouseHintCount, markHouseHintShown, getMito, setMito } from '../../state/store.js';
+import { getHouseHintCount, markHouseHintShown, getMito, setMito, getNeeds, NEEDS } from '../../state/store.js';
+import { roomForNeed } from '../../content/rooms.js';
 import { buildPanes, layoutRoom, roomLayout } from './room.js';
-import { createNav } from './nav.js';
+import { createNav, ROOM_ICONS } from './nav.js';
 import { bindGestures } from './gestures.js';
 import { createMotion } from './motion.js';
 import { createReactions } from './reactions.js';
@@ -80,6 +81,7 @@ export function init(){
       // la primera vez en este cuarto: su regalo, ya puesto (y Mito lo dice si está aquí y despierto)
       if(decor.gift(to)) setTimeout(()=>{ if(!away()) decor.thank(to); }, 500);
       decor?.render();
+      needs?.render();
       look();
     },
   });
@@ -92,7 +94,37 @@ export function init(){
     button: act('decor'), here: ()=> nav.room, canTalk: ()=> !sleep.asleep && !away(), onChange: refresh,
     mito: ()=> ({ room: nav.mitoRoom, y: motion?.busy || !motion?.rest ? Infinity : motion.rest.depth, on: motion?.busy ? null : motion?.rest?.on }),
   });
-  needs = createNeeds(room, mascot, reactions, { busy: ()=> sleep.asleep || bath.bathing || food.eating || decor.active || away() });
+  // Si lo que necesita está en otro cuarto, un botón en la barra los lleva a los dos ("Cocina", "Baño", "Cuarto").
+  const goChip = document.createElement('button');
+  goChip.type = 'button';
+  goChip.className = 'house-act go-chip';
+  goChip.hidden = true;
+  room.querySelector('.house-bar:not(.decor-tray)')?.prepend(goChip);
+  let goTo = null;
+  function chip(need){
+    const there = roomForNeed(need);
+    goTo = there && there.id !== nav.room && !away() && !sleep.asleep ? there : null;
+    goChip.hidden = !goTo;
+    if(goTo){
+      goChip.innerHTML = `${ROOM_ICONS[goTo.id]}<span>${goTo.name}</span>`;
+      goChip.setAttribute('aria-label', `Ir con Mito: ${goTo.name}`);
+    }
+  }
+  goChip.addEventListener('click', ()=>{ hideHint(); if(goTo) nav.go(goTo.id, 'dot'); });
+  needs = createNeeds(room, mascot, reactions, {
+    busy: ()=> sleep.asleep || bath.bathing || food.eating || decor.active || away(),
+    here: ()=> nav.room, onNeed: chip,
+  });
+
+  // Las acciones aprovechan el lugar: a dormir, a la cama (si hay en el Cuarto); a comer, a una silla de la mesa.
+  const HOP_WAIT = ()=> reducedMotion() ? 420 : 620;
+  function hopTo(kinds, ids){
+    const seat = decor.surfaces(nav.mitoRoom).filter(st => kinds.includes(st.kind) && (!ids || ids.includes(st.id)))
+      .sort((a, b) => Math.abs((a.x0 + a.x1) / 2 - (motion.rest?.x ?? 0)) - Math.abs((b.x0 + b.x1) / 2 - (motion.rest?.x ?? 0)))[0];
+    if(!seat || motion.busy || motion.rest?.on === seat.id) return false;
+    motion.hop((seat.x0 + seat.x1) / 2, seat.y, seat);
+    return true;
+  }
   // Los botones nunca se deshabilitan: cada uno responde. "Dormir" o "Comer" durante el baño lo terminan primero;
   // "Bañar" o "Comer" mientras duerme lo despiertan con ternura (y luego ya se puede).
   act('eat')?.addEventListener('click', ()=>{
@@ -100,12 +132,16 @@ export function init(){
     if(toMito()) return;
     if(sleep.asleep){ sleep.touch(); return; }
     if(bath.bathing){ bath.finish(); return; }
+    // al abrir la charola, si hay mesa, se sienta en una de sus sillas
+    if(!food.open && hopTo(['sit'], ['m-table'])){ setTimeout(()=> food.toggle(), HOP_WAIT()); return; }
     food.toggle();
   });
   act('sleep')?.addEventListener('click', ()=>{
     hideHint();
     if(toMito()) return;
     if(bath.bathing){ bath.finish(); return; }
+    // con sueño y una cama aquí, se acuesta en ella y luego se duerme (sin sueño, lo dice desde donde está)
+    if(!sleep.asleep && getNeeds().energy < NEEDS.sleepBelow && hopTo(['lie'])){ setTimeout(()=> sleep.toggle(), HOP_WAIT()); return; }
     sleep.toggle();
   });
   act('bath')?.addEventListener('click', ()=>{

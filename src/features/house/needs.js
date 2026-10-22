@@ -7,11 +7,14 @@
 //   is-asleep: dormido (lo maneja sleep.js con el mismo estado)
 //
 // Frases: como mucho una por minuto, solo si no hubo gestos en los últimos 10 s, nunca durmiendo ni bañándose.
+// Si lo que necesita se atiende en otro cuarto (content/rooms.js: comer en la Cocina, bañarse en el Baño, dormir en el
+// Cuarto), la frase invita a ir; onNeed(need) avisa a la Casa para que muestre el botón que los lleva a los dos.
 // Los cariños (del bus) suben el ánimo; si eso lo saca de "triste", lo agradece.
 
 import { on } from '../../core/bus.js';
 import { getNeeds, topNeed, careMood, NEEDS } from '../../state/store.js';
-import { MITO_NEEDS, MITO_THANKS, MITO_FOOD } from '../../content/house.js';
+import { MITO_NEEDS, MITO_THANKS, MITO_FOOD, MITO_INVITE } from '../../content/house.js';
+import { roomForNeed } from '../../content/rooms.js';
 import { DIRT } from '../../content/art/house.js';
 import { FOOD_ART } from '../../content/art/food.js';
 import { favoriteFood, hasFood } from './food.js';
@@ -20,7 +23,8 @@ const PHRASE_GAP_MS = 60e3;      // una frase de necesidad por minuto, como much
 const QUIET_AFTER_GESTURE_MS = 10e3;
 const TICK_MS = 5e3;
 
-export function createNeeds(room, mascot, reactions, { busy }){
+// here(): el cuarto que se ve (y donde está Mito).
+export function createNeeds(room, mascot, reactions, { busy, here = ()=> null, onNeed = ()=>{} }){
   mascot.insertAdjacentHTML('beforeend', DIRT
     + '<div class="hunger-think" aria-hidden="true"><i></i><i></i><span></span></div><div class="hunger-rumble" aria-hidden="true"><i></i><i></i></div>');
   const think = mascot.querySelector(':scope > .hunger-think > span');
@@ -37,6 +41,7 @@ export function createNeeds(room, mascot, reactions, { busy }){
     const dirt = Math.max(0, Math.min(1, (NEEDS.low - n.clean) / (NEEDS.low - NEEDS.floor)));
     room.style.setProperty('--dirt', dirt.toFixed(2));
     reactions.setBase(need === 'sad' ? 'sad' : 'normal');
+    onNeed(need);
     return { n, need };
   }
 
@@ -48,7 +53,9 @@ export function createNeeds(room, mascot, reactions, { busy }){
     const { need } = render();
     if(!need || !MITO_NEEDS[need]) return false;
     lastPhrase = now;
-    if(need === 'hungry' && !hasFood()) reactions.sayFrom(MITO_FOOD.hungryEmpty, 'need-hungry-empty');
+    const there = roomForNeed(need);
+    if(there && there.id !== here() && MITO_INVITE[need]) reactions.sayFrom(MITO_INVITE[need], 'invite-' + need);
+    else if(need === 'hungry' && !hasFood()) reactions.sayFrom(MITO_FOOD.hungryEmpty, 'need-hungry-empty');
     else reactions.sayFrom(MITO_NEEDS[need], 'need-' + need);
     return true;
   }

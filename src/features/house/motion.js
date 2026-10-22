@@ -73,7 +73,12 @@ export function createMotion(room, mascot, { geometry = ()=> null, onHit = ()=>{
     set('--lift', clamp((groundY - y) / (L.H * .5), 0, 1).toFixed(3));
     onPaint();
   }
-  const paintRest = ()=> rest && paint(rest.x, rest.y, rest.y, rest.depth);
+  // Quieto: en su lugar; on-lie si está en una superficie para acostarse (la cama: al dormir, se acurruca).
+  function paintRest(){
+    if(!rest) return;
+    paint(rest.x, rest.y, rest.y, rest.depth);
+    room.classList.toggle('on-lie', !!rest.on && seats.find(st => st.id === rest.on)?.kind === 'lie');
+  }
 
   /* ---------- la mascota: se queda en el piso, cerca de Mito ---------- */
   function petTarget(){
@@ -180,6 +185,7 @@ export function createMotion(room, mascot, { geometry = ()=> null, onHit = ()=>{
     body = { x: at.x, y: at.y };
     state = 'held';
     room.classList.add('is-held');
+    room.classList.remove('on-lie');
     room.style.removeProperty('--mito-fade');
   }
 
@@ -282,19 +288,22 @@ export function createMotion(room, mascot, { geometry = ()=> null, onHit = ()=>{
     frame = raf(step);
   }
 
-  // Un salto a un lugar del piso (x, y en px): "Traer a Mito".
-  function hop(x, y){
+  // Un salto a un lugar (x, y en px: sus pies): al piso ("Traer a Mito") o a la superficie de un mueble (seat:
+  // { id, base }; acostarse en la cama al dormir, sentarse a la mesa al comer).
+  function hop(x, y, seat = null){
     caf(frame);
     const g = geometry();
     if(!g || !rest) return;
-    const to = { x, y, on: null, depth: y };
+    seats = g.seats;
+    const to = { x, y, on: seat ? seat.id : null, depth: seat ? seat.base : y };
     if(reducedMotion()){ fadeTo(to); return; }
     const from = { ...rest }, start = now(), arc = g.L.mito * .45;
     state = 'hop';
     const step = t=>{
       const k = Math.min(1, (t - start) / HOP_MS), e = 1 - (1 - k) ** 2;
       const cx = from.x + (to.x - from.x) * e, cy = from.y + (to.y - from.y) * e - Math.sin(Math.PI * k) * arc;
-      paint(cx, cy, from.depth + (to.depth - from.depth) * e, from.depth + (to.depth - from.depth) * e);
+      const d = from.depth + (to.depth - from.depth) * e;
+      paint(cx, cy, Math.max(cy, from.y + (to.y - from.y) * e), d);
       if(k < 1) frame = raf(step); else arrive(to, false);
     };
     frame = raf(step);
