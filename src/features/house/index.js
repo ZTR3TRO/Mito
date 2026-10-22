@@ -271,6 +271,14 @@ export function init(){
     else document.documentElement.style.removeProperty('--nav-h');
   };
   window.addEventListener('resize', measureNav);
+  window.addEventListener('orientationchange', measureNav);
+  window.visualViewport?.addEventListener('resize', measureNav);   // la barra de direcciones de Safari sube y baja
+
+  // Candado de scroll (con el CSS de la Casa): en el iPhone el rebote de Safari solo se detiene con un touchmove no
+  // pasivo. Las bandejas (.ft-list) se siguen deslizando de lado.
+  document.addEventListener('touchmove', e=>{
+    if(inHouse && e.cancelable && !e.target.closest?.('.ft-list, [role="alertdialog"], [role="dialog"]')) e.preventDefault();
+  }, { passive: false });
 
   let welcomeTimer = 0;
   on('nav:after', view=>{

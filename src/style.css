@@ -1528,13 +1528,21 @@ body[data-view="house"] main{ padding:0; max-width:none; display:flex; flex-dire
 body[data-view="house"] .mascot-side{ display:none; }   /* en la Casa ya está el Mito grande; el del panel distrae */
 #view-house.active{ display:flex; flex-direction:column; flex:1 1 auto; min-height:0; }
 .house{ position:relative; flex:1 1 auto; min-height:0; display:flex; container:house / size; }
+/* Candado de scroll: en la Casa la página no se desplaza ni rebota. body y .app traen min-height:100vh (en Safari del
+   iPhone, el viewport con la barra de direcciones retraída: más alto que lo visible) y min-height le gana a height,
+   así que se anula. Fuera de la Casa estas reglas no aplican y las demás vistas se desplazan normal. */
+html:has(body[data-view="house"]), body[data-view="house"]{ overflow:hidden; overscroll-behavior:none; }
+body[data-view="house"]{ height:100vh; height:100dvh; min-height:0; }
+body[data-view="house"] .app{ min-height:0; max-height:100vh; max-height:100dvh; }
+/* El dedo sobre las capas de la escena nunca desplaza la página (las bandejas conservan su pan-x). */
+.house-panes, .stage-scene, .house-speech{ touch-action:none; }
 @media (min-width: 881px){
   body[data-view="house"] .app{ height:100vh; height:100dvh; }
   body[data-view="house"] main{ height:100vh; height:100dvh; }
 }
 @media (max-width: 880px){
   /* header arriba (su alto natural) y el cuarto hasta la barra de navegación fija (--nav-h lo mide house/index.js) */
-  body[data-view="house"] .app{ display:flex; flex-direction:column; height:100vh; height:100dvh; }
+  body[data-view="house"] .app{ position:fixed; inset:0; display:flex; flex-direction:column; height:100vh; height:100dvh; }
   body[data-view="house"] .sidebar{ flex:0 0 auto; }
   body[data-view="house"] main{ flex:1 1 auto; padding:0 0 var(--nav-h, calc(64px + env(safe-area-inset-bottom, 0px))); }
 }

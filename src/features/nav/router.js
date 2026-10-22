@@ -20,7 +20,7 @@ export function goTo(view){
   const navView = byId('view-' + view)?.dataset.navParent || view;
   $$('.navbtn').forEach(b=>b.classList.toggle('active', b.dataset.view === navView));
   emit('nav:after', view);
-  window.scrollTo({ top:0, behavior:'smooth' });
+  window.scrollTo({ top:0, behavior: view === 'house' ? 'auto' : 'smooth' });   // la Casa no se desplaza: sin animación
 }
 
 export function initNavButtons(){
