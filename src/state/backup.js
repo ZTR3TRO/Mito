@@ -79,7 +79,7 @@ export function parseSave(json){
     lastDay: typeof s.lastDay === 'string' ? s.lastDay : null,
     theme: s.theme === 'dark' ? 'dark' : 'light',
     course: typeof s.course === 'string' ? s.course : d.course,
-    // opcional: si el archivo no lo trae, se queda como estaba
+    // opcional: si el archivo no lo trae, empieza en 0 (importar reemplaza la partida entera, ver importSave)
     ...(Number.isFinite(s.houseHint) ? { houseHint: Math.max(0, Math.floor(s.houseHint)) } : {}),
     // opcional: las necesidades de Mito en la Casa, validadas (sin el campo, todo empieza lleno)
     ...(s.house != null ? { house: parseHouse(s.house) } : {}),
@@ -94,7 +94,10 @@ export function parseSave(json){
 
 export function importSave(json){
   const clean = parseSave(json);
-  // Object.assign mantiene la identidad de `state`: quien la capturó la sigue viendo.
+  // Importar reemplaza la partida entera: lo que el archivo no trae (los campos opcionales, como las necesidades,
+  // la charola, los muebles o las pistas) queda como en una partida nueva, en vez de quedarse como estaba.
+  // Se borra y se asigna sobre el mismo objeto: así `state` mantiene su identidad y quien lo capturó lo sigue viendo.
+  Object.keys(state).forEach(k=>{ if(!(k in clean)) delete state[k]; });
   Object.assign(state, clean);
   commit();
 }

@@ -645,9 +645,10 @@ test('muebles: datos guardados limpios, compatibles sin el campo, y en exportar,
   const saved = getDecor();
   importSave(exportSave());
   assert.deepEqual(getDecor(), saved);
-  // importar una partida sin el campo no toca los muebles (como los demás campos opcionales: la charola, las pistas)
+  // importar una partida sin el campo la reemplaza entera: el cuarto queda sin muebles
   importSave(fixture);
-  assert.deepEqual(getDecor(), saved);
+  assert.deepEqual(getDecor().owned, []);
+  assert.equal('decor' in state, false);
   // reiniciar todo
   state.decor = { owned: ['m-bed'], placed: {} }; state.decorHint = 3;
   resetAll();
@@ -732,4 +733,21 @@ test('contenido: catálogo de muebles (10 a 12, pared y piso, 150–400), dibujo
   }
   const phrases = [...Object.values(MITO_DECOR.placed), ...MITO_DECOR.gift];
   assert.deepEqual(phrases.filter(m => [...m].length > 34), []);
+});
+
+test('respaldo: importar reemplaza la partida entera, también los campos opcionales que el archivo no trae', ()=>{
+  const fixture = readFileSync(new URL('./fixtures/guardado-42c03de.json', import.meta.url), 'utf8');
+  state.house = { v: 3, at: Date.now(), needs: { hunger: 30, clean: 30, energy: 30, mood: 30 }, sleepSince: null };
+  state.pantry = { 'f-apple': 4 }; state.decor = { owned: ['m-bed'], placed: {} };
+  state.houseHint = 2; state.foodHint = 1; state.decorHint = 5;
+  const before = state;
+  importSave(fixture);
+  assert.equal(state, before, 'el objeto de estado es el mismo (quien lo capturó lo sigue viendo)');
+  for(const k of ['house', 'pantry', 'decor', 'houseHint', 'foodHint', 'decorHint']) assert.equal(k in state, false, k);
+  assert.equal(state.chispas, JSON.parse(fixture).chispas);
+  // y lo que el archivo sí trae, entra
+  importSave(JSON.stringify({ ...JSON.parse(fixture), pantry: { 'f-egg': 2 }, decorHint: 3 }));
+  assert.deepEqual(state.pantry, { 'f-egg': 2 });
+  assert.equal(state.decorHint, 3);
+  resetAll();
 });
