@@ -1,15 +1,18 @@
 // Tienda y armario: catálogo, tarjetas de producto, compra/equipar, la sección Comida (se compra por unidad
-// y se gasta en la Casa) y la tienda de temporada de Halloween.
+// y se gasta en la Casa), la sección Muebles (una sola vez cada uno; se colocan en la Casa con "Decorar") y la
+// tienda de temporada de Halloween.
 
 import { clear, byId, delegate } from '../../core/dom.js';
 import { WARDROBE, findItem, findItemById, categoryOf, isSeasonalOpen } from '../../content/wardrobe.js';
 import {
   getChispas, getEquipped, owns, buyAndEquip, equipCategory,
-  getPetName, getPetDisplayName, renamePet, getPetLook, setPetLook, foodCount, buyFood,
+  getPetName, getPetDisplayName, renamePet, getPetLook, setPetLook, foodCount, buyFood, getDecor, buyFurniture,
 } from '../../state/store.js';
 import { FOODS, FOOD_MAX, findFood } from '../../content/food.js';
 import { FOOD_ART } from '../../content/art/food.js';
-import { on } from '../../core/bus.js';
+import { FURNITURE, findFurniture } from '../../content/furniture.js';
+import { FURNITURE_ART, FURNITURE_DEFS } from '../../content/art/furniture.js';
+import { on, emit } from '../../core/bus.js';
 import { applyAvatar, previewAvatar, itemThumb } from '../mascot/avatar.js';
 import { sparkAt } from '../mascot/effects.js';
 import { petSay } from '../mascot/speech.js';
@@ -21,8 +24,8 @@ let petNameReturnFocus = null;
 
 // Móvil (≤ 880 px): tocar un objeto lo pone "en prueba" (vista previa grande + barra fija); comprar o equipar solo con el botón de la barra.
 const isMobile = ()=> !!window.matchMedia?.('(max-width: 880px)').matches;
-let trial = null;   // { cat, id } del objeto en prueba, o { food: true, id } para la comida
-let focusOnShow = null;   // 'food': al abrir la Tienda, ir a la sección Comida (desde la charola de la Casa)
+let trial = null;   // { cat, id } del objeto en prueba, o { food: true, id } para la comida, o { furn: true, id } para un mueble
+let focusOnShow = null;   // 'food' | 'furniture': al abrir la Tienda, ir a esa sección (desde la Casa)
 const reducedMotion = ()=> !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
 function displayName(cat, item, custom){
@@ -91,8 +94,9 @@ function renderCollection(hostId, shopping, seasonalOnly = false){
     host.innerHTML = '<div class="empty-state">Todavía no has comprado productos. Puedes usar las opciones básicas o <button class="btn-mini" data-nav="shop">Visitar tienda</button>.</div>';
   }
 
-  // La comida va primero: nunca se agota (la ropa comprada desaparece de la Tienda).
-  if(shopping && !seasonalOnly) host.appendChild(buildFoodSection());
+  // La comida y los muebles van primero: nunca se agotan (la ropa comprada desaparece de la Tienda; un mueble
+  // comprado se queda, con el botón para colocarlo).
+  if(shopping && !seasonalOnly) host.append(buildFoodSection(), buildFurnitureSection());
   let shown = 0;
 
   WARDROBE.forEach(cat=>{
@@ -271,6 +275,135 @@ function handleFoodBuy(btn){
   if(notice) notice.textContent = `${f.name}: +1. Tienes ${have} en tu charola.`;
 }
 
+/* ---------- Muebles: se compran una sola vez y se colocan en la Casa ("Decorar") ---------- */
+const ZONE = { wall: 'Pared', floor: 'Piso' };
+
+function buildFurnitureSection(){
+  if(!document.getElementById('furnDefs')) document.body.insertAdjacentHTML('afterbegin', FURNITURE_DEFS);
+  const section = document.createElement('div');
+  section.className = 'shop-cat furn-cat';
+  section.id = 'shopFurniture';
+  section.innerHTML = '<h3>Muebles <span class="food-cat-sub">Se compran una sola vez. Colócalos donde quieras en la Casa, con “Decorar”.</span></h3>';
+  const grid = document.createElement('div');
+  grid.className = 'shop-items';
+  FURNITURE.forEach(f => grid.appendChild(buildFurnitureCard(f)));
+  section.appendChild(grid);
+  return section;
+}
+
+// placed: en el cuarto · stored: comprado, en el inventario · gift: el regalo, aún sin entregar · shop: a la venta
+function furnitureState(f){
+  const d = getDecor();
+  if(d.placed[f.id]) return 'placed';
+  if(d.owned.includes(f.id)) return 'stored';
+  return f.cost > 0 ? 'shop' : 'gift';
+}
+const FURN_STATE = { placed: 'En tu cuarto', stored: 'En tu inventario', gift: 'Te espera en la Casa', shop: 'Una sola vez' };
+const furnitureStateLabel = f => (f.gift ? 'Regalo · ' : '') + FURN_STATE[furnitureState(f)];
+
+function buildFurnitureCard(f){
+  const card = document.createElement('div');
+  card.className = 'shop-item furn-item' + (trial && trial.id === f.id ? ' is-trial' : '');
+  card.dataset.item = f.id;
+  card.innerHTML = `
+    <span class="fi-tag ${f.zone}">${ZONE[f.zone]}</span>
+    <span class="si-have" aria-hidden="true"></span>
+    <div class="si-visual fi-art">${FURNITURE_ART[f.id]}</div>
+    <div class="si-name">${esc(f.name)}</div>
+    <div class="fi-state"></div>
+    <div class="si-actions"><button type="button" class="btn-mini"></button></div>`;
+  syncFurnitureCard(card, f);
+  // En escritorio, la vista previa muestra el mueble (no a Mito) al pasar el ratón o al tabular por el botón.
+  const show = ()=>{ if(!isMobile()) showFurniturePreview(f); };
+  const hide = ()=>{ if(!isMobile()) showFurniturePreview(null); };
+  card.addEventListener('mouseenter', show);
+  card.addEventListener('mouseleave', hide);
+  card.querySelector('.btn-mini').addEventListener('focus', show);
+  card.querySelector('.btn-mini').addEventListener('blur', hide);
+  return card;
+}
+
+// Botón de un mueble: el precio ("Te faltan N ⚡" sin saldo) o, si ya es tuyo, llevarlo a la Casa con Decorar abierto.
+function syncFurnitureButton(btn, f){
+  const st = furnitureState(f), missing = f.cost - getChispas();
+  ['buyFurn', 'placeFurn', 'nav'].forEach(k => delete btn.dataset[k]);
+  btn.removeAttribute('disabled'); btn.removeAttribute('aria-disabled'); btn.removeAttribute('title');
+  btn.classList.toggle('equip-only', st !== 'shop');
+  if(st === 'shop'){
+    btn.dataset.buyFurn = f.id;
+    btn.textContent = missing > 0 ? `Te faltan ${missing} ⚡` : `Comprar · ⚡ ${f.cost}`;
+    if(missing > 0){ btn.setAttribute('aria-disabled', 'true'); btn.title = `Te faltan ${missing} chispas`; }
+  } else {
+    btn.dataset.nav = 'house';
+    if(st !== 'gift') btn.dataset.placeFurn = f.id;
+    btn.textContent = { placed: 'Mover en la Casa', stored: 'Colocar en la Casa', gift: 'Ir a la Casa' }[st];
+  }
+  btn.setAttribute('aria-label', `${btn.textContent}: ${f.name}`);
+}
+
+function syncFurnitureCard(card, f){
+  const st = furnitureState(f);
+  const badge = card.querySelector('.si-have');
+  badge.hidden = st === 'shop' || st === 'gift';
+  badge.textContent = st === 'placed' ? '✓' : '📦';
+  card.querySelector('.fi-state').textContent = furnitureStateLabel(f);
+  syncFurnitureButton(card.querySelector('.si-actions .btn-mini'), f);
+}
+
+function refreshFurniture(){
+  document.querySelectorAll('.furn-item[data-item]').forEach(card=>{
+    const f = findFurniture(card.dataset.item);
+    if(f) syncFurnitureCard(card, f);
+  });
+}
+
+// Mini cuarto (pared, zócalo y piso) con el mueble donde le toca: en la vista previa de escritorio y en la barra de móvil.
+function miniRoom(f){
+  const art = FURNITURE_ART[f.id].replace('<svg ', `<svg preserveAspectRatio="${f.zone === 'wall' ? 'xMidYMid' : 'xMidYMax'} meet" `);
+  return `<div class="fv-mini" aria-hidden="true"><span class="fv-wall"></span><span class="fv-floor"></span><span class="fv-base"></span>
+    <span class="fv-art ${f.zone}${f.flat ? ' flat' : ''}">${art}</span></div>`;
+}
+
+function showFurniturePreview(f){
+  const box = byId('mascotPreview')?.closest('.wardrobe-preview');
+  if(!box) return;
+  let pane = box.querySelector('.fv-pane');
+  if(!f){ box.classList.remove('is-furn'); return; }
+  if(!pane){ pane = document.createElement('div'); pane.className = 'fv-pane'; box.appendChild(pane); }
+  if(pane.dataset.item !== f.id){
+    pane.dataset.item = f.id;
+    pane.innerHTML = `${miniRoom(f)}<div class="preview-labels">
+      <div class="pv-row">Mueble: <b>${esc(f.name)}</b></div>
+      <div class="pv-row">Va en: <b>${f.zone === 'wall' ? 'la pared' : 'el piso'}</b></div>
+      ${f.glow ? '<div class="pv-row">Se enciende de noche ✨</div>' : ''}
+      <div class="pv-row">${f.cost > 0 ? `Precio: <b>⚡ ${f.cost}</b>` : '<b>Regalo</b>'} · ${esc(FURN_STATE[furnitureState(f)])}</div></div>`;
+  }
+  box.classList.add('is-furn');
+}
+
+function handleFurnitureBuy(btn){
+  const notice = byId('shopNotice');
+  const f = findFurniture(btn.dataset.buyFurn);
+  if(!f) return;
+  if(btn.getAttribute('aria-disabled') === 'true'){
+    if(notice) notice.textContent = btn.title;
+    return;
+  }
+  if(!buyFurniture(f.id)){
+    if(notice) notice.textContent = ACTION_FAILED;
+    refreshFurniture();
+    return;
+  }
+  sparkAt(byId('mascotPreview'), '🛋️');
+  refreshFurniture();
+  updateBalance();
+  const badge = document.querySelector(`.furn-item[data-item="${f.id}"] .si-have`);
+  if(badge){ badge.classList.remove('pop'); void badge.offsetWidth; badge.classList.add('pop'); }
+  if(!isMobile()) showFurniturePreview(null);
+  renderTrialBar();
+  if(notice) notice.textContent = `${f.name}: comprado. Colócalo en la Casa con “Decorar”.`;
+}
+
 function closePetNameModal(){
   document.querySelector('.pet-modal-backdrop')?.remove();
   if(petNameReturnFocus && document.contains(petNameReturnFocus)) petNameReturnFocus.focus({ preventScroll:true });
@@ -394,6 +527,7 @@ function updateAffordability(){
     btn.setAttribute('aria-label', `${btn.textContent}: ${item.name}`);
   });
   refreshFood();
+  refreshFurniture();
   renderTrialBar();
 }
 
@@ -406,9 +540,10 @@ function previewTargets(){
 
 function setTrial(card){
   const id = card.dataset.item;
-  if(findFood(id)){   // la comida no se prueba: la barra muestra el alimento en vez de Mito
-    if(trial && !trial.food) applyAvatar();
-    trial = { food: true, id };
+  // la comida y los muebles no se prueban: la barra los muestra en vez de a Mito
+  if(findFood(id) || findFurniture(id)){
+    if(trial && !trial.food && !trial.furn) applyAvatar();
+    trial = findFood(id) ? { food: true, id } : { furn: true, id };
     document.querySelectorAll('.shop-item.is-trial').forEach(c=>c.classList.remove('is-trial'));
     card.classList.add('is-trial');
     renderTrialBar();
@@ -426,10 +561,10 @@ function setTrial(card){
 
 function clearTrial(){
   if(!trial) return;
-  const wasFood = trial.food;
+  const withMito = !trial.food && !trial.furn;
   trial = null;
   document.querySelectorAll('.shop-item.is-trial').forEach(c=>c.classList.remove('is-trial'));
-  if(!wasFood) applyAvatar();
+  if(withMito) applyAvatar();
   renderTrialBar();
 }
 
@@ -444,7 +579,24 @@ function renderTrialBar(){
   if(!name || !act) return;
   const box = document.querySelector('.tb-mito');
   const food = trial && trial.food ? findFood(trial.id) : null;
+  const furn = trial && trial.furn ? findFurniture(trial.id) : null;
   box?.classList.toggle('is-food', !!food);
+  box?.classList.toggle('is-furn', !!furn);
+  ['buyFurn', 'placeFurn', 'nav'].forEach(k => delete act.dataset[k]);
+  if(furn){
+    byId('trialBar').classList.add('is-open');
+    document.body.classList.add('trial-open');
+    let pic = box.querySelector('.tb-furn');
+    if(!pic){ pic = document.createElement('div'); pic.className = 'tb-furn'; box.appendChild(pic); }
+    if(pic.dataset.item !== furn.id){ pic.dataset.item = furn.id; pic.innerHTML = miniRoom(furn); }
+    name.textContent = furn.name;
+    sub.textContent = `Muebles · ${ZONE[furn.zone]} · ` + (furnitureState(furn) === 'shop' ? `⚡ ${furn.cost}` : furnitureStateLabel(furn));
+    close.hidden = act.hidden = false;
+    act.className = 'btn-mini tb-act';
+    ['buy', 'equip', 'buyFood'].forEach(k=> delete act.dataset[k]);
+    syncFurnitureButton(act, furn);
+    return;
+  }
   if(food){
     byId('trialBar').classList.add('is-open');
     document.body.classList.add('trial-open');
@@ -562,11 +714,16 @@ export function init(){
     if(e.target.closest('[data-trial-clear]')){ clearTrial(); return; }
     if(isMobile()){
       // En móvil, tocar una tarjeta (o su botón) solo pone el objeto en prueba; la compra va en la barra.
+      // (Los botones que llevan a otra vista, como "Colocar en la Casa", sí funcionan directo.)
       const card = e.target.closest('.shop-item');
-      if(card && !e.target.closest('.rename-pet')){ setTrial(card); return; }
+      if(card && !e.target.closest('.rename-pet, [data-nav]')){ setTrial(card); return; }
     }
     const foodBtn = e.target.closest('[data-buy-food]');
     if(foodBtn){ handleFoodBuy(foodBtn); return; }
+    const furnBtn = e.target.closest('[data-buy-furn]');
+    if(furnBtn){ handleFurnitureBuy(furnBtn); return; }
+    // "Colocar en la Casa": la navegación la hace data-nav; la Casa abre Decorar al llegar
+    if(e.target.closest('[data-place-furn]')){ emit('house:focus', 'decor'); return; }
     const btn = e.target.closest('[data-buy], [data-equip]');
     if(btn) handlePurchase(btn);
   });
@@ -588,19 +745,21 @@ export function init(){
     trial = null;
     document.querySelectorAll('.shop-item.is-trial').forEach(c=>c.classList.remove('is-trial'));
     renderTrialBar();
-    if(view === 'shop' && focusOnShow === 'food') showFoodSection();
+    byId('mascotPreview')?.closest('.wardrobe-preview')?.classList.remove('is-furn');
+    if(view === 'shop' && focusOnShow) showSection(focusOnShow === 'furniture' ? 'shopFurniture' : 'shopFood');
     focusOnShow = null;
   });
-  // La charola de la Casa pide ir directo a la sección Comida.
+  // La charola y la bandeja de Decorar piden ir directo a la sección Comida o Muebles.
   on('shop:focus', section=>{ focusOnShow = section; });
 }
 
-// Lleva a la sección Comida y la resalta un momento. En escritorio ya está arriba (debajo de la vista previa fija).
-function showFoodSection(){
+// Lleva a una sección (Comida o Muebles) y la resalta un momento.
+function showSection(id){
   setTimeout(()=>{
-    const section = byId('shopFood');
+    const section = byId(id);
     if(!section) return;
-    if(isMobile()) section.scrollIntoView({ block: 'start', behavior: reducedMotion() ? 'auto' : 'smooth' });
+    // la Comida ya está arriba en escritorio (debajo de la vista previa fija); los Muebles van después
+    if(isMobile() || id !== 'shopFood') section.scrollIntoView({ block: 'start', behavior: reducedMotion() ? 'auto' : 'smooth' });
     section.classList.remove('is-flash'); void section.offsetWidth; section.classList.add('is-flash');
     setTimeout(()=> section.classList.remove('is-flash'), 1800);
   }, 120);

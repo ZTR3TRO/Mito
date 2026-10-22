@@ -988,3 +988,48 @@ test('Inicio: el título del hero se encoge con nombres largos y las materias si
 
   document.querySelectorAll('#courseTabs .course-pill')[0].click();
 });
+
+test('casa · fase 4: la sección Muebles, comprar, "Colocar en la Casa" abre Decorar y la bandeja', ()=>{
+  resetApp();
+  store.addChispas(500);
+  document.querySelector('.navbtn[data-view="shop"]').click();
+  const section = document.getElementById('shopFurniture');
+  assert.ok(section, 'la sección Muebles existe');
+  assert.equal(section.querySelectorAll('.furn-item').length, 12);
+  // el regalo no se vende: lleva a la Casa
+  const rug = section.querySelector('.furn-item[data-item="m-rug"] .btn-mini');
+  assert.equal(rug.dataset.nav, 'house');
+  assert.equal(rug.dataset.buyFurn, undefined);
+  // sin saldo para la cama (400 > 500 − 240 después de la lámpara)
+  section.querySelector('[data-buy-furn="m-lamp"]').click();
+  assert.equal(store.getChispas(), 260);
+  assert.deepEqual(store.getDecor().owned, ['m-lamp']);
+  assert.match(document.getElementById('shopNotice').textContent, /Decorar/);
+  const bed = section.querySelector('[data-buy-furn="m-bed"]');
+  assert.match(bed.textContent, /Te faltan 140/);
+  bed.click();
+  assert.equal(store.getChispas(), 260, 'sin saldo no compra');
+  // ya comprada: se coloca en la Casa (y no se puede volver a comprar)
+  const place = section.querySelector('.furn-item[data-item="m-lamp"] .btn-mini');
+  assert.equal(place.dataset.placeFurn, 'm-lamp');
+  assert.match(place.textContent, /Colocar en la Casa/);
+  place.click();
+  assert.ok(document.getElementById('view-house').classList.contains('active'));
+  const room = document.getElementById('houseRoom');
+  assert.ok(room.classList.contains('is-decorating'), 'Decorar ya está abierto');
+  const tray = room.querySelector('.decor-tray');
+  assert.ok(!tray.hidden);
+  assert.ok(tray.querySelector('.dc-item[data-furn-item="m-lamp"]'), 'la lámpara está en la bandeja');
+  assert.ok(JSON.parse(store.exportSave()).decor.owned.includes('m-lamp'), 'los muebles entran en la copia de seguridad');
+  // Listo cierra Decorar; el botón Decorar lo vuelve a abrir
+  tray.querySelector('[data-decor-done]').click();
+  assert.ok(!room.classList.contains('is-decorating') && tray.hidden);
+  const decor = room.querySelector('[data-house-act="decor"]');
+  decor.click();
+  assert.ok(room.classList.contains('is-decorating'));
+  decor.click();
+  // salir de la Casa cierra Decorar
+  document.querySelector('.navbtn[data-view="home"]').click();
+  assert.ok(!room.classList.contains('is-decorating'));
+  resetApp();
+});
