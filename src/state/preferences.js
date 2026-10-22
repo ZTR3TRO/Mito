@@ -1,4 +1,4 @@
-// Preferencias: tema, materia activa y cuántas veces se mostraron las pistas de la Casa y de la charola.
+// Preferencias: tema, materia activa y cuántas veces se mostraron las pistas de la Casa, de la charola y de Decorar.
 
 import { state, commit, num } from './core.js';
 
@@ -42,5 +42,15 @@ export function getFoodHintCount(){
 
 export function markFoodHintShown(){
   state.foodHint = getFoodHintCount() + 1;
+  commit();
+}
+
+// Pista de Decorar ("arrastra un mueble…") y el puntito del botón (solo mientras nunca se ha abierto). `decorHint` es opcional.
+export function getDecorHintCount(){
+  return Math.max(0, Math.floor(num(state.decorHint)));
+}
+
+export function markDecorHintShown(){
+  state.decorHint = getDecorHintCount() + 1;
   commit();
 }

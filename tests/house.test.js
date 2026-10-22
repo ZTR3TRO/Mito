@@ -555,3 +555,181 @@ test('contenido: catálogo de comida completo, datos de nutrición cortos y fras
   assert.deepEqual(phrases.filter(m => [...m].length > 34), []);
   assert.deepEqual(Object.keys(PET_EAT).sort(), Object.keys(PET_HOUSE).sort(), 'cada mascota tiene su frase al comer');
 });
+
+/* ---------------- muebles y decoración (Fase 4) ---------------- */
+
+import { cleanDecor, getDecor, buyFurniture, placeFurniture, flipFurniture, storeFurniture, grantGift, parseDecor } from '../src/state/decor.js';
+import { FURNITURE, findFurniture, FURNITURE_SIZE } from '../src/content/furniture.js';
+import { FURNITURE_ART } from '../src/content/art/furniture.js';
+import { MITO_DECOR } from '../src/content/house.js';
+import { importSave, exportSave } from '../src/state/backup.js';
+import { FURN, furnitureBox, clampSpot, spotAt, freeSpot, depthOrder, windowRect } from '../src/features/house/furniture-layout.js';
+
+const freshDecor = (chispas = 5000) => { delete state.decor; state.chispas = chispas; };
+const F = id => findFurniture(id);
+const overlap = (a, b) => a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+// Los tamaños de pantalla que se revisan (el cuarto, con la barra dentro).
+const ROOMS = [[1176, 900, 84], [1176, 800, 84], [390, 714, 76], [360, 614, 76], [1920, 900, 84]].map(([w, h, bar]) => sceneLayout(w, h, bar));
+
+test('muebles: comprar cobra una sola vez, va al inventario y el regalo no se vende', ()=>{
+  freshDecor(400);
+  assert.equal(buyFurniture('m-bed'), true);
+  assert.equal(state.chispas, 0);
+  assert.deepEqual(getDecor().owned, ['m-bed']);
+  assert.deepEqual(getDecor().placed, {}, 'comprado: queda en el inventario, no en el cuarto');
+  state.chispas = 1000;
+  assert.equal(buyFurniture('m-bed'), false, 'una sola vez');
+  assert.equal(buyFurniture('m-rug'), false, 'la alfombra es regalo');
+  assert.equal(buyFurniture('m-nope'), false);
+  assert.equal(state.chispas, 1000);
+  state.chispas = 100;
+  assert.equal(buyFurniture('m-lamp'), false, 'sin saldo');
+  assert.equal(state.chispas, 100);
+  freshDecor(0);
+});
+
+test('muebles: colocar, mover, voltear y guardar; Mito lo comenta solo la primera vez', ()=>{
+  freshDecor();
+  buyFurniture('m-sofa'); buyFurniture('m-clock');
+  assert.deepEqual(placeFurniture('m-lamp', { u: .5, v: .5 }), { ok: false, first: false }, 'no lo tienes');
+  assert.deepEqual(placeFurniture('m-sofa', { zona: 'wall', u: 3, v: -1 }), { ok: true, first: true });
+  assert.deepEqual(getDecor().placed['m-sofa'], { zona: 'floor', u: 1, v: 0 }, 'la zona es la del catálogo y u, v quedan en [0, 1]');
+  assert.equal(placeFurniture('m-sofa', { u: .3, v: .6 }).first, false, 'moverlo no es la primera vez');
+  assert.equal(flipFurniture('m-sofa'), true);
+  assert.equal(placeFurniture('m-sofa', { u: .4, v: .6 }).ok, true);
+  assert.equal(getDecor().placed['m-sofa'].flip, true, 'al moverlo sigue volteado');
+  assert.equal(flipFurniture('m-sofa'), false);
+  placeFurniture('m-clock', { u: .7, v: .3 });
+  assert.equal(flipFurniture('m-clock'), false, 'el reloj es simétrico: no se voltea');
+  assert.equal(storeFurniture('m-sofa'), true);
+  assert.equal(storeFurniture('m-sofa'), false, 'ya estaba guardado');
+  assert.deepEqual(Object.keys(getDecor().placed), ['m-clock']);
+  assert.ok(getDecor().owned.includes('m-sofa'), 'guardar no lo quita de tus muebles');
+  assert.equal(placeFurniture('m-sofa', { u: .5, v: .5 }).first, false, 'volver a ponerlo tampoco es la primera vez');
+  freshDecor(0);
+});
+
+test('muebles: la alfombra de regalo se entrega una vez, ya colocada', ()=>{
+  freshDecor(0);
+  assert.deepEqual(grantGift({ u: .5, v: .4 }), ['m-rug']);
+  assert.deepEqual(getDecor().placed['m-rug'], { zona: 'floor', u: .5, v: .4 });
+  assert.deepEqual(grantGift({ u: .1, v: .1 }), [], 'ya la tienes');
+  storeFurniture('m-rug');
+  assert.deepEqual(grantGift({ u: .1, v: .1 }), [], 'guardada sigue siendo tuya: no se regala otra');
+  assert.equal(state.chispas, 0, 'el regalo no cuesta');
+  freshDecor(0);
+});
+
+test('muebles: datos guardados limpios, compatibles sin el campo, y en exportar, importar y reiniciar', ()=>{
+  const fixture = readFileSync(new URL('./fixtures/guardado-42c03de.json', import.meta.url), 'utf8');
+  const old = JSON.parse(fixture);
+  assert.equal('decor' in parseSave(fixture), false, 'una partida vieja no inventa el campo');
+  assert.deepEqual(cleanDecor(undefined), { owned: [], placed: {}, seen: [] }, 'sin el campo: sin muebles');
+  const junk = parseSave(JSON.stringify({ ...old, decor: {
+    owned: ['m-bed', 'm-bed', 'm-x', 7, 'm-picture'],
+    placed: { 'm-bed': { zona: 'wall', u: 'mucho', v: 9, flip: true }, 'm-picture': { u: .5, v: .2, flip: true }, 'm-lamp': { u: .5, v: .5 }, 'm-x': {} },
+    seen: ['m-bed', 'm-lamp'],
+  } }));
+  assert.deepEqual(junk.decor, {
+    owned: ['m-bed', 'm-picture'],
+    placed: { 'm-bed': { zona: 'floor', u: .5, v: 1, flip: true }, 'm-picture': { zona: 'wall', u: .5, v: .2 } },
+    seen: ['m-bed'],
+  }, 'sin repetidos ni desconocidos, nada colocado sin comprar, y el cuadro no se voltea');
+  assert.equal('decor' in parseSave(JSON.stringify({ ...old, decor: { owned: ['m-x'] } })), false, 'sin muebles: no se guarda');
+  assert.equal('decor' in parseSave(JSON.stringify({ ...old, decor: 'roto' })), false);
+  assert.equal(parseDecor(null), undefined);
+
+  // exportar e importar no pierde nada
+  freshDecor();
+  buyFurniture('m-desk'); placeFurniture('m-desk', { u: .25, v: .5 }); flipFurniture('m-desk'); buyFurniture('m-plant');
+  const saved = getDecor();
+  importSave(exportSave());
+  assert.deepEqual(getDecor(), saved);
+  // importar una partida sin el campo no toca los muebles (como los demás campos opcionales: la charola, las pistas)
+  importSave(fixture);
+  assert.deepEqual(getDecor(), saved);
+  // reiniciar todo
+  state.decor = { owned: ['m-bed'], placed: {} }; state.decorHint = 3;
+  resetAll();
+  assert.equal('decor' in state, false);
+  assert.equal('decorHint' in state, false);
+});
+
+test('muebles: colocados quedan enteros dentro de su zona, en todos los tamaños', ()=>{
+  for(const L of ROOMS) for(const item of FURNITURE) for(const [u, v] of [[0, 0], [1, 1], [-3, 5], [.5, .5], [1, 0], [0, 1]]){
+    const p = clampSpot(L, item, { u, v });
+    const b = furnitureBox(L, item, p);
+    const tag = `${item.id} ${L.W}×${L.H} (${u}, ${v})`;
+    assert.ok(b.x >= FURN.margin - .5 && b.x + b.w <= L.W - FURN.margin + .5, `${tag}: dentro a lo ancho`);
+    assert.ok(b.y >= FURN.margin - .5, `${tag}: no sale por arriba`);
+    if(item.zone === 'floor'){
+      assert.ok(b.base >= L.horizon + FURN.margin - .5, `${tag}: la base está en el piso`);
+      assert.ok(b.base <= L.H - L.barSpace - FURN.barGap + .5, `${tag}: no baja a la franja de la barra`);
+    } else {
+      assert.ok(b.y + b.h <= L.horizon - FURN.margin + .5, `${tag}: en la pared, arriba del zócalo`);
+      assert.ok(!overlap(b, windowRect(L)), `${tag}: no tapa la ventana`);
+    }
+  }
+});
+
+test('muebles: más al frente se ven más grandes (la perspectiva del piso) y valen 1 donde está Mito', ()=>{
+  for(const L of ROOMS){
+    const sofa = F('m-sofa');
+    const back = furnitureBox(L, sofa, { u: .5, v: 0 }), front = furnitureBox(L, sofa, { u: .5, v: 1 });
+    assert.ok(front.w > back.w * 1.05, `${L.W}×${L.H}: crece hacia el frente`);
+    const atMito = spotAt(L, sofa, L.home.x, L.home.y);
+    const w = furnitureBox(L, sofa, atMito).w, w0 = sofa.size * L.block.w * FURNITURE_SIZE[L.kind];
+    assert.ok(Math.abs(w - w0) < 1, 'en la fila de Mito, su tamaño de catálogo');
+    const clock = F('m-clock');
+    assert.equal(furnitureBox(L, clock, { u: .5, v: 0 }).w, furnitureBox(L, clock, { u: .5, v: 1 }).w, 'en la pared no cambia');
+  }
+});
+
+test('muebles: de una posición en px a { u, v } y de vuelta', ()=>{
+  const L = ROOMS[0], lamp = F('m-lamp');
+  const p = spotAt(L, lamp, L.W * .3, L.horizon + 120);
+  const b = furnitureBox(L, lamp, p);
+  assert.ok(Math.abs(b.x + b.w / 2 - L.W * .3) < .5 && Math.abs(b.base - (L.horizon + 120)) < .5);
+  assert.equal(spotAt(L, lamp, L.W * .3, L.horizon + 120, true).flip, true, 'conserva el volteo');
+  const far = spotAt(L, lamp, -500, 99999);
+  assert.ok(far.u > 0 && far.v === 1, 'fuera del cuarto: al borde más cercano');
+});
+
+test('muebles: un mueble de la pared que cae sobre la ventana se corre al lado libre más cercano', ()=>{
+  for(const L of ROOMS){
+    const R = windowRect(L), pic = F('m-picture');
+    const p = clampSpot(L, pic, { u: (R.x + R.w / 2) / L.W, v: .3 });
+    assert.ok(!overlap(furnitureBox(L, pic, p), R), `${L.W}×${L.H}`);
+  }
+});
+
+test('muebles: al sacarlo de la bandeja va a un lugar libre (no detrás de Mito ni encima de otro)', ()=>{
+  const L = ROOMS[2];
+  const mito = { x: L.home.x - L.mito * .35, y: L.home.y - L.mito * .76, w: L.mito * .7, h: L.mito * .72 };   // su cuerpo
+  const sofa = furnitureBox(L, F('m-sofa'), freeSpot(L, F('m-sofa')));
+  assert.ok(!overlap(sofa, mito), 'no queda escondido detrás de Mito');
+  const plant = furnitureBox(L, F('m-plant'), freeSpot(L, F('m-plant'), [sofa]));
+  assert.ok(!overlap(plant, sofa) && !overlap(plant, mito));
+});
+
+test('muebles: profundidad: la pared atrás y el piso por v (lo de más al frente, encima)', ()=>{
+  const e = (id, v) => ({ item: F(id), p: { u: .5, v } });
+  const order = depthOrder([e('m-sofa', .9), e('m-clock', .9), e('m-bed', .1), e('m-plant', .5), e('m-picture', 0)]).map(x => x.item.id);
+  assert.deepEqual(order, ['m-clock', 'm-picture', 'm-bed', 'm-plant', 'm-sofa']);
+});
+
+test('contenido: catálogo de muebles (10 a 12, pared y piso, 150–400), dibujos y frases cortas', ()=>{
+  assert.ok(FURNITURE.length >= 10 && FURNITURE.length <= 12);
+  assert.ok(FURNITURE.some(f => f.zone === 'wall') && FURNITURE.some(f => f.zone === 'floor'));
+  assert.deepEqual(FURNITURE.filter(f => f.gift).map(f => f.id), ['m-rug'], 'un solo regalo, gratis');
+  for(const f of FURNITURE){
+    if(!f.gift) assert.ok(f.cost >= 150 && f.cost <= 400, `${f.id}: precio`);
+    assert.ok(['wall', 'floor'].includes(f.zone));
+    const vb = FURNITURE_ART[f.id]?.match(/viewBox="0 0 (\d+) (\d+)"/);
+    assert.ok(vb, `${f.id}: dibujo`);
+    assert.deepEqual([+vb[1], +vb[2]], f.box, `${f.id}: la proporción del dibujo es la del catálogo`);
+    assert.ok(MITO_DECOR.placed[f.id], `${f.id}: lo que dice Mito al colocarlo`);
+  }
+  const phrases = [...Object.values(MITO_DECOR.placed), ...MITO_DECOR.gift];
+  assert.deepEqual(phrases.filter(m => [...m].length > 34), []);
+});

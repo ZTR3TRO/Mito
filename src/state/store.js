@@ -22,10 +22,13 @@ export {
 
 export {
   getTheme, setTheme, getCourse, setCourse, getHouseHintCount, markHouseHintShown, getFoodHintCount, markFoodHintShown,
+  getDecorHintCount, markDecorHintShown,
 } from './preferences.js';
 
 export { NEEDS, topNeed, getNeeds, careMood, startSleep, wakeUp, addClean } from './house.js';
 
 export { getPantry, foodCount, buyFood, eatFood } from './pantry.js';
+
+export { getDecor, buyFurniture, placeFurniture, flipFurniture, storeFurniture, grantGift } from './decor.js';
 
 export { exportSave, parseSave, importSave, resetAll } from './backup.js';

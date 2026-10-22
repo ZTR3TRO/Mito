@@ -82,3 +82,16 @@ export const PET_EAT = {
   ufo: 'Bip: nutrientes detectados 🛸', pumpkin: 'Jiji, ¡qué rico se ve! 🎃', bat: 'Iii, ¿hay fruta para mí? 🦇',
   bee: 'Bzz, ¿y un poco de miel? 🍯', ajolote: 'Glub, ¡buen provecho! 🫧',
 };
+
+/* ---------- Fase 4: muebles y decoración ---------- */
+
+// Lo que dice Mito la primera vez que se coloca cada mueble (clave = id en content/furniture.js), y con el regalo.
+export const MITO_DECOR = {
+  placed: {
+    'm-rug': '¡Qué alfombra tan suavecita! 💜', 'm-cushion': '¡Un cojín para apapacharme!', 'm-plant': '¡Una plantita! La cuidaré 🌱',
+    'm-lamp': '¡De noche se ve preciosa! ✨', 'm-bookcase': '¡Cuántos libros! 📚', 'm-sofa': '¡Qué sillón tan cómodo! 💙',
+    'm-desk': '¡Aquí estudiaremos juntos! ✏️', 'm-bed': '¡Una camita! Qué bonita 😴', 'm-picture': '¡Qué cuadro tan bonito! 🏔️',
+    'm-clock': '¡Tic, tac! Ya sé la hora ⏰', 'm-shelf': '¡Mi repisa quedó genial!', 'm-lights': '¡Lucecitas! Me encantan 🌟',
+  },
+  gift: ['¡Mira! Un regalo para mi cuarto 🎁', '¡Una alfombra nueva! Gracias 💜'],
+};

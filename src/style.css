@@ -1538,7 +1538,8 @@ body[data-view="house"] .mascot-side{ display:none; }   /* en la Casa ya está e
   body[data-view="house"] .sidebar{ flex:0 0 auto; }
   body[data-view="house"] main{ flex:1 1 auto; padding:0 0 var(--nav-h, calc(64px + env(safe-area-inset-bottom, 0px))); }
 }
-.room{
+.room, .fv-mini{
+  /* (la paleta también la usa el mini cuarto de la vista previa de muebles en la Tienda, .fv-mini) */
   /* Las escribe features/house/room.js en px: el bloque (--bx, --by, --bw, --bh), el zócalo (--horizon) y el
      alto del piso y de la pared dentro del bloque (--fb, --wb). Estos valores son solo el respaldo inicial. */
   --bx: 0px; --by: 0px; --bw: 100%; --bh: 100%; --horizon: 62%; --fb: 200px; --wb: 400px;
@@ -1563,7 +1564,7 @@ body[data-view="house"] .mascot-side{ display:none; }   /* en la Casa ya está e
 @container house (orientation: portrait) or (max-width: 640px){
   .room{ --bar-space: 76px; }
 }
-[data-theme="dark"] .room{
+[data-theme="dark"] .room, [data-theme="dark"] .fv-mini{
   /* noche */
   --wall-1:#2b2140; --wall-2:#231b33; --dot:#382a4d; --vignette:rgba(0,0,0,.38);
   --base-hi:#2fa57c; --base-1:#1e7a5c; --base-2:#14563f; --base-drop:rgba(0,0,0,.45); --wall-ao:rgba(0,0,0,.28);
@@ -1825,11 +1826,14 @@ body[data-view="house"] .mascot-side{ display:none; }   /* en la Casa ya está e
 /* botones de la barra: el activo (Despertar, Listo) en menta; deshabilitado, apagado */
 .house-act.is-on{ background:linear-gradient(135deg, var(--mint), #5fd9b0); box-shadow:0 4px 0 0 var(--mint-deep), var(--shadow-mint); }
 .house-act[disabled]{ opacity:.45; cursor:default; filter:saturate(.6); }
-/* angosto (4 botones en 360 px): icono arriba y texto abajo, como una barra de pestañas */
+/* angosto (5 botones en 360 px): icono arriba y una etiqueta pequeña debajo, como una barra de pestañas */
 @container house (max-width: 460px){
-  .house-act{ flex-direction:column; justify-content:center; gap:2px; min-width:58px; padding:6px 10px 5px; font-size:11.5px; }
+  .house-act{ flex-direction:column; justify-content:center; gap:2px; min-width:52px; padding:6px 7px 5px; font-size:11.5px; }
   .house-act svg{ width:19px; height:19px; }
-  .house-bar{ gap:5px; padding:5px; }
+  .house-bar{ gap:4px; padding:5px; }
+}
+@container house (max-width: 380px){
+  .house-act{ min-width:50px; padding:6px 5px 5px; font-size:11px; letter-spacing:-.01em; }
 }
 
 @media (prefers-reduced-motion: reduce){
@@ -1951,6 +1955,8 @@ body[data-view="house"] .mascot-side{ display:none; }   /* en la Casa ya está e
 .food-cat-sub{ display:block; margin-top:3px; font:700 12.5px/1.3 var(--font-body); color:var(--ink-dim); }
 .food-cat{ border-radius:18px; outline:4px solid transparent; outline-offset:10px; transition:outline-color .5s ease; scroll-margin-top:24px; }
 .food-cat.is-flash{ outline-color:rgba(22,201,141,.4); }
+.furn-cat{ border-radius:18px; outline:4px solid transparent; outline-offset:10px; transition:outline-color .5s ease; scroll-margin-top:24px; }
+.furn-cat.is-flash{ outline-color:rgba(185,138,246,.45); }
 .food-item{ position:relative; }
 .food-item .si-actions .btn-mini{ white-space:nowrap; padding:8px 10px; }
 .si-have{ position:absolute; top:8px; right:8px; padding:2px 8px; border-radius:999px; font-size:11.5px; font-weight:800; color:#04352a; background:var(--mint); }
@@ -1975,3 +1981,109 @@ body[data-view="house"] .mascot-side{ display:none; }   /* en la Casa ya está e
   .ft-item.is-nope{ animation:none; }
   .si-have.pop{ animation:none; }
 }
+
+/* ================= CASA · FASE 4: muebles y decoración ================= */
+/* Capas (features/house/decor.js): alfombras sobre el piso y bajo la luz de la ventana · zonas (solo al arrastrar) ·
+   muebles sobre la luz y bajo Mito (dentro, el orden del DOM es la profundidad) · la barrita del seleccionado. */
+.room-rugs, .room-zones, .room-furn, .room-tools{ inset:0; pointer-events:none; }
+.room-rugs{ z-index:1; } .room-zones{ z-index:2; } .room-furn{ z-index:3; } .room-tools{ z-index:8; }
+.furn{ position:absolute; box-sizing:border-box; outline:none; -webkit-tap-highlight-color:transparent; transition:transform .15s ease, filter .15s ease, opacity .15s ease; }
+.furn-art{ display:block; width:100%; height:100%; pointer-events:none; }
+.furn-art svg, .fv-art svg{ width:100%; height:100%; display:block; overflow:visible; }
+.furn.is-flip .furn-art{ transform:scaleX(-1); }
+[data-theme="dark"] .furn-art, [data-theme="dark"] .fv-art{ filter:brightness(.9) saturate(.96); }
+
+/* de noche (modo oscuro) la lámpara y la guirnalda se encienden; cuando Mito duerme, se apagan */
+.fx-glow{ opacity:0; transition:opacity .6s ease; }
+[data-theme="dark"] .room .fx-glow, [data-theme="dark"] .fv-mini .fx-glow{ opacity:1; }
+[data-theme="dark"] .room.is-asleep .fx-glow{ opacity:0; }
+
+/* Decorar: Mito deja pasar los toques (sus gestos están apagados) y los muebles se pueden tomar */
+.room.is-decorating .room-stage, .room.is-decorating .mascot{ pointer-events:none; }
+.room.is-decorating .furn{ pointer-events:auto; cursor:grab; touch-action:none; }
+.room.is-decorating .house-bar:not(.decor-tray), .room.is-decorating .house-hint:not(.decor-hint){ display:none; }
+.furn.is-sel::before, .furn:focus-visible::before{ content:''; position:absolute; inset:-7px; border-radius:16px; pointer-events:none;
+  border:2.5px dashed var(--lilac); background:rgba(185,138,246,.12); }
+.furn:focus-visible::before{ border-style:solid; }
+.furn.is-lift{ z-index:6; cursor:grabbing; transform:translateY(-4px) scale(1.06); filter:drop-shadow(0 16px 12px rgba(51,39,74,.32)); }
+.furn.is-lift::before{ display:none; }
+.furn.is-leaving{ opacity:.5; transform:scale(.8); }
+
+/* la barrita del seleccionado: Voltear y Guardar */
+.dc-tools{ position:absolute; display:flex; gap:6px; pointer-events:auto; }
+.dc-tools button{ all:unset; cursor:pointer; display:inline-flex; align-items:center; gap:5px; padding:7px 11px; border-radius:999px; box-sizing:border-box; white-space:nowrap;
+  font:800 12.5px/1 var(--font-body); color:var(--ink); background:var(--card); border:2px solid var(--line);
+  box-shadow:0 3px 0 0 var(--line), 0 8px 16px -8px rgba(51,39,74,.35); -webkit-tap-highlight-color:transparent; }
+.dc-tools button svg{ width:16px; height:16px; }
+.dc-tools button[data-decor-store]{ color:#a02e6b; }
+[data-theme="dark"] .dc-tools button[data-decor-store]{ color:#ff9ac8; }
+.dc-tools button:focus-visible{ outline:3px solid var(--lilac); outline-offset:2px; }
+.dc-tools button:active{ transform:translateY(2px); box-shadow:0 1px 0 0 var(--line); }
+
+/* zonas: al arrastrar se ve dónde puede ir (la del mueble, resaltada) */
+.dc-zone{ position:absolute; display:none; border-radius:16px; box-sizing:border-box; border:2.5px dotted rgba(255,255,255,.5); background:rgba(0,0,0,.05); }
+.room.is-dragging-furn .dc-zone{ display:block; }
+.dc-zone.is-target{ border:2.5px dashed #fff; background:rgba(22,201,141,.16); box-shadow:inset 0 0 0 2px rgba(22,201,141,.5); }
+.dc-zone b{ position:absolute; left:10px; top:6px; font:800 10.5px/1 var(--font-body); letter-spacing:.05em; text-transform:uppercase; color:#fff; text-shadow:0 1px 3px rgba(0,0,0,.45); }
+
+/* la bandeja de Decorar: ocupa el lugar de la barra (como la charola) */
+.decor-tray[hidden]{ display:none; }
+.decor-tray{ align-items:center; gap:8px; padding:6px; width:max-content; box-sizing:border-box; }
+.house-act.dc-done{ background:linear-gradient(135deg, var(--mint), #5fd9b0); color:#04352a; border-color:transparent; box-shadow:0 3px 0 0 var(--mint-deep); }
+.house-act.dc-done:active{ box-shadow:0 1px 0 0 var(--mint-deep); }
+.dc-item{ cursor:pointer; }
+.dc-item .ft-art svg{ width:46px; height:34px; }
+.dc-tag, .fi-tag{ font:800 9.5px/1 var(--font-body); letter-spacing:.04em; text-transform:uppercase; padding:2px 6px; border-radius:999px; }
+.dc-tag.wall, .fi-tag.wall{ color:#5b3aa6; background:#e8dcff; }
+.dc-tag.floor, .fi-tag.floor{ color:#0b6a4d; background:#c9f5e4; }
+[data-theme="dark"] .dc-tag.wall, [data-theme="dark"] .fi-tag.wall{ color:#e4d4ff; background:#4a3a73; }
+[data-theme="dark"] .dc-tag.floor, [data-theme="dark"] .fi-tag.floor{ color:#b9f5dd; background:#1d5a45; }
+.dc-empty > div{ min-width:120px; }
+.dc-drop{ display:none; align-items:center; gap:10px; padding:0 14px; min-height:54px; box-sizing:border-box; border-radius:14px;
+  border:2.5px dashed var(--pink); background:rgba(255,93,162,.08); color:var(--ink); }
+.dc-drop svg{ width:24px; height:24px; color:var(--pink); flex:none; }
+.dc-drop b{ font-size:13px; white-space:nowrap; }
+.decor-tray.is-dragging .ft-list, .decor-tray.is-dragging .ft-empty{ display:none; }
+.decor-tray.is-dragging .dc-drop{ display:flex; }
+.decor-tray.is-hot .dc-drop{ background:rgba(255,93,162,.2); border-style:solid; }
+/* la pista de Decorar va abajo, junto a la bandeja (no tapa los muebles de la pared), y se va con el primer movimiento */
+.house-hint.decor-hint{ top:auto; bottom:calc(var(--bar-space) + 6px); left:50%; translate:-50% 0; max-width:calc(100% - 24px); border-radius:14px; text-align:center; }
+/* puntito en "Decorar" hasta que se abra la primera vez */
+.house-act[data-house-act="decor"]{ position:relative; }
+.house-act.has-dot::after{ content:''; position:absolute; top:5px; right:7px; width:9px; height:9px; border-radius:50%; background:var(--yellow); box-shadow:0 0 0 2px #fff; }
+
+/* Tienda · sección Muebles */
+.furn-item{ position:relative; }
+.furn-item .fi-tag{ position:absolute; top:9px; left:9px; }
+.furn-item .si-visual{ height:68px; }
+.furn-item .fi-art svg{ width:84px; height:64px; }
+.furn-item .fi-state{ margin:-2px 0 9px; font-size:11.5px; font-weight:700; color:var(--ink-dim); text-align:center; }
+.furn-item .si-actions .btn-mini{ white-space:nowrap; padding:8px 10px; }
+.furn-item .si-have{ min-width:12px; text-align:center; padding:2px 6px; }
+/* mini cuarto (vista previa): pared, zócalo y piso, con el mueble donde le toca */
+.fv-mini{ flex:none; position:relative; overflow:hidden; border-radius:18px; border:2px solid var(--line); box-sizing:border-box; container-type:normal; }
+.fv-mini > span{ position:absolute; }
+.fv-wall{ left:0; right:0; top:0; height:62%;
+  background:radial-gradient(circle at 25% 25%, var(--dot) 0 2px, transparent 2.6px) 0 0 / 22px 22px, linear-gradient(180deg, var(--wall-1), var(--wall-2)); }
+.fv-floor{ left:0; right:0; bottom:0; height:38%; background:repeating-linear-gradient(90deg, var(--plank-1) 0 28px, var(--plank-2) 28px 56px); }
+.fv-base{ left:0; right:0; top:calc(62% - 6px); height:6px; background:linear-gradient(180deg, var(--base-hi) 0 1.5px, var(--base-1) 1.5px 55%, var(--base-2)); }
+.fv-art{ left:16%; right:16%; top:12%; bottom:12%; }
+.fv-art.wall{ top:9%; bottom:auto; height:44%; }
+.fv-art.flat{ top:auto; bottom:5%; height:30%; }
+.wardrobe-preview .fv-pane{ display:none; align-items:center; gap:28px; }
+.wardrobe-preview.is-furn > :not(.fv-pane){ display:none; }
+.wardrobe-preview.is-furn .fv-pane{ display:flex; }
+.fv-pane .fv-mini{ width:260px; height:170px; }
+/* barra de vista previa en móvil */
+.tb-furn{ display:none; }
+.tb-mito.is-furn{ padding:0; overflow:hidden; }
+.tb-mito.is-furn .mascot, .tb-mito.is-furn .tb-food{ display:none; }
+.tb-mito.is-furn .tb-furn{ display:block; width:100%; height:100%; }
+.tb-furn .fv-mini{ width:100%; height:100%; border:0; border-radius:0; }
+
+@media (prefers-reduced-motion: reduce){
+  .furn, .fx-glow, .house-hint.decor-hint{ transition:none; }
+  .furn.is-lift{ transform:none; }
+  .furn.is-leaving{ transform:none; }
+}
+

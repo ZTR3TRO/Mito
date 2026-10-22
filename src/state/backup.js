@@ -9,6 +9,7 @@ import {
 } from './core.js';
 import { parseHouse } from './house.js';
 import { parsePantry } from './pantry.js';
+import { parseDecor } from './decor.js';
 
 export function exportSave(){
   return JSON.stringify(state, null, 2);
@@ -85,6 +86,9 @@ export function parseSave(json){
     ...(Number.isFinite(s.foodHint) ? { foodHint: Math.max(0, Math.floor(s.foodHint)) } : {}),
     // opcional: la comida de la charola, validada (sin el campo, o si queda vacía, la charola está vacía)
     ...(parsePantry(s.pantry) ? { pantry: parsePantry(s.pantry) } : {}),
+    ...(Number.isFinite(s.decorHint) ? { decorHint: Math.max(0, Math.floor(s.decorHint)) } : {}),
+    // opcional: los muebles comprados y dónde están, validados (sin el campo, el cuarto no tiene muebles)
+    ...(parseDecor(s.decor) ? { decor: parseDecor(s.decor) } : {}),
   };
 }
 
@@ -102,6 +106,8 @@ export function resetAll(){
   delete state.house;       // y deja a Mito con todas sus necesidades llenas
   delete state.pantry;      // con la charola vacía
   delete state.foodHint;
+  delete state.decor;       // sin muebles (la alfombra de regalo vuelve al entrar a la Casa)
+  delete state.decorHint;
   state.theme = prevTheme;
   commit();
 }

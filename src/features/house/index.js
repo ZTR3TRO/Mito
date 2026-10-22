@@ -1,11 +1,13 @@
 // La Casa de Mito: el cuarto a pantalla completa con Mito y su mascota, los gestos para jugar con él y la
 // barra de acciones. Se compone de: room.js (la escena), gestures.js (dedo y ratón), motion.js (arrastrar y
 // lanzar), reactions.js (cara, frases y mascota), needs.js (cómo se notan sus necesidades), sleep.js (dormir),
-// bath.js (bañar) y food.js (comer). Guarda cuántas veces mostró las pistas, las necesidades de Mito
-// (state/house.js) y la comida de la charola (state/pantry.js).
+// bath.js (bañar), food.js (comer) y decor.js (los muebles y el modo Decorar). Guarda cuántas veces mostró las
+// pistas, las necesidades de Mito (state/house.js), la comida de la charola (state/pantry.js) y los muebles
+// (state/decor.js).
 //
 // Avisa por el bus lo que pasa (house:poke, house:tickle, house:pet, house:grab, house:drop, house:land) para que
-// las fases siguientes (necesidades, decoración) puedan reaccionar sin tocar los gestos.
+// las fases siguientes (necesidades, decoración) puedan reaccionar sin tocar los gestos. La Tienda pide abrir
+// Decorar al llegar con house:focus ('decor').
 
 import { byId } from '../../core/dom.js';
 import { on, emit } from '../../core/bus.js';
@@ -18,6 +20,7 @@ import { createNeeds } from './needs.js';
 import { createSleep } from './sleep.js';
 import { createBath } from './bath.js';
 import { createFood } from './food.js';
+import { createDecor } from './decor.js';
 
 const reducedMotion = ()=> !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 const WELCOME_MS = 450;
@@ -54,7 +57,9 @@ export function init(){
   const sleep = createSleep(room, mascot, reactions, { button: act('sleep'), onChange: refresh });
   const bath = createBath(room, mascot, reactions, { button: act('bath'), onChange: refresh });
   const food = createFood(room, mascot, reactions, { button: act('eat'), onChange: refresh });
-  needs = createNeeds(room, mascot, reactions, { busy: ()=> sleep.asleep || bath.bathing || food.eating });
+  // Decorar no despierta a Mito: no es jugar con él. Si duerme, no comenta los muebles.
+  const decor = createDecor(room, reactions, { button: act('decor'), canTalk: ()=> !sleep.asleep, onChange: refresh });
+  needs = createNeeds(room, mascot, reactions, { busy: ()=> sleep.asleep || bath.bathing || food.eating || decor.active });
   // Los botones nunca se deshabilitan: cada uno responde. "Dormir" o "Comer" durante el baño lo terminan primero;
   // "Bañar" o "Comer" mientras duerme lo despiertan con ternura (y luego ya se puede).
   act('eat')?.addEventListener('click', ()=>{
@@ -73,6 +78,12 @@ export function init(){
     if(sleep.asleep){ sleep.touch(); return; }
     bath.toggle();
   });
+  act('decor')?.addEventListener('click', ()=>{
+    hideHint();
+    if(bath.bathing){ bath.finish(); return; }
+    food.close();
+    decor.toggle();
+  });
   const motion = createMotion(room, mascot, {
     onPaint: reactions.place,
     onHit: (kind, impact)=> reactions.hit(kind, impact),
@@ -80,7 +91,7 @@ export function init(){
   });
 
   const cancelGesture = bindGestures(mascot, {
-    enabled: ()=> !bath.bathing && !food.eating,
+    enabled: ()=> !bath.bathing && !food.eating && !decor.active,
     onPetTap: ()=>{ hideHint(); if(!sleep.asleep) reactions.petTap(); },
     onGesture: g=>{
       hideHint();
@@ -106,12 +117,18 @@ export function init(){
   });
 
   // La escena se compone para el tamaño del cuarto; la luz además depende del modo (de día es más suave).
-  const relight = ()=> layoutRoom(room);
+  const relight = ()=>{ layoutRoom(room); decor.render(); };
   if(typeof ResizeObserver !== 'undefined') new ResizeObserver(()=>{ relight(); motion.repaint(); }).observe(room);
   on('theme:changed', ()=> requestFrame(relight));
   // Si la partida cambia por fuera (importar, reiniciar, el panel de depuración), la Casa se repinta con el estado nuevo.
   let inHouse = false;
-  on('state:changed', ()=>{ if(inHouse){ sleep.sync(); needs.render(); food.render(); } });
+  on('state:changed', ()=>{ if(inHouse){ sleep.sync(); needs.render(); food.render(); decor.render(); } });
+  // "Colocar en la Casa" en la Tienda: al llegar, Decorar ya está abierto.
+  let openDecor = false;
+  on('house:focus', what=>{
+    if(what !== 'decor') return;
+    if(inHouse) decor.open(); else openDecor = true;
+  });
 
   // En móvil el cuarto llega justo hasta la barra de navegación fija: se mide su alto real (cambia con la zona segura).
   const measureNav = ()=>{
@@ -132,13 +149,20 @@ export function init(){
       maybeShowHint();
       const asleep = sleep.enter();
       needs.enter();
-      // un momento después: si necesita algo lo pide; si no (y está despierto), saluda
-      welcomeTimer = setTimeout(()=>{ if(!asleep && !needs.ask(true)) reactions.welcome(); }, WELCOME_MS);
+      const gifted = decor.enter();
+      if(openDecor){ openDecor = false; decor.open(); }
+      // un momento después: agradece el regalo, o si necesita algo lo pide; si no (y está despierto), saluda
+      welcomeTimer = setTimeout(()=>{
+        if(asleep) return;
+        if(gifted) decor.thank();
+        else if(!decor.active && !needs.ask(true)) reactions.welcome();
+      }, WELCOME_MS);
     } else {
       cancelGesture();
       motion.reset();
       bath.leave();
       food.leave();
+      decor.leave();
       sleep.leave();
       needs.leave();
       reactions.clear();

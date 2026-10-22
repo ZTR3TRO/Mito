@@ -2,10 +2,10 @@
 // Solo dibuja; no sabe nada de gestos ni de física. La composición sale de layout.js: la escena aprobada es un
 // bloque fijo (.scene) que se escala de forma uniforme para caber, y el fondo se extiende alrededor.
 //
-// Profundidad (de atrás hacia adelante): pared → piso → zócalo → bloque (luz → ventana → escenario: sombras,
-// mascota y Mito) → globos de texto y barra de acciones. En la Fase 4 los muebles de pared van sobre la pared y
-// los de piso se ordenan entre sí por su profundidad v; Mito en reposo queda siempre al frente de todos (para
-// que nada lo tape ni impida tocarlo) y mientras vuela también.
+// Profundidad (de atrás hacia adelante): pared → piso → zócalo → alfombras → luz → ventana → muebles (los de la
+// pared y luego los del piso por su profundidad v; los dibuja decor.js) → escenario: sombras, mascota y Mito →
+// globos de texto y barra de acciones. Mito en reposo queda siempre al frente de todos los muebles (para que nada
+// lo tape ni impida tocarlo) y mientras vuela también.
 
 import { sceneLayout, lightPlan, FLOOR, floorRowY, floorX, toRoomX, toRoomY, GLASS, CURTAIN } from './layout.js';
 
@@ -158,12 +158,18 @@ export function buildRoom(room, s = room.dataset.s || 'room'){
 // Compone la escena para el tamaño actual del cuarto: el bloque (posición y tamaño), el fondo extendido y la luz.
 // Se llama al entrar a la Casa, al cambiar de tamaño y al cambiar de modo (la luz de día es más suave).
 // `barSpace` = 0 si la barra de acciones va fuera del cuarto (la versión aprobada, en dev).
-export function layoutRoom(room){
+// La composición del cuarto para su tamaño actual (null si está oculto). La usan la escena y los muebles (decor.js).
+export function roomLayout(room){
   const W = room.clientWidth, H = room.clientHeight;
-  if(!W || !H) return;   // cuarto oculto (otra vista)
+  if(!W || !H) return null;   // cuarto oculto (otra vista)
+  const bar = room.dataset.bar === 'outside' ? 0 : parseFloat(getComputedStyle(room).getPropertyValue('--bar-space')) || 84;
+  return sceneLayout(W, H, bar);
+}
+
+export function layoutRoom(room){
+  const L = roomLayout(room);
+  if(!L) return;
   const css = getComputedStyle(room);
-  const bar = room.dataset.bar === 'outside' ? 0 : parseFloat(css.getPropertyValue('--bar-space')) || 84;
-  const L = sceneLayout(W, H, bar);
   const px = n => f(n) + 'px';
   const set = (k, v) => room.style.setProperty(k, v);
   set('--bx', px(L.block.x)); set('--by', px(L.block.y)); set('--bw', px(L.block.w)); set('--bh', px(L.block.h));
