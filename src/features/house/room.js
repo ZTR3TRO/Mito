@@ -1,6 +1,10 @@
-// Escena del cuarto de la Casa: dibuja el fondo extendido (pared y piso), la ventana con cortinas y la luz.
+// Escena de la Casa: dibuja el fondo de cada cuarto (pared, piso de duela o de mosaico, ventana con cortinas y luz).
 // Solo dibuja; no sabe nada de gestos ni de física. La composición sale de layout.js: la escena aprobada es un
 // bloque fijo (.scene) que se escala de forma uniforme para caber, y el fondo se extiende alrededor.
+//
+// La casa es horizontal: cada cuarto es un panel (.pane, uno por cada cuarto de content/rooms.js) con sus propias
+// capas, todos del tamaño del cuarto visible. La cámara (nav.js) mueve cada capa con su velocidad (parallax); los
+// paneles no se transforman, así las capas de todos los cuartos se ordenan con Mito por su z-index.
 //
 // Profundidad (de atrás hacia adelante): pared → piso → zócalo → alfombras → luz → ventana → muebles (los de la
 // pared y luego los del piso por su profundidad v; los dibuja decor.js) → escenario: sombras, mascota y Mito →
@@ -8,6 +12,7 @@
 // lo tape ni impida tocarlo) y mientras vuela también.
 
 import { sceneLayout, lightPlan, FLOOR, floorRowY, floorX, toRoomX, toRoomY, GLASS, CURTAIN } from './layout.js';
+import { ROOMS } from '../../content/rooms.js';
 
 const f = n => n.toFixed(1);
 const poly = pts => 'M' + pts.map(([x, y]) => `${f(x)} ${f(y)}`).join('L') + 'Z';
@@ -45,6 +50,59 @@ function floorSvg(L){
     <g stroke="var(--grain)" stroke-width="1" stroke-linecap="round" fill="none">${grain}</g>
     <g stroke="var(--bevel)" stroke-width="1" fill="none">${bevel}</g>
     <g stroke="var(--joint)" stroke-width="1.3" fill="none">${joints}</g></svg>`;
+}
+
+/* ---------- piso de mosaico: Cocina (ajedrez) y Baño (mosaico chico) ----------
+   La misma perspectiva que la duela (filas con floorRowY y columnas con floorX), con baldosas cuadradas en vez de
+   tablas. Colores: --tile-1, --tile-2 y --grout (style.css, por cuarto). */
+const TILES = { checker: { w: 26, split: 1 }, tiles: { w: 15, split: 2 } };   // ancho de la baldosa (u) y filas por fila de duela
+function tilesSvg(L, kind){
+  const T = TILES[kind];
+  const H = L.H - L.horizon, yMax = H / L.fb * 100;
+  const xMin = (0 - L.block.x) / L.block.w * 100, xMax = (L.W - L.block.x) / L.block.w * 100;
+  const X = (u, y) => toRoomX(L, floorX(u, y)), Y = y => toRoomY(L, y) - L.horizon;
+  const rowY = i => floorRowY(i / T.split);
+  let tiles = '', grout = '';
+  for(let r = 0; rowY(r) < yMax; r++){
+    const ya = rowY(r), yb = rowY(r + 1);
+    const first = Math.floor((xMin - 50) / T.w) - 3;
+    for(let k = first, ua = 50 + first * T.w; floorX(ua, ya) < xMax + T.w; k++, ua += T.w){
+      const ub = ua + T.w;
+      // ajedrez: alterna; mosaico: casi todas iguales, con alguna más oscura "al azar" (pero siempre igual)
+      const tone = kind === 'checker' ? (((r + k) % 2 + 2) % 2 ? 1 : 2) : (((r * 3 + k * 7) % 5 + 5) % 5 === 0 ? 2 : 1);
+      tiles += `<path d="M${f(X(ua, ya))} ${f(Y(ya))}L${f(X(ub, ya))} ${f(Y(ya))}L${f(X(ub, yb))} ${f(Y(yb))}L${f(X(ua, yb))} ${f(Y(yb))}Z" fill="var(--tile-${tone})"/>`;
+      grout += `<path d="M${f(X(ub, ya))} ${f(Y(ya))}L${f(X(ub, yb))} ${f(Y(yb))}"/>`;
+    }
+    if(r) grout += `<path d="M0 ${f(Y(ya))}H${f(L.W)}"/>`;
+  }
+  return `<svg viewBox="0 0 ${f(L.W)} ${f(H)}" aria-hidden="true">${tiles}
+    <g stroke="var(--grout)" stroke-width="1.4" fill="none">${grout}</g></svg>`;
+}
+
+/* ---------- ventana redonda (Baño): marco grueso, vidrio esmerilado y el cielo de día o de noche ----------
+   El mismo viewBox 200 × 250 que la rectangular, para que ocupe el mismo lugar. Sin cortinas ni haz de luz. */
+function roundWindowSvg(s){
+  return `<svg viewBox="0 0 200 250" aria-hidden="true">
+    <defs>
+      <clipPath id="ph-${s}"><circle cx="100" cy="104" r="50"/></clipPath>
+      <linearGradient id="phsky-${s}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--sky-1)"/><stop offset="1" style="stop-color:var(--sky-2)"/></linearGradient>
+      <radialGradient id="phfrost-${s}" cx=".35" cy=".3"><stop offset="0" stop-color="#fff" stop-opacity=".1"/><stop offset="1" stop-color="#fff" stop-opacity=".45"/></radialGradient>
+      <mask id="phmoon-${s}"><circle cx="120" cy="82" r="11" fill="#fff"/><circle cx="126" cy="77" r="9" fill="#000"/></mask>
+    </defs>
+    <circle cx="104" cy="110" r="66" style="fill:var(--frame-shadow)"/>
+    <circle cx="100" cy="104" r="66" style="fill:var(--frame)" stroke="var(--frame-line)" stroke-width="2"/>
+    <circle cx="100" cy="104" r="56" style="fill:var(--frame-in)"/>
+    <g clip-path="url(#ph-${s})">
+      <rect x="40" y="44" width="120" height="120" fill="url(#phsky-${s})"/>
+      <g class="day"><circle cx="120" cy="80" r="11" fill="#fff4b8"/>
+        <g fill="#fff" opacity=".9"><circle cx="80" cy="112" r="7"/><circle cx="90" cy="106" r="9"/><rect x="74" y="111" width="28" height="7" rx="3.5"/></g></g>
+      <g class="night"><rect x="98" y="62" width="40" height="40" fill="#fff7dc" mask="url(#phmoon-${s})"/>
+        <g fill="#fff"><circle cx="74" cy="80" r="1.2"/><circle cx="86" cy="128" r="1"/><circle cx="130" cy="124" r="1.1"/></g></g>
+      <rect x="40" y="44" width="120" height="120" fill="url(#phfrost-${s})"/>
+      <path d="M70 134L118 70" stroke="#fff" stroke-width="6" stroke-linecap="round" style="opacity:var(--glare)"/>
+    </g>
+    <g style="fill:var(--frame-line)"><circle cx="100" cy="42" r="3.4"/><circle cx="162" cy="104" r="3.4"/><circle cx="100" cy="166" r="3.4"/><circle cx="38" cy="104" r="3.4"/></g>
+  </svg>`;
 }
 
 /* ---------- ventana rectangular: marco con grosor, repisón, cortinas y el cielo de día o de noche ----------
@@ -148,11 +206,27 @@ function lightSvg(L, s, soft){
   </svg>`;
 }
 
-// Monta la ventana (una vez). `s` hace únicos los ids de los SVG (puede haber varios cuartos en dev).
-export function buildRoom(room, s = room.dataset.s || 'room'){
+// Arma los cuartos de la casa en .house-panes (una vez): un panel por cuarto, con sus capas. La pared, su detalle y
+// la ventana con su luz son "lejanas" (.far: van más lento en el parallax); el piso, el zócalo y la oscuridad de
+// dormir van con la cámara. Las capas de muebles las agrega decor.js.
+// Un cuarto suelto (los bocetos de dev, sin .house-panes) solo necesita su ventana de siempre.
+// `s` hace únicos los ids de los SVG (puede haber varios cuartos en la misma página).
+export function buildPanes(room, s = room.dataset.s || 'room'){
   room.dataset.s = s;
-  const win = room.querySelector('.win');
-  if(win) win.innerHTML = windowSvg(s);
+  const host = room.querySelector('.house-panes');
+  if(!host){
+    const win = room.querySelector('.win');
+    if(win) win.innerHTML = windowSvg(s);
+    return;
+  }
+  host.innerHTML = ROOMS.map((r, i) => `<div class="pane" data-room="${r.id}" data-floor="${r.floor}" data-window="${r.window}" style="--i:${i}">
+      <div class="room-wall far"></div><div class="wall-deco far"></div><div class="room-floor"></div><div class="room-base"></div>
+      <div class="scene pane-scene far"><div class="room-light"></div><div class="win"></div></div>
+      <div class="room-night" aria-hidden="true"></div>
+    </div>`).join('');
+  host.querySelectorAll('.pane').forEach(p=>{
+    p.querySelector('.win').innerHTML = p.dataset.window === 'round' ? roundWindowSvg(`${s}-${p.dataset.room}`) : windowSvg(`${s}-${p.dataset.room}`);
+  });
 }
 
 // Compone la escena para el tamaño actual del cuarto: el bloque (posición y tamaño), el fondo extendido y la luz.
@@ -174,11 +248,18 @@ export function layoutRoom(room){
   const set = (k, v) => room.style.setProperty(k, v);
   set('--bx', px(L.block.x)); set('--by', px(L.block.y)); set('--bw', px(L.block.w)); set('--bh', px(L.block.h));
   set('--horizon', px(L.horizon)); set('--fb', px(L.fb)); set('--wb', px(L.block.h - L.fb));
-  const scene = room.querySelector('.scene');
-  if(scene) scene.dataset.kind = L.kind;
-  const floor = room.querySelector('.room-floor');
-  if(floor) floor.innerHTML = floorSvg(L);
-  const light = room.querySelector('.room-light');
+  set('--rw', px(L.W));   // ancho de un cuarto: la cámara se mueve de a uno (nav.js)
+  room.querySelectorAll('.scene').forEach(scene=>{ scene.dataset.kind = L.kind; });
   const soft = parseFloat(css.getPropertyValue('--light-soft')) || 1;   // de día, bordes más suaves
-  if(light) light.innerHTML = lightSvg(L, room.dataset.s || 'room', soft);
+  // la escena de un solo cuarto (dev) o los paneles de la casa
+  const panes = room.querySelectorAll('.pane');
+  const targets = panes.length ? [...panes] : [room];
+  for(const t of targets){
+    const kind = t.dataset.floor || 'planks';
+    const floor = t.querySelector('.room-floor');
+    if(floor) floor.innerHTML = kind === 'planks' ? floorSvg(L) : tilesSvg(L, kind);
+    const light = t.querySelector('.room-light');
+    const id = (room.dataset.s || 'room') + (t.dataset.room ? '-' + t.dataset.room : '');
+    if(light) light.innerHTML = t.dataset.window === 'round' ? '' : lightSvg(L, id, soft);
+  }
 }

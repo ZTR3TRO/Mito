@@ -1,6 +1,6 @@
-// La Casa de Mito: el cuarto a pantalla completa con Mito y su mascota, los gestos para jugar con él y la
-// barra de acciones. Se compone de: room.js (la escena), gestures.js (dedo y ratón), motion.js (arrastrar y
-// lanzar), reactions.js (cara, frases y mascota), needs.js (cómo se notan sus necesidades), sleep.js (dormir),
+// La Casa de Mito: la casa a pantalla completa (varios cuartos, uno al lado del otro) con Mito y su mascota, los
+// gestos para jugar con él y la barra de acciones. Se compone de: room.js (la escena de cada cuarto), nav.js (la
+// cámara: flechas, indicadores y la orilla), gestures.js (dedo y ratón), motion.js (arrastrar y lanzar), reactions.js (cara, frases y mascota), needs.js (cómo se notan sus necesidades), sleep.js (dormir),
 // bath.js (bañar), food.js (comer) y decor.js (los muebles y el modo Decorar). Guarda cuántas veces mostró las
 // pistas, las necesidades de Mito (state/house.js), la comida de la charola (state/pantry.js) y los muebles
 // (state/decor.js).
@@ -11,8 +11,9 @@
 
 import { byId } from '../../core/dom.js';
 import { on, emit } from '../../core/bus.js';
-import { getHouseHintCount, markHouseHintShown } from '../../state/store.js';
-import { buildRoom, layoutRoom } from './room.js';
+import { getHouseHintCount, markHouseHintShown, getMito, setMito } from '../../state/store.js';
+import { buildPanes, layoutRoom } from './room.js';
+import { createNav } from './nav.js';
 import { bindGestures } from './gestures.js';
 import { createMotion } from './motion.js';
 import { createReactions } from './reactions.js';
@@ -31,7 +32,7 @@ const HINT_FADE_MS = 500;
 export function init(){
   const room = byId('houseRoom'), mascot = byId('mascotHouse'), speech = byId('houseSpeech'), hint = byId('houseHint');
   if(!room || !mascot || !speech) return;
-  buildRoom(room);
+  buildPanes(room);
 
   // Pista de las primeras visitas.
   let hintTimer = 0;
@@ -57,24 +58,46 @@ export function init(){
   const sleep = createSleep(room, mascot, reactions, { button: act('sleep'), onChange: refresh });
   const bath = createBath(room, mascot, reactions, { button: act('bath'), onChange: refresh });
   const food = createFood(room, mascot, reactions, { button: act('eat'), onChange: refresh });
-  // Decorar no despierta a Mito: no es jugar con él. Si duerme, no comenta los muebles.
-  const decor = createDecor(room, reactions, { button: act('decor'), canTalk: ()=> !sleep.asleep, onChange: refresh });
-  needs = createNeeds(room, mascot, reactions, { busy: ()=> sleep.asleep || bath.bathing || food.eating || decor.active });
+  // La cámara. Con las flechas o los indicadores Mito te sigue, salvo si duerme; con la charola, el baño o Decorar
+  // abiertos no se cambia de cuarto (style.css oculta flechas e indicadores con las mismas clases).
+  let decor = null, motion = null;
+  const nav = createNav(room, {
+    follows: ()=> !sleep.asleep,
+    onEdge: ()=> reactions.place(),
+    canMove: ()=> !bath.bathing && !food.open && !decor?.active,
+    onLeave: (from, to, how)=>{
+      hideHint();
+      if(how !== 'carry'){ motion?.reset(); reactions.clear(); }
+    },
+    onArrive: to=>{
+      if(nav.mitoRoom === to && getMito().room !== to) setMito({ room: to });   // Mito llegó aquí: se guarda
+      decor?.render();
+    },
+  });
+  // Mito está en otro cuarto (se quedó dormido allá): las acciones primero llevan con él.
+  const away = ()=> nav.mitoRoom !== nav.room;
+  const toMito = ()=> away() && nav.go(nav.mitoRoom, 'dot');
+  // Decorar no despierta a Mito: no es jugar con él. Si duerme o no está aquí, no comenta los muebles.
+  decor = createDecor(room, reactions, { button: act('decor'), here: ()=> nav.room, canTalk: ()=> !sleep.asleep && !away(), onChange: refresh });
+  needs = createNeeds(room, mascot, reactions, { busy: ()=> sleep.asleep || bath.bathing || food.eating || decor.active || away() });
   // Los botones nunca se deshabilitan: cada uno responde. "Dormir" o "Comer" durante el baño lo terminan primero;
   // "Bañar" o "Comer" mientras duerme lo despiertan con ternura (y luego ya se puede).
   act('eat')?.addEventListener('click', ()=>{
     hideHint();
+    if(toMito()) return;
     if(sleep.asleep){ sleep.touch(); return; }
     if(bath.bathing){ bath.finish(); return; }
     food.toggle();
   });
   act('sleep')?.addEventListener('click', ()=>{
     hideHint();
+    if(toMito()) return;
     if(bath.bathing){ bath.finish(); return; }
     sleep.toggle();
   });
   act('bath')?.addEventListener('click', ()=>{
     hideHint();
+    if(toMito()) return;
     if(sleep.asleep){ sleep.touch(); return; }
     bath.toggle();
   });
@@ -84,7 +107,7 @@ export function init(){
     food.close();
     decor.toggle();
   });
-  const motion = createMotion(room, mascot, {
+  motion = createMotion(room, mascot, {
     onPaint: reactions.place,
     onHit: (kind, impact)=> reactions.hit(kind, impact),
     onSettle: bounced=>{ reactions.settle(bounced); emit('house:land', { bounced }); },
@@ -105,8 +128,9 @@ export function init(){
         case 'tickle': reactions.tickle(); emit('house:tickle'); break;
         case 'pet': reactions.stroke(); emit('house:pet'); break;
         case 'grab': motion.grab(g.x, g.y); reactions.grab(); emit('house:grab'); break;
-        case 'drag': motion.drag(g.x, g.y); break;
+        case 'drag': motion.drag(g.x, g.y); nav.edge(g.x); break;
         case 'drop': {
+          nav.edge(null);
           const speed = motion.drop(g.vx, g.vy);
           reactions.release(speed, reducedMotion());
           emit('house:drop', { speed });
@@ -145,6 +169,7 @@ export function init(){
     inHouse = view === 'house';
     if(view === 'house'){
       measureNav();
+      nav.show(getMito().room);   // la cámara aparece en el cuarto donde está Mito
       requestFrame(relight);
       maybeShowHint();
       const asleep = sleep.enter();
@@ -159,6 +184,8 @@ export function init(){
       }, WELCOME_MS);
     } else {
       cancelGesture();
+      nav.edge(null);
+      nav.leave();
       motion.reset();
       bath.leave();
       food.leave();

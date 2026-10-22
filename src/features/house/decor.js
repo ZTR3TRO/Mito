@@ -44,14 +44,23 @@ const pct = s => Math.round((s || 1) * 100) + ' %';
 const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 const inside = (e, el) => { const r = el.getBoundingClientRect(); return e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom; };
 
-export function createDecor(room, reactions, { button, canTalk = ()=> true, onChange = ()=>{} }){
+// here(): el cuarto que se ve (nav.js). Decorar acomoda los muebles de ese cuarto; se dibujan los de todos.
+export function createDecor(room, reactions, { button, here = ()=> 'bedroom', canTalk = ()=> true, onChange = ()=>{} }){
   if(!document.getElementById('furnDefs')) document.body.insertAdjacentHTML('afterbegin', FURNITURE_DEFS);
   const layer = cls => { const el = document.createElement('div'); el.className = cls; el.setAttribute('aria-hidden', 'true'); return el; };
-  // capas: alfombras (sobre el piso, bajo la luz de la ventana) · zonas · muebles (bajo Mito) · barrita del seleccionado
-  const rugs = layer('room-rugs'), zones = layer('room-zones'), furn = layer('room-furn'), tools = document.createElement('div');
+  // capas de cada cuarto (en su panel, para que vayan con su parallax): alfombras (sobre el piso, bajo la luz de la
+  // ventana) · lo colgado en la pared (lejano, como la pared) · muebles del piso (bajo Mito)
+  const panes = {};
+  room.querySelectorAll('.pane').forEach(p=>{
+    const l = { rugs: layer('room-rugs'), wall: layer('room-furn far'), furn: layer('room-furn') };
+    p.querySelector('.room-base').after(l.rugs, l.wall, l.furn);
+    panes[p.dataset.room] = l;
+  });
+  // del cuarto que se ve: zonas (al arrastrar) y la barrita del seleccionado
+  const zones = layer('room-zones'), tools = document.createElement('div');
   tools.className = 'room-tools';
   zones.innerHTML = '<div class="dc-zone" data-zona="wall"><b>Pared</b></div><div class="dc-zone" data-zona="floor"><b>Piso</b></div>';
-  (room.querySelector('.room-base') || room.firstChild).after(rugs, zones, furn);
+  (room.querySelector('.house-panes') || room.firstChild).after(zones);
   const tray = document.createElement('div');
   tray.className = 'house-bar decor-tray';
   tray.setAttribute('role', 'toolbar');
@@ -70,14 +79,14 @@ export function createDecor(room, reactions, { button, canTalk = ()=> true, onCh
   const announce = t => { status.textContent = t; };
 
   /* ---------- dibujar ---------- */
-  // Por ahora la Casa tiene un solo cuarto a la vista: el Cuarto. Lo que está en otro cuarto no se dibuja aquí.
-  const ROOM = 'bedroom';
-  function placedList(d = getDecor()){
-    return FURNITURE.filter(f => d.placed[f.id] && spotRoom(d.placed[f.id]) === ROOM).map(item => ({ item, p: clampSpot(L, item, d.placed[item.id]) }));
+  // Los muebles colocados en un cuarto (por omisión, el que se ve), con su colocación corregida.
+  function placedList(d = getDecor(), roomId = here()){
+    return FURNITURE.filter(f => d.placed[f.id] && spotRoom(d.placed[f.id]) === roomId).map(item => ({ item, p: clampSpot(L, item, d.placed[item.id]) }));
   }
   const boxStyle = b => `left:${px(b.x)};top:${px(b.y)};width:${px(b.w)};height:${px(b.h)}`;
-  function piece({ item, p }){
-    const attrs = active
+  // mine: es del cuarto que se está decorando (se puede tomar y enfocar)
+  function piece({ item, p }, mine = false){
+    const attrs = mine
       ? ` tabindex="0" role="button" aria-label="${esc(item.name)} (${ZONE[item.zone].toLowerCase()}, ${pct(p.scale)}). Flechas para moverlo, + y − para cambiar su tamaño${item.flip ? ', F para voltearlo' : ''}, Supr para guardarlo"`
       : '';
     return `<div class="furn ${item.zone}${item.flat ? ' flat' : ''}${p.flip ? ' is-flip' : ''}${sel === item.id ? ' is-sel' : ''}" data-furn="${item.id}" style="${boxStyle(furnitureBox(L, item, p))}"${attrs}>
@@ -90,13 +99,16 @@ export function createDecor(room, reactions, { button, canTalk = ()=> true, onCh
     const d = getDecor();
     if(active) renderTray(d);   // la bandeja no depende del tamaño del cuarto
     if(!L) return;
-    const list = placedList(d);
-    if(sel && !d.placed[sel]) sel = null;
+    if(sel && (!d.placed[sel] || spotRoom(d.placed[sel]) !== here())) sel = null;
     // lo que tiene el foco se vuelve a enfocar después de repintar (al moverlo con el teclado)
     const focused = room.contains(document.activeElement) ? document.activeElement.closest?.('.furn')?.dataset.furn : null;
-    rugs.innerHTML = list.filter(e => e.item.flat).map(piece).join('');
-    furn.innerHTML = depthOrder(list.filter(e => !e.item.flat)).map(piece).join('');
-    [rugs, furn].forEach(el => active ? el.removeAttribute('aria-hidden') : el.setAttribute('aria-hidden', 'true'));
+    for(const [roomId, l] of Object.entries(panes)){
+      const list = placedList(d, roomId), mine = active && roomId === here();
+      l.rugs.innerHTML = list.filter(e => e.item.flat).map(e => piece(e, mine)).join('');
+      l.wall.innerHTML = list.filter(e => e.item.zone === 'wall').map(e => piece(e, mine)).join('');
+      l.furn.innerHTML = depthOrder(list.filter(e => e.item.zone === 'floor' && !e.item.flat)).map(e => piece(e, mine)).join('');
+      Object.values(l).forEach(el => mine ? el.removeAttribute('aria-hidden') : el.setAttribute('aria-hidden', 'true'));
+    }
     const M = FURN.margin, [wall, floor] = zones.children;
     Object.assign(wall.style, { left: px(M), top: px(M), width: px(L.W - 2 * M), height: px(L.horizon - 2 * M) });
     Object.assign(floor.style, { left: px(M), top: px(L.horizon + M), width: px(L.W - 2 * M), height: px(Math.max(0, L.H - L.barSpace - L.horizon - M)) });
@@ -182,7 +194,7 @@ export function createDecor(room, reactions, { button, canTalk = ()=> true, onCh
     const item = findFurniture(id);
     if(!item || !L) return;
     const others = placedList().filter(e => !e.item.flat).map(e => furnitureBox(L, e.item, e.p));
-    place(item, freeSpot(L, item, others));
+    place(item, { ...freeSpot(L, item, others), room: here() });
     pieceEl(id)?.focus({ preventScroll: true });
   }
   function flip(id){
@@ -235,8 +247,9 @@ export function createDecor(room, reactions, { button, canTalk = ()=> true, onCh
     hideHint();
     tools.innerHTML = '';
     if(d.kind === 'new'){
-      furn.insertAdjacentHTML('beforeend', piece({ item: d.item, p: clampSpot(L, d.item, { u: .5, v: .5 }) }));
-      d.el = furn.lastElementChild;
+      const host = panes[here()][d.item.zone === 'wall' ? 'wall' : 'furn'];
+      host.insertAdjacentHTML('beforeend', piece({ item: d.item, p: clampSpot(L, d.item, { u: .5, v: .5 }) }, true));
+      d.el = host.lastElementChild;
       d.chip?.classList.add('is-picked');
     }
     try{ (d.kind === 'new' ? tray : d.el).setPointerCapture(e.pointerId); }catch{}
@@ -333,7 +346,7 @@ export function createDecor(room, reactions, { button, canTalk = ()=> true, onCh
     d.chip?.classList.remove('is-picked');
     if(cancel || !d.spot || (d.kind === 'new' && inside(e, tray))){ if(d.kind === 'new') d.el.remove(); render(); return d; }
     if(d.over) putAway(d.id);
-    else place(d.item, d.spot);
+    else place(d.item, d.kind === 'new' ? { ...d.spot, room: here() } : d.spot);
     return d;
   }
 
@@ -474,7 +487,7 @@ export function createDecor(room, reactions, { button, canTalk = ()=> true, onCh
       if(L && rug && !getDecor().owned.includes(rug.id)){
         const first = spotAt(L, rug, L.home.x, L.home.y);
         const h = furnitureBox(L, rug, first).h;
-        gifted = grantGift(ROOM, spotAt(L, rug, L.home.x, L.home.y + h * .3)).length > 0;
+        gifted = grantGift(rug.room, spotAt(L, rug, L.home.x, L.home.y + h * .3)).length > 0;
       }
       render();
       paintButton();

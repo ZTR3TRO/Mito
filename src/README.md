@@ -53,10 +53,12 @@ src/
                        view, review, counts
     shop/              tienda (con las secciones Comida y Muebles) y tienda de temporada: index, season
     house/             la Casa: index (cableado), layout (bloque aprobado escalado, piso y luz; puro),
-                       room (dibuja la escena), gestures (dedo y ratón), motion (arrastrar y lanzar),
-                       reactions (cara, frases y mascota), needs (cómo se notan sus necesidades),
-                       sleep (dormir), bath (bañar), food (la charola y comer), decor (los muebles y el
-                       modo Decorar), furniture-layout (dónde y de qué tamaño va cada mueble, límites y escala; puro)
+                       room (dibuja cada cuarto: pared, piso, ventana y luz), nav (la cámara entre cuartos:
+                       flechas, indicadores, la orilla y el parallax), gestures (dedo y ratón), motion
+                       (arrastrar y lanzar), reactions (cara, frases y mascota), needs (cómo se notan sus
+                       necesidades), sleep (dormir), bath (bañar), food (la charola y comer), decor (los
+                       muebles y el modo Decorar), furniture-layout (dónde y de qué tamaño va cada mueble,
+                       límites y escala; puro)
     progress/          vista de progreso y copia de seguridad: view, backup
     mascot/            la mascota entera: avatar, auras, face, effects, speech
     pwa/update.js      service worker: registro y actualización segura (solo en producción)

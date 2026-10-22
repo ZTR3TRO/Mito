@@ -4,7 +4,7 @@
 //   ?theme=light|dark   ?size=390|1176   ?state=placed|decor|drag|shop   ?pet=0   ?still
 // La colocación de aquí (place) es la que se propone para features/house/furniture-layout.js.
 import { previewAvatar } from '../src/features/mascot/avatar.js';
-import { buildRoom, layoutRoom } from '../src/features/house/room.js';
+import { buildPanes, layoutRoom } from '../src/features/house/room.js';
 import { sceneLayout } from '../src/features/house/layout.js';
 import { FURNITURE as ALL, findFurniture, FURNITURE_SIZE } from '../src/content/furniture.js';
 import { FURNITURE_ART as ART, FURNITURE_DEFS } from '../src/content/art/furniture.js';
@@ -202,7 +202,7 @@ export function renderDecor(root){
     panel.innerHTML = html;
     root.appendChild(panel);
   }
-  root.querySelectorAll('.decor-sketch .room:not(.fv-mini)').forEach(r => buildRoom(r));
+  root.querySelectorAll('.decor-sketch .room:not(.fv-mini)').forEach(r => buildPanes(r));
   for(const id of jobs) previewAvatar('color', LOOK.color, id, LOOK);
   const ro = new ResizeObserver(entries => entries.forEach(e => layoutRoom(e.target)));
   root.querySelectorAll('.decor-sketch .room:not(.fv-mini)').forEach(r => ro.observe(r));

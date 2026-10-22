@@ -4,7 +4,7 @@
 //   móvil (390 × 714) y escritorio (1176 × 800).
 //   ?theme=light|dark   ?size=390|1176   ?state=tray|drag|eat|hungry|empty|full|shop   ?pet=0   ?still
 import { previewAvatar } from '../src/features/mascot/avatar.js';
-import { buildRoom, layoutRoom } from '../src/features/house/room.js';
+import { buildPanes, layoutRoom } from '../src/features/house/room.js';
 import { FOODS as CATALOG } from '../src/content/food.js';
 import { FOOD_ART as ART } from '../src/content/art/food.js';
 import { PET_EAT } from '../src/content/house.js';
@@ -154,7 +154,7 @@ export function renderFood(root){
     panel.innerHTML = html;
     root.appendChild(panel);
   }
-  root.querySelectorAll('.food-sketch .room').forEach(r => buildRoom(r));
+  root.querySelectorAll('.food-sketch .room').forEach(r => buildPanes(r));
   for(const [id, mouth] of jobs){
     previewAvatar('color', LOOK.color, id, LOOK);
     if(mouth) setMouth(id, mouth);

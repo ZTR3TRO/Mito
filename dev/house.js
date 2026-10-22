@@ -8,7 +8,7 @@
 //   ?food      bocetos de la Fase 3: la comida (ver dev/food.js)
 //   ?decor     bocetos de la Fase 4: muebles y decoración (ver dev/furniture.js)
 import { previewAvatar } from '../src/features/mascot/avatar.js';
-import { buildRoom, layoutRoom } from '../src/features/house/room.js';
+import { buildPanes, layoutRoom } from '../src/features/house/room.js';
 import { DIRT } from '../src/content/art/house.js';
 
 const q = new URLSearchParams(location.search);
@@ -105,7 +105,7 @@ else for(const theme of themes){
   panel.innerHTML = html;
   root.appendChild(panel);
 }
-document.querySelectorAll('.panel:not(.food-sketch):not(.decor-sketch) .room').forEach(r => buildRoom(r));
+document.querySelectorAll('.panel:not(.food-sketch):not(.decor-sketch) .room').forEach(r => buildPanes(r));
 for(const [id, look, st] of jobs){
   previewAvatar('color', look.color, id, look);
   if(st) document.getElementById(id).insertAdjacentHTML('beforeend', DIRT);

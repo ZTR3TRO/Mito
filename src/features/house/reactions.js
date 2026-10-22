@@ -1,8 +1,9 @@
 // Reacciones en la Casa: la cara y la animación de Mito, lo que dice, y cómo reacciona la mascota.
 // Las frases y la tabla de reacciones por mascota están en content/house.js.
 //
-// Globos: el de Mito se coloca donde no tape su cara, ni a la mascota, ni el globo de la mascota (arriba de Mito,
-// a su derecha o a su izquierda, lo primero que quepa dentro del cuarto) y lo sigue si se mueve. El de la mascota
+// Globos: el de Mito se coloca donde no tape su cara, ni a la mascota, ni el globo de la mascota, ni la orilla
+// (cuando se lleva a Mito al borde para cambiar de cuarto): arriba de Mito, arriba pero corrido hacia adentro, a su
+// derecha o a su izquierda, lo primero que quepa dentro del cuarto. Lo sigue si se mueve. El de la mascota
 // es el de siempre (speech.js), a la izquierda de Mito y encima de ella.
 
 import { MITO_HOUSE, PET_HOUSE } from '../../content/house.js';
@@ -63,10 +64,15 @@ export function createReactions(room, mascot, speech){
     const avoid = [body];
     const pet = petEl(); if(pet) avoid.push(rel(pet.getBoundingClientRect()));
     const pb = mascot.querySelector(':scope > .pet-bubble.show'); if(pb) avoid.push(rel(pb.getBoundingClientRect()));
+    const edge = room.querySelector('.edge-go.show'), strip = edge && rel(edge.getBoundingClientRect());
+    if(strip) avoid.push(strip);
     const clampX = x => Math.max(EDGE, Math.min(W - w - EDGE, x));
     const faceY = s.top - r.top + box * .3;
+    // arriba, pero sin entrar a la orilla (del lado contrario a ella)
+    const inward = strip ? (strip.left > W / 2 ? Math.min(clampX(cx - w / 2), strip.left - w - GAP) : Math.max(clampX(cx - w / 2), strip.right + GAP)) : null;
     const options = [
       ['above', clampX(cx - w / 2), body.top - h - GAP],
+      ...(strip ? [['above', inward, body.top - h - GAP]] : []),
       ['right', body.right + GAP, faceY],
       ['left', body.left - w - GAP, faceY],
     ];
