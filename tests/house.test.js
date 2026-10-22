@@ -751,3 +751,12 @@ test('respaldo: importar reemplaza la partida entera, también los campos opcion
   assert.equal(state.decorHint, 3);
   resetAll();
 });
+
+test('muebles: cambiar solo una parte de la colocación conserva lo demás (no vuelve al centro)', ()=>{
+  freshDecor();
+  buyFurniture('m-sofa');
+  placeFurniture('m-sofa', { u: .3, v: .7, flip: true });
+  placeFurniture('m-sofa', { v: .4 });
+  assert.deepEqual(getDecor().placed['m-sofa'], { zona: 'floor', u: .3, v: .4, flip: true });
+  freshDecor(0);
+});

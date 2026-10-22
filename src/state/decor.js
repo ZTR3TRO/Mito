@@ -61,8 +61,8 @@ export function placeFurniture(id, spot){
   const item = findFurniture(id);
   const d = getDecor();
   if(!item || !d.owned.includes(id) || !spot || typeof spot !== 'object') return { ok: false, first: false };
-  const prev = d.placed[id];
-  d.placed[id] = cleanSpot(item, { flip: prev ? prev.flip === true : false, ...spot });
+  // lo que no venga en `spot` (posición, volteo) se queda como estaba
+  d.placed[id] = cleanSpot(item, { ...d.placed[id], ...spot });
   const first = !d.seen.includes(id);
   if(first) d.seen = known([...d.seen, id]);
   store(d);
