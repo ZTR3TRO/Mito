@@ -1,72 +1,170 @@
-// Movimiento de Mito en la Casa: seguir al dedo, lanzarlo con física y devolverlo a su lugar.
-// La física es pura (core/physics.js) y trabaja en "altos de cuarto"; aquí se mide el cuarto, se avanza
-// la simulación en cada cuadro y se pinta el resultado en variables CSS del cuarto (--fly-x, --fly-y, --lift).
-// Solo se mueven Mito, su aura y su rubor; la mascota se queda en el piso (ver .room .mascot en style.css).
+// Movimiento de Mito en la Casa: está donde lo dejaste (Fase 5: Mito libre). Sigue al dedo, se lanza con física y,
+// al caer, se queda en el piso o sobre un mueble con superficie (cama, sillón, cojín, silla…) si cae encima; si se
+// pasa de la orilla del mueble, cae al piso. La física es pura (core/physics.js, en "altos de cuarto"); aquí se
+// mide el cuarto, se avanza la simulación en cada cuadro y se pinta en variables CSS del cuarto.
 //
-// Con prefers-reduced-motion no hay rebote: al soltarlo se desvanece y reaparece en su lugar.
+// Profundidad: en el piso, Mito apoya en una "línea de piso" (más al frente = más abajo en la pantalla) y se ve más
+// grande o más chico con la misma perspectiva que los muebles (furniture-layout.js, scaleAt). Mientras está en la
+// mano, su sombra marca dónde va a caer: si los pies están sobre el piso, ahí (esa es su profundidad nueva); si lo
+// levantas sobre la pared, la sombra se queda en la fila donde estaba; sobre un mueble con superficie, en ella.
+//
+// Variables que escribe (style.css): --fly-x, --fly-y (dónde están sus pies respecto a su lugar de siempre),
+// --mito-k (su escala), --ground-y y --lift (la sombra), y las de la mascota: --pet-x, --pet-y, --pet-k. La mascota
+// lo sigue un momento después y se queda en el piso, cerca de él (si Mito está sobre un mueble, frente al mueble).
+//
+// Con prefers-reduced-motion no hay vuelo ni rebote: al soltarlo se desvanece y aparece donde cae.
 
 import { advance, clampToRoom } from '../../core/physics.js';
+import { mitoBand, scaleAt } from './furniture-layout.js';
 
-const REST_MS = 300;        // quieto en el piso este tiempo antes de volver a su lugar
-const RETURN_MS = 600;      // lo que tarda en volver a su lugar
 const FADE_MS = 180;        // desvanecido con movimiento reducido (cada mitad)
-// Medidas del dibujo de Mito (viewBox 150): pies en y 131, antenas arriba en y −5, cuerpo de x 23 a 127.
-const FEET = 131 / 150, TOP = (131 + 5) / 150, HALF_W = 52 / 150;
+const HOP_MS = 560;         // un salto a otro lugar ("Traer a Mito")
+const PET_MS = 520, PET_DELAY = 260;   // la mascota lo alcanza
+const SEAT_GRAB = .14;      // con los pies hasta este tanto (× su alto) debajo de una superficie, se sienta en ella…
+const SEAT_NEAR = .35;      // …o hasta este tanto encima, aunque el mueble esté más al frente que su sombra
+// Medidas del dibujo de Mito (viewBox 150): pies en y 131, antenas arriba en y −5, cuerpo de x 23 a 127; el dibujo
+// va a −88 % de su alto respecto a su lugar (style.css).
+const FEET = 131 / 150, TOP = (131 + 5) / 150, HALF_W = 52 / 150, ANCHOR = .88;
 
 const reducedMotion = ()=> !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-const raf = cb => (window.requestAnimationFrame ? window.requestAnimationFrame(cb) : setTimeout(()=>cb(performance.now()), 16));
+const raf = cb => (window.requestAnimationFrame ? window.requestAnimationFrame(cb) : setTimeout(()=>cb(now()), 16));
 const caf = id => (window.cancelAnimationFrame ? window.cancelAnimationFrame(id) : clearTimeout(id));
 const now = ()=> (typeof performance !== 'undefined' ? performance.now() : Date.now());
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 
-export function createMotion(room, mascot, { onHit = ()=>{}, onSettle = ()=>{}, onPaint = ()=>{} } = {}){
-  let state = 'home';        // home | held | flying | resting | returning | fading
-  let body = null;           // { x, y, vx, vy } en altos de cuarto; null = en su lugar
+// geometry(): { L, seats } del cuarto de Mito — L de sceneLayout (px del cuarto) y seats las superficies de sus
+// muebles: [{ id, x0, x1, y, base }] (furniture-layout.js, seatSurfaces). null si el cuarto no se ve.
+// onSettle(rest) cuando queda quieto: rest = { x, y, on, depth } (pies en px; on = id del mueble o null; depth = la
+// línea de piso que le toca: la suya o la base del mueble).
+export function createMotion(room, mascot, { geometry = ()=> null, onHit = ()=>{}, onSettle = ()=>{}, onPaint = ()=>{} } = {}){
+  let state = 'rest';        // rest | held | flying | fading | hop
+  let rest = null;           // dónde está quieto: { x, y, on, depth } (px)
+  let body = null;           // en la mano o en vuelo: { x, y, vx, vy } en altos de cuarto
+  let depth = 0;             // la línea de piso mientras está en la mano o en vuelo (px)
   let grabOffset = { x: 0, y: 0 };
-  let frame = 0, lastT = 0, restSince = 0, bounced = false;
-  let tween = null;          // { from, start } para volver a su lugar
+  let frame = 0, lastT = 0, bounced = false, petFrame = 0, petTimer = 0;
+  let seats = [], petAt = null;
 
-  // Medidas actuales. El contenedor .mascot no se mueve (solo Mito dentro), así que su caja marca el lugar de casa.
-  function measure(){
-    const r = room.getBoundingClientRect(), m = mascot.getBoundingClientRect();
-    const H = r.height || 1, box = m.width;
-    const home = { x: (m.left + m.width / 2 - r.left) / H, y: (m.top + box * FEET - r.top) / H };
-    const world = { width: r.width / H, floor: home.y, r: box * HALF_W / H, h: box * TOP / H };
-    return { r, H, home, world };
+  // Su lugar de siempre (donde está la caja .mascot), en px del cuarto: los pies.
+  const homeOf = L => ({ x: L.home.x, y: L.home.y - L.mito * (ANCHOR - FEET) });
+  const set = (k, v) => room.style.setProperty(k, v);
+  const pxv = n => n.toFixed(1) + 'px';
+  const roomRect = ()=> room.getBoundingClientRect();
+
+  // Lo que hay debajo de unos pies en (x, y): la superficie de un mueble o el piso. Con los pies a la altura de una
+  // superficie (un poco arriba o casi encima), es esa, aunque el mueble esté más al frente que su sombra: la usuaria
+  // lo puso ahí. Si no, la primera superficie debajo de él que esté detrás de su línea de piso.
+  function groundUnder(x, y, floorY){
+    const m = geometry()?.L.mito || 0;
+    const across = seats.filter(s => x >= s.x0 && x <= s.x1);
+    const near = across.filter(s => y >= s.y - m * SEAT_NEAR && y <= s.y + m * SEAT_GRAB).sort((a, b) => Math.abs(a.y - y) - Math.abs(b.y - y))[0];
+    const hit = near || across.filter(s => y <= s.y + m * SEAT_GRAB && s.y < floorY).sort((a, b) => a.y - b.y)[0];
+    return hit ? { y: hit.y, depth: hit.base, seat: hit } : { y: floorY, depth: floorY, seat: null };
   }
 
-  function paint(){
-    const { H, home, world } = measure();
-    const b = body || home;
-    room.style.setProperty('--fly-x', ((b.x - home.x) * H).toFixed(1) + 'px');
-    room.style.setProperty('--fly-y', ((b.y - home.y) * H).toFixed(1) + 'px');
-    const lift = Math.max(0, Math.min(1, (world.floor - b.y) / .5));
-    room.style.setProperty('--lift', lift.toFixed(3));
+  // Pinta a Mito con los pies en (x, y), su sombra en groundY y la escala de la profundidad `d`.
+  function paint(x, y, groundY, d){
+    const g = geometry();
+    if(!g) return;
+    const { L } = g, home = homeOf(L), k = scaleAt(L, d);
+    set('--fly-x', pxv(x - home.x)); set('--fly-y', pxv(y - home.y));
+    set('--ground-y', pxv(groundY - home.y));
+    set('--mito-k', k.toFixed(3));
+    set('--lift', clamp((groundY - y) / (L.H * .5), 0, 1).toFixed(3));
     onPaint();
   }
+  const paintRest = ()=> rest && paint(rest.x, rest.y, rest.y, rest.depth);
 
-  function reset(){
+  /* ---------- la mascota: se queda en el piso, cerca de Mito ---------- */
+  function petTarget(){
+    const g = geometry();
+    if(!g || !rest) return null;
+    const { L } = g, home = homeOf(L), [, b1] = mitoBand(L);
+    const k = scaleAt(L, rest.depth), m = L.mito;
+    // en el piso, a su lado y un poco al frente; sobre un mueble, frente al mueble
+    const y = Math.min(b1, rest.depth + m * (rest.on ? .1 : .06));
+    const kp = scaleAt(L, y);
+    let x = rest.x - m * .63 * k;
+    if(x < m * .25) x = rest.x + m * .63 * k;                   // pegado a la pared izquierda: del otro lado
+    x = clamp(x, m * .2, L.W - m * .2);
+    // posición por omisión de la mascota (a la izquierda de su lugar de siempre, style.css)
+    return { dx: x - (home.x - m * .63), dy: y - (home.y + m * .1), k: kp };
+  }
+  function petPaint(t){ set('--pet-x', pxv(t.dx)); set('--pet-y', pxv(t.dy)); set('--pet-k', t.k.toFixed(3)); petAt = t; }
+  function petFollow(instant = false){
+    clearTimeout(petTimer); caf(petFrame);
+    const to = petTarget();
+    if(!to) return;
+    if(instant || reducedMotion() || !petAt){ petPaint(to); return; }
+    const from = petAt;
+    petTimer = setTimeout(()=>{
+      const start = now();
+      const step = t=>{
+        const k = Math.min(1, (t - start) / PET_MS), e = k < .5 ? 2 * k * k : 1 - (-2 * k + 2) ** 2 / 2;
+        const hop = Math.sin(Math.PI * k) * -10;   // da saltitos al caminar
+        petPaint({ dx: from.dx + (to.dx - from.dx) * e, dy: from.dy + (to.dy - from.dy) * e + hop * (k < 1 ? Math.abs(Math.sin(k * Math.PI * 3)) : 0), k: from.k + (to.k - from.k) * e });
+        if(k < 1) petFrame = raf(step); else petPaint(to);
+      };
+      petFrame = raf(step);
+    }, PET_DELAY);
+  }
+
+  /* ---------- dónde está ---------- */
+  // Lo pone quieto en una posición guardada (state/house.js, getMito): { home } | { u, v } | { on, s }.
+  // petInstant: la mascota aparece a su lado de una vez (al entrar, al cambiar de cuarto); si no, lo alcanza.
+  function place(pos, { petInstant = true } = {}){
     caf(frame); frame = 0;
-    body = null; tween = null; state = 'home';
+    const g = geometry();
+    seats = g?.seats || [];
+    if(!g) return;
+    const { L } = g, home = homeOf(L), [b0, b1] = mitoBand(L);
+    let r = { x: home.x, y: home.y, on: null, depth: home.y };
+    if(pos?.on){
+      const st = seats.find(x => x.id === pos.on);
+      if(st) r = { x: st.x0 + (st.x1 - st.x0) * (Number.isFinite(pos.s) ? pos.s : .5), y: st.y, on: pos.on, depth: st.base };
+    } else if(Number.isFinite(pos?.u) && Number.isFinite(pos?.v)){
+      const y = b0 + pos.v * (b1 - b0);
+      r = { x: pos.u * L.W, y, on: null, depth: y };
+    }
+    const m = L.mito * scaleAt(L, r.depth) * HALF_W;
+    r.x = clamp(r.x, m, L.W - m);
+    rest = r; body = null; state = 'rest';
     room.classList.remove('is-held');
-    room.style.setProperty('--fly-x', '0px');
-    room.style.setProperty('--fly-y', '0px');
-    room.style.setProperty('--lift', '0');
     room.style.removeProperty('--mito-fade');
+    paintRest();
+    petFollow(petInstant);
+  }
+  // Lo que se guarda (state/house.js, setMito) de una posición quieta.
+  function saved(r = rest){
+    const g = geometry();
+    if(!g || !r) return null;
+    const { L } = g, [b0, b1] = mitoBand(L);
+    if(r.on){
+      const st = seats.find(x => x.id === r.on);
+      if(st) return { on: r.on, s: clamp((r.x - st.x0) / Math.max(1, st.x1 - st.x0), 0, 1) };
+    }
+    return { u: r.x / L.W, v: clamp((r.y - b0) / Math.max(1, b1 - b0), 0, 1) };
   }
 
-  // Punto de la pantalla (px de cliente) → altos de cuarto.
-  function toUnits(px, py){
-    const { r, H } = measure();
-    return { x: (px - r.left) / H, y: (py - r.top) / H };
+  /* ---------- en la mano ---------- */
+  function measure(){
+    const g = geometry(), r = roomRect();
+    const H = r.height || 1;
+    return { g, r, H };
   }
+  const toPx = (px, py) => { const r = roomRect(); return { x: px - r.left, y: py - r.top }; };
 
   function grab(px, py){
-    caf(frame); frame = 0; tween = null;
-    const { home } = measure();
-    const p = toUnits(px, py);
-    const b = body || { ...home };
-    grabOffset = { x: p.x - b.x, y: p.y - b.y };
-    body = { x: b.x, y: b.y, vx: 0, vy: 0 };
+    caf(frame); frame = 0;
+    const { g } = measure();
+    if(!g) return;
+    seats = g.seats;
+    if(!rest) place(null);
+    const p = toPx(px, py);
+    const at = body ? { x: body.x * roomRect().height, y: body.y * roomRect().height } : { x: rest.x, y: rest.y };
+    grabOffset = { x: p.x - at.x, y: p.y - at.y };
+    depth = rest.depth;
+    body = { x: at.x, y: at.y };
     state = 'held';
     room.classList.add('is-held');
     room.style.removeProperty('--mito-fade');
@@ -74,69 +172,135 @@ export function createMotion(room, mascot, { onHit = ()=>{}, onSettle = ()=>{}, 
 
   function drag(px, py){
     if(state !== 'held') return;
-    const { world } = measure();
-    const p = toUnits(px, py);
-    body = clampToRoom({ x: p.x - grabOffset.x, y: p.y - grabOffset.y, vx: 0, vy: 0 }, world);
-    paint();
+    const { g } = measure();
+    if(!g) return;
+    const { L } = g, [b0, b1] = mitoBand(L);
+    const k = scaleAt(L, depth), m = L.mito * k;
+    const p = toPx(px, py);
+    const x = clamp(p.x - grabOffset.x, m * HALF_W, L.W - m * HALF_W);
+    const y = clamp(p.y - grabOffset.y, m * TOP, b1);
+    if(y >= b0) depth = y;   // con los pies sobre el piso, esa es su profundidad
+    body = { x, y };
+    const gnd = groundUnder(x, y, depth);
+    paint(x, y, gnd.y, gnd.seat ? gnd.depth : depth);
   }
 
   // vx, vy en px/ms (del clasificador de gestos). Devuelve la rapidez en altos de cuarto por segundo.
   function drop(vx = 0, vy = 0){
     if(state !== 'held') return 0;
     room.classList.remove('is-held');
-    const { H } = measure();
+    const { g, H } = measure();
     const speed = Math.hypot(vx, vy) * 1000 / H;
-    if(reducedMotion()){ fadeHome(); return speed; }
-    body = { ...body, vx: vx * 1000 / H, vy: vy * 1000 / H, t: 0, resting: false };
-    state = 'flying'; bounced = false; restSince = 0;
+    if(!g){ state = 'rest'; return speed; }
+    let { x, y } = body;
+    // con los pies a la altura de una superficie, se sienta en ella: su línea de piso pasa a ser la del mueble (para
+    // que la superficie quede por encima del piso) y, si estaba un poco abajo, se ajusta a ella
+    const gnd = groundUnder(x, y, depth);
+    if(gnd.seat){
+      depth = Math.max(depth, gnd.seat.base);
+      if(y > gnd.seat.y) y = gnd.seat.y - .01;
+    }
+    const w = world(g, depth);
+    const start = { x: x / H, y: y / H, vx: vx * 1000 / H, vy: vy * 1000 / H, t: 0, resting: false, on: null };
+    if(reducedMotion()){ fadeTo(settle(start, w, H)); return speed; }
+    body = start;
+    state = 'flying'; bounced = false;
     lastT = now();
     frame = raf(loop);
     return speed;
   }
 
+  // El mundo de la física (en altos de cuarto): el piso es su línea de piso; las superficies, las de sus muebles.
+  function world(g, floorY){
+    const { L } = g, H = L.H, k = scaleAt(L, floorY), m = L.mito * k;
+    const plats = seats.filter(s => s.y < floorY - 1).map(s => ({ x0: s.x0 / H, x1: s.x1 / H, y: s.y / H, seat: s }));
+    return { width: L.W / H, floor: floorY / H, r: m * HALF_W / H, h: m * TOP / H, platforms: plats };
+  }
+  // Dónde queda quieto un cuerpo (en px), con su superficie si cayó en una.
+  function restOf(b, w, H){
+    const pl = Number.isInteger(b.on) ? w.platforms[b.on] : null;
+    return pl ? { x: b.x * H, y: pl.y * H, on: pl.seat.id, depth: pl.seat.base } : { x: b.x * H, y: w.floor * H, on: null, depth: w.floor * H };
+  }
+  // Sin animación: simula hasta que se detiene (movimiento reducido).
+  function settle(b, w, H){
+    let cur = b;
+    for(let i = 0; i < 400 && !cur.stopped; i++) cur = advance(cur, w, .05).body;
+    return restOf(cur, w, H);
+  }
+
   function loop(t){
     const dt = Math.max(0, (t - lastT) / 1000);
     lastT = t;
-    const { world, home } = measure();
-    if(state === 'flying'){
-      const r = advance(body, world, dt);
-      body = r.body;
-      for(const h of r.hits){
-        if(h.hit === 'floor' && h.impact > 1) bounced = true;
-        onHit(h.hit, h.impact);
-      }
-      if(body.stopped){ state = 'resting'; restSince = t; }
-    } else if(state === 'resting'){
-      if(t - restSince >= REST_MS){ state = 'returning'; tween = { from: { ...body }, start: t }; }
-    } else if(state === 'returning'){
-      const k = Math.min(1, (t - tween.start) / RETURN_MS);
-      const e = 1 - (1 - k) ** 3;
-      body = { ...body, x: tween.from.x + (home.x - tween.from.x) * e, y: tween.from.y + (home.y - tween.from.y) * e };
-      if(k >= 1){ const hadBounce = bounced; reset(); onSettle(hadBounce); return; }
+    const g = geometry();
+    if(!g){ state = 'rest'; return; }
+    const H = g.L.H, w = world(g, depth);
+    const r = advance(body, w, dt);
+    body = r.body;
+    for(const h of r.hits){
+      if(h.hit === 'floor' && h.impact > 1) bounced = true;
+      onHit(h.hit, h.impact);
     }
-    paint();
+    const pl = Number.isInteger(body.on) ? w.platforms[body.on] : null;
+    paint(body.x * H, body.y * H, pl ? pl.y * H : depth, pl ? pl.seat.base : depth);
+    if(body.stopped){ arrive(restOf(body, w, H), bounced); return; }
     frame = raf(loop);
   }
 
-  // Movimiento reducido: se desvanece, aparece en su lugar y vuelve a verse. Nada salta.
-  function fadeHome(){
+  function arrive(r, hadBounce = false){
+    rest = r; body = null; state = 'rest';
+    paintRest();
+    petFollow();
+    onSettle(r, hadBounce);
+  }
+
+  // Movimiento reducido: se desvanece, aparece donde cae y vuelve a verse. Nada salta.
+  function fadeTo(r){
     state = 'fading';
     const start = now();
-    const step = t => {
+    let moved = false;
+    const step = t=>{
       const k = (t - start) / FADE_MS;
-      if(k < 1){ room.style.setProperty('--mito-fade', (1 - k).toFixed(2)); frame = raf(step); return; }
-      if(body){ body = null; paint(); }
-      if(k < 2){ room.style.setProperty('--mito-fade', (k - 1).toFixed(2)); frame = raf(step); return; }
-      reset();
-      onSettle(false);
+      if(k < 1){ set('--mito-fade', (1 - k).toFixed(2)); frame = raf(step); return; }
+      if(!moved){ moved = true; rest = r; paintRest(); }   // a la mitad, ya invisible: aparece en su lugar nuevo
+      if(k < 2){ set('--mito-fade', (k - 1).toFixed(2)); frame = raf(step); return; }
+      room.style.removeProperty('--mito-fade');
+      arrive(r, false);
+    };
+    frame = raf(step);
+  }
+
+  // Un salto a un lugar del piso (x, y en px): "Traer a Mito".
+  function hop(x, y){
+    caf(frame);
+    const g = geometry();
+    if(!g || !rest) return;
+    const to = { x, y, on: null, depth: y };
+    if(reducedMotion()){ fadeTo(to); return; }
+    const from = { ...rest }, start = now(), arc = g.L.mito * .45;
+    state = 'hop';
+    const step = t=>{
+      const k = Math.min(1, (t - start) / HOP_MS), e = 1 - (1 - k) ** 2;
+      const cx = from.x + (to.x - from.x) * e, cy = from.y + (to.y - from.y) * e - Math.sin(Math.PI * k) * arc;
+      paint(cx, cy, from.depth + (to.depth - from.depth) * e, from.depth + (to.depth - from.depth) * e);
+      if(k < 1) frame = raf(step); else arrive(to, false);
     };
     frame = raf(step);
   }
 
   return {
     get state(){ return state; },
-    get busy(){ return state !== 'home'; },
-    grab, drag, drop, reset,
-    repaint: ()=>{ if(body) paint(); },
+    get busy(){ return state !== 'rest'; },
+    get rest(){ return rest; },
+    place, saved, grab, drag, drop, hop,
+    // Al salir de la vista o al cambiar de cuarto: se cancela lo que estuviera a medias y queda quieto donde estaba.
+    reset(){
+      caf(frame); frame = 0; clearTimeout(petTimer); caf(petFrame);
+      body = null; state = 'rest';
+      room.classList.remove('is-held');
+      room.style.removeProperty('--mito-fade');
+      if(rest) paintRest();
+    },
+    // Se volvió a componer el cuarto (tamaño, muebles): se vuelve a poner donde está guardado.
+    repaint: ()=>{ if(state === 'rest' && rest) paintRest(); },
   };
 }

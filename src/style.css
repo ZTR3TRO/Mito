@@ -1629,19 +1629,26 @@ body[data-view="house"] .mascot-side{ display:none; }   /* en la Casa ya está e
   left:var(--home-x); top:var(--home-y); translate:-50% -88%; outline:none; -webkit-tap-highlight-color:transparent; }
 .room .mascot .pet{ left:-30%; touch-action:none; cursor:pointer; }
 .room .mascot:focus-visible > svg.mito{ outline:3px solid var(--lilac); outline-offset:2px; border-radius:50%; }
-/* Lo que se mueve al arrastrar o lanzar: Mito, su aura y su rubor. La mascota se queda en el piso. */
-.room .mascot > svg.mito, .room .mascot > .aura, .room .mascot > .house-blush{ translate:var(--fly-x) var(--fly-y); }
+/* Lo que se mueve con Mito: él, su aura y su rubor (motion.js). Está donde lo dejaste: --fly-x/--fly-y es dónde están
+   sus pies respecto a su lugar de siempre, y --mito-k su escala por la profundidad (con origen en los pies). */
+.room .mascot > svg.mito, .room .mascot > .aura, .room .mascot > .house-blush{ translate:var(--fly-x) var(--fly-y); scale:var(--mito-k, 1); transition:scale .25s ease; }
+.room .mascot > .aura{ transform-origin:50% 75%; }          /* el aura mide 148 %: sus pies quedan al 75 % */
+.room .mascot > .house-blush{ transform-origin:50% 87%; }
+.room.is-held .mascot > svg.mito, .room.is-held .mascot > .aura, .room.is-held .mascot > .house-blush{ transition:none; }
+/* la mascota lo sigue y se queda en el piso, cerca de él (--pet-x/--pet-y desde su lugar de siempre, --pet-k su escala) */
+.room .mascot > svg.pet, .room .mascot > .pet-bubble{ translate:var(--pet-x, 0px) var(--pet-y, 0px); }
+.room .mascot > svg.pet{ scale:var(--pet-k, 1); }
 .room .mascot > svg.mito, .room .mascot > .aura{ opacity:var(--mito-fade, 1); }
 .room .mascot > svg.mito > ellipse{ display:none; }   /* su sombra de siempre volaría con él: en la Casa la sombra está en el piso (.contact-mito) */
 .room .mascot > svg.mito{ touch-action:none; cursor:grab; transform-origin:50% 87%; -webkit-touch-callout:none; }
 .room.is-held .mascot > svg.mito{ cursor:grabbing; }
 .contact{ position:absolute; border-radius:50%; pointer-events:none; translate:-50% -50%;
   background:radial-gradient(closest-side, rgba(var(--shadow), var(--shadow-a)), rgba(var(--shadow), calc(var(--shadow-a) * .45)) 60%, transparent); }
-.contact-mito{ left:calc(var(--home-x) + var(--fly-x)); top:calc(var(--home-y) - var(--mito) * .015);
+.contact-mito{ left:calc(var(--home-x) + var(--fly-x)); top:calc(var(--home-y) + var(--ground-y, 0px) - var(--mito) * .015);
   width:calc(var(--mito) * .78); height:calc(var(--mito) * .13);
-  scale:calc(1 - var(--lift) * .55); opacity:calc(1 - var(--lift) * .65); }
-.contact-pet{ left:calc(var(--home-x) - var(--mito) * .63); top:calc(var(--home-y) + var(--mito) * .075);
-  width:calc(var(--mito) * .3); height:calc(var(--mito) * .06); }
+  scale:calc((1 - var(--lift) * .55) * var(--mito-k, 1)); opacity:calc(1 - var(--lift) * .65); }
+.contact-pet{ left:calc(var(--home-x) - var(--mito) * .63 + var(--pet-x, 0px)); top:calc(var(--home-y) + var(--mito) * .075 + var(--pet-y, 0px));
+  width:calc(var(--mito) * .3); height:calc(var(--mito) * .06); scale:var(--pet-k, 1); }
 .room:not(:has(.mascot > svg.pet)) .contact-pet{ display:none; }
 
 /* rubor de las caricias, sobre las mejillas de Mito (x 42 y 108, y 90 de 150) */
@@ -2217,3 +2224,26 @@ body[data-view="house"] .mascot-side{ display:none; }   /* en la Casa ya está e
 .room-toast.show{ opacity:1; }
 .room-toast svg{ width:16px; height:16px; color:var(--pink); }
 @media (prefers-reduced-motion: reduce){ .door-frame, .room-toast{ transition:none; } }
+
+/* ================= CASA · FASE 5: Mito libre (profundidad, silueta y "Traer a Mito") ================= */
+/* los muebles del piso de su cuarto que quedan más al frente que él, delante de él (decor.js) */
+.room-furn.front{ z-index:5; }
+/* su silueta: si un mueble lo tapa en su mayoría, un contorno suave de su cuerpo por encima de los muebles */
+.mito-ghost{ z-index:6; pointer-events:none; }
+.mito-ghost svg{ width:100%; height:100%; display:block; overflow:visible; }
+.mito-ghost path{ fill:rgba(255,255,255,.14); stroke:rgba(255,255,255,.95); stroke-width:3.2; stroke-linecap:round; stroke-linejoin:round;
+  filter:drop-shadow(0 0 4px rgba(22,201,141,.9)) drop-shadow(0 0 10px rgba(22,201,141,.45)); }
+.mito-ghost path:first-child{ fill:none; }
+.mito-ghost[hidden]{ display:none; }
+/* "Traer a Mito" / "Ir con Mito": arriba a la derecha (la pista y el aviso del cuarto van al centro o a la izquierda) */
+.bring-mito{ all:unset; position:absolute; z-index:8; top:12px; right:12px; display:inline-flex; align-items:center; gap:6px; padding:7px 12px 7px 10px; border-radius:999px;
+  box-sizing:border-box; cursor:pointer; font:800 12.5px/1 var(--font-body); color:#04352a; background:linear-gradient(135deg, var(--mint), #5fd9b0);
+  box-shadow:0 4px 0 0 var(--mint-deep), 0 10px 20px -10px rgba(51,39,74,.45); -webkit-tap-highlight-color:transparent; }
+.bring-mito svg{ width:18px; height:18px; }
+.bring-mito[hidden]{ display:none; }
+.bring-mito:focus-visible{ outline:3px solid var(--lilac); outline-offset:3px; }
+.bring-mito:active{ transform:translateY(2px); box-shadow:0 2px 0 0 var(--mint-deep); }
+.room:is(.is-held, .is-moving) .bring-mito{ display:none; }
+@media (prefers-reduced-motion: reduce){
+  .room .mascot > svg.mito, .room .mascot > .aura, .room .mascot > .house-blush{ transition:none; }
+}

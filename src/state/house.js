@@ -145,7 +145,8 @@ export function feed(amount, now = Date.now()){
 
 /* ---------- dónde está Mito (Fase 5) ----------
    Guardado en house.mito, de tres formas:
-     { room, u, v }    en el piso de ese cuarto (u, v como los muebles del piso: furniture-layout.js)
+     { room, u, v }    en el piso de ese cuarto: u = x de sus pies (0–1 del ancho), v = profundidad dentro de la franja
+                       del piso donde puede estar (furniture-layout.js, mitoBand)
      { room, on, s }   sobre un mueble que tiene superficie (seat); s = dónde, de 0 a 1 a lo largo de ella
      { room }          en el lugar de siempre de ese cuarto (sin el campo: en el del Cuarto)
    Se limpia al leer: un cuarto que no existe es el Cuarto; un mueble sin superficie, o que ya no está en ese cuarto

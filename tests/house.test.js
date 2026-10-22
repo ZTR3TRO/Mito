@@ -1011,3 +1011,82 @@ test('tamaño con la base nueva (Fase 5): solo se convierte lo ajustado, al mín
   freshDecor(0);
 });
 
+/* ---------------- Mito libre (Fase 5): superficies, física y profundidad ---------------- */
+
+import { seatSurfaces, mitoBody, coverage, inFront, clearSpot, floorBand, mitoBand, scaleAt } from '../src/features/house/furniture-layout.js';
+
+const W1 = { width: 1.6, floor: .9, r: .1, h: .25 };
+const settleOn = (body, world) => { let b = body; for(let i = 0; i < 300 && !b.stopped; i++) b = advance(b, world, .05).body; return b; };
+
+test('física: cae sobre una superficie desde arriba y se queda; el piso sigue igual sin superficies', ()=>{
+  const world = { ...W1, platforms: [{ x0: .4, x1: .9, y: .6 }] };
+  const b = settleOn({ x: .6, y: .3, vx: 0, vy: 0 }, world);
+  assert.equal(b.on, 0, 'apoyado en la superficie');
+  assert.ok(Math.abs(b.y - .6) < 1e-9);
+  const floor = settleOn({ x: .6, y: .3, vx: 0, vy: 0 }, W1);
+  assert.equal(floor.on, null);
+  assert.ok(Math.abs(floor.y - W1.floor) < 1e-9, 'sin superficies: al piso, como siempre');
+});
+
+test('física: desde abajo la superficie se atraviesa; fuera de sus orillas, al piso', ()=>{
+  const world = { ...W1, platforms: [{ x0: .4, x1: .9, y: .6 }] };
+  // lanzado hacia arriba desde el piso, por debajo de la superficie: la cruza al subir y cae sobre ella al bajar
+  const up = settleOn({ x: .6, y: .9, vx: 0, vy: -2.4, resting: false }, world);
+  assert.equal(up.on, 0);
+  // fuera de sus orillas: al piso
+  const beside = settleOn({ x: 1.2, y: .3, vx: 0, vy: 0 }, world);
+  assert.equal(beside.on, null);
+  assert.ok(Math.abs(beside.y - W1.floor) < 1e-9);
+  // una superficie por debajo del piso de Mito (un mueble más al frente que él) no cuenta
+  const low = settleOn({ x: .6, y: .3, vx: 0, vy: 0 }, { ...W1, platforms: [{ x0: .4, x1: .9, y: .95 }] });
+  assert.equal(low.on, null);
+});
+
+test('física: si se desliza más allá de la orilla del mueble, cae al piso', ()=>{
+  const world = { ...W1, platforms: [{ x0: .4, x1: .9, y: .6 }] };
+  const b = settleOn({ x: .8, y: .6, vx: 1.2, vy: 0, resting: true, on: 0 }, world);
+  assert.equal(b.on, null, 'se pasó de la orilla');
+  assert.ok(Math.abs(b.y - W1.floor) < 1e-9, 'y cayó al piso');
+  assert.ok(b.x > .9);
+});
+
+test('superficies: en px del cuarto, dentro del mueble, reflejadas si está volteado; las de pared no cuentan', ()=>{
+  const L = ROOMS[0], bed = F('m-bed');
+  const p = clampSpot(L, bed, { u: .3, v: .4 }), b = furnitureBox(L, bed, p);
+  const [s] = seatSurfaces(L, bed, p);
+  assert.ok(s.x0 >= b.x && s.x1 <= b.x + b.w && s.y > b.y && s.y < b.base);
+  assert.equal(s.kind, 'lie');
+  assert.equal(s.base, b.base, 'su profundidad es la del mueble');
+  const [f] = seatSurfaces(L, bed, { ...p, flip: true });
+  assert.ok(Math.abs((f.x0 - b.x) - (b.x + b.w - s.x1)) < 1e-6, 'volteado: espejo');
+  assert.deepEqual(seatSurfaces(L, F('m-picture'), { u: .5, v: .5 }), []);
+  assert.deepEqual(seatSurfaces(L, F('m-lamp'), { u: .5, v: .5 }), []);
+});
+
+test('profundidad: Mito se ve más grande al frente; lo que está más al frente que él lo tapa', ()=>{
+  const L = ROOMS[0], [b0, b1] = floorBand(L);
+  assert.ok(scaleAt(L, b1) > scaleAt(L, b0));
+  assert.ok(Math.abs(scaleAt(L, L.home.y) - 1) < 1e-9, 'en su lugar de siempre, su tamaño de siempre');
+  const sofa = { item: F('m-sofa'), p: clampSpot(L, F('m-sofa'), { u: .5, v: .7 }) };
+  const sb = furnitureBox(L, sofa.item, sofa.p);
+  assert.equal(inFront(L, [sofa], sb.base - 20).length, 1, 'Mito detrás del sillón: el sillón va delante');
+  assert.equal(inFront(L, [sofa], sb.base + 20).length, 0, 'Mito delante: el sillón va detrás');
+  assert.equal(inFront(L, [sofa], sb.base).length, 0, 'sentado en él: el sillón va detrás de Mito');
+  // detrás del sillón, en su centro: tapado en su mayoría; lejos de él, nada
+  const y = sb.base - 10, k = scaleAt(L, y);
+  assert.ok(coverage(mitoBody(L, sb.x + sb.w / 2, y, k), inFront(L, [sofa], y)) > .55);
+  assert.equal(coverage(mitoBody(L, sb.x - L.mito * 2, y, k), inFront(L, [sofa], y)), 0);
+  assert.equal(coverage(mitoBody(L, 100, y, k), []), 0);
+});
+
+test('"Traer a Mito": el lugar elegido no lo deja tapado, en todos los tamaños', ()=>{
+  for(const L of ROOMS){
+    const list = ['m-sofa', 'm-bed', 'm-bookcase', 'm-desk'].map((id, i) => ({ item: F(id), p: clampSpot(L, F(id), { u: .15 + i * .25, v: .55 + (i % 2) * .3 }) }));
+    const to = clearSpot(L, list, L.W / 2);
+    const [b0, b1] = mitoBand(L);
+    assert.ok(to.y >= b0 - .5 && to.y <= b1 + .5, `${L.W}×${L.H}: en el piso, sin bajar a los indicadores`);
+    assert.ok(b1 <= floorBand(L)[1] && b1 <= L.H - L.barSpace - 40);
+    assert.ok(to.x > 0 && to.x < L.W);
+    assert.ok(coverage(mitoBody(L, to.x, to.y), inFront(L, list, to.y)) < .2, `${L.W}×${L.H}: se ve`);
+  }
+});

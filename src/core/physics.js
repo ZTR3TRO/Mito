@@ -5,8 +5,11 @@
 // del tamaño de la pantalla y cambiar el tamaño de la ventana a medio vuelo no rompe nada.
 // El cuerpo se mide por sus pies: { x, y } es el centro de abajo; `r` es su medio ancho y `h` su alto.
 //
-// Mundo: { width, floor, r, h } — width = ancho/alto de la caja; floor = y del piso (donde apoya los pies).
+// Mundo: { width, floor, r, h, platforms? } — width = ancho/alto de la caja; floor = y del piso (donde apoya los pies).
 // Límites del cuerpo: x en [r, width − r]; y en [h, floor] (la cabeza no pasa del techo, los pies no del piso).
+// platforms: [{ x0, x1, y }] superficies de un solo sentido (la cama, el sillón…): se cae sobre ellas desde arriba
+// (con sus pies entre x0 y x1) y se queda; desde abajo se pasan de largo, y si se sale de la orilla, cae.
+// El cuerpo lleva `on`: el índice de la plataforma donde está apoyado (null = en el piso o en el aire).
 
 export const PHYSICS = {
   gravity: 5.5,           // altos de caja / s²
@@ -33,32 +36,48 @@ export function clampToRoom(body, world){
 }
 
 // Un paso fijo. Devuelve el cuerpo nuevo y si chocó contra algo ('floor' | 'wall' | 'ceiling') con qué rapidez.
+const within = (pl, x) => !!pl && x >= pl.x0 && x <= pl.x1;
+
 export function step(body, world, dt = PHYSICS.step){
   const p = PHYSICS;
   let { x, y, vx, vy } = clampToRoom(body, world);
   let resting = !!body.resting;
   let hit = null, impact = 0;
-  const onFloor = y >= world.floor - 1e-9;
+  const plats = world.platforms || [];
+  // la superficie donde estaba apoyado, si sigue debajo de él (y por encima del piso)
+  let on = Number.isInteger(body.on) ? body.on : null;
+  if(on !== null && !(within(plats[on], x) && plats[on].y < world.floor)) on = null;
+  if(on === null && Number.isInteger(body.on)) resting = false;   // ya no está sobre el mueble: cae
+  const ground = on === null ? world.floor : plats[on].y;          // lo que tiene debajo
 
-  if(resting || (onFloor && Math.abs(vy) < p.restSpeed && vy >= 0)){
-    // deslizándose por el piso
+  if(resting || (y >= ground - 1e-9 && Math.abs(vy) < p.restSpeed && vy >= 0)){
+    // deslizándose por el piso o por la superficie del mueble
     resting = true;
-    vy = 0; y = world.floor;
+    vy = 0; y = ground;
     vx *= Math.max(0, 1 - p.rollFriction * dt);
     x += vx * dt;
+    if(on !== null && !within(plats[on], x)){ on = null; resting = false; }   // se pasó de la orilla: cae al piso
   } else {
+    const y0 = y;
     vy += p.gravity * dt;
     x += vx * dt;
     y += vy * dt;
-    if(y >= world.floor){
-      y = world.floor;
+    // cae sobre una superficie: venía de arriba de ella y ahora la cruza, con los pies entre sus orillas
+    let land = null;
+    if(vy > 0) plats.forEach((pl, i)=>{
+      if(pl.y < world.floor && y0 <= pl.y + 1e-9 && y >= pl.y && within(pl, x) && (land === null || pl.y < plats[land].y)) land = i;
+    });
+    const stop = land === null ? world.floor : plats[land].y;
+    if(y >= stop){
+      y = stop;
+      on = land;
       if(vy > 0){
         hit = 'floor'; impact = vy;
         vy = -vy * p.floorBounce;
         vx *= p.floorFriction;
         if(Math.abs(vy) < p.restSpeed){ vy = 0; resting = true; }
       }
-    }
+    } else on = null;
     const top = Math.min(world.h, world.floor);
     if(y < top){ y = top; if(vy < 0){ hit = 'ceiling'; impact = -vy; vy = -vy * p.wallBounce; } }
   }
@@ -67,9 +86,10 @@ export function step(body, world, dt = PHYSICS.step){
   if(x < minX){ x = minX; if(vx < 0){ hit = hit || 'wall'; impact = Math.max(impact, -vx); vx = -vx * p.wallBounce; } }
   if(x > maxX){ x = maxX; if(vx > 0){ hit = hit || 'wall'; impact = Math.max(impact, vx); vx = -vx * p.wallBounce; } }
 
+  if(on !== null && !within(plats[on], x)){ on = null; resting = false; }   // un rebote contra la pared lo sacó del mueble
   const stopped = resting && Math.abs(vx) < p.stopSpeed;
   if(stopped) vx = 0;
-  return { body: { x, y, vx, vy, resting, stopped, t: (body.t || 0) + dt }, hit, impact };
+  return { body: { x, y, vx, vy, resting, stopped, on, t: (body.t || 0) + dt }, hit, impact };
 }
 
 // Avanza `elapsed` segundos con pasos fijos (como mucho maxFrame de golpe). Devuelve el cuerpo y los choques.
@@ -78,7 +98,7 @@ export function advance(body, world, elapsed){
   const p = PHYSICS;
   let dt = finite(elapsed) ? Math.min(Math.max(elapsed, 0), p.maxFrame) : 0;
   let b = clampToRoom(body, world);
-  b.t = body.t || 0; b.resting = !!body.resting;
+  b.t = body.t || 0; b.resting = !!body.resting; b.on = Number.isInteger(body.on) ? body.on : null;
   const hits = [];
   while(dt > 1e-9){
     const h = Math.min(p.step, dt);
@@ -88,6 +108,9 @@ export function advance(body, world, elapsed){
     dt -= h;
     if(b.stopped) break;
   }
-  if(b.t >= p.maxSim && !b.stopped) b = { ...b, y: world.floor, vx: 0, vy: 0, resting: true, stopped: true };
+  if(b.t >= p.maxSim && !b.stopped){
+    const pl = Number.isInteger(b.on) ? (world.platforms || [])[b.on] : null;
+    b = { ...b, y: pl ? pl.y : world.floor, vx: 0, vy: 0, resting: true, stopped: true };
+  }
   return { body: b, hits };
 }

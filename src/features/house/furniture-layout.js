@@ -57,10 +57,14 @@ export function resizeSpot(L, item, p, scale){
   const b = furnitureBox(L, item, clampSpot(L, item, p));
   return spotAt(L, item, b.x + b.w / 2, b.y + b.h / 2 - baseSize(L, item, s).h / 2, { flip: p.flip, scale: s });
 }
-// Franja donde puede estar la base de un mueble del piso.
-const floorBand = L => [L.horizon + FURN.margin, Math.max(L.horizon + FURN.margin, L.H - L.barSpace - FURN.barGap)];
-// Escala de perspectiva para una base en y (1 en el lugar de Mito).
-function scaleAt(L, y){
+// Franja donde puede estar la base de un mueble del piso (y los pies de Mito, en el piso).
+export const floorBand = L => [L.horizon + FURN.margin, Math.max(L.horizon + FURN.margin, L.H - L.barSpace - FURN.barGap)];
+// Donde pueden ir los pies de Mito: la misma franja, pero sin bajar hasta los indicadores de los cuartos (que van
+// encima de la barra): ahí, tan al frente, se vería enorme y los taparía.
+export const MITO_DOTS = 44;
+export const mitoBand = L => { const [b0, b1] = floorBand(L); return [b0, Math.max(b0, Math.min(b1, L.H - L.barSpace - MITO_DOTS))]; };
+// Escala de perspectiva para algo que apoya en y (1 en el lugar de siempre de Mito). La usan los muebles y Mito.
+export function scaleAt(L, y){
   const pct = yy => (yy - L.horizon) / L.fb * 100;
   return (pct(y) + FLOOR.persp) / (pct(L.home.y) + FLOOR.persp);
 }
@@ -173,3 +177,57 @@ export const depthOrder = list => list
   .map((e, i) => ({ e, i, z: e.item.zone === 'wall' ? -1 : e.p.v }))
   .sort((a, b) => a.z - b.z || a.i - b.i)
   .map(x => x.e);
+
+/* ---------- Mito y los muebles (Fase 5) ---------- */
+
+// Las superficies de un mueble colocado (donde Mito se sienta, se acuesta o se mete), en px del cuarto:
+// [{ x0, x1, y, kind, base }] — y es la línea donde apoya los pies; base, la del mueble en el piso (su profundidad).
+export function seatSurfaces(L, item, p){
+  if(!item.seat || item.zone !== 'floor') return [];
+  const q = clampSpot(L, item, p), b = furnitureBox(L, item, q);
+  return item.seat.map(st=>{
+    const [a, c] = q.flip ? [1 - st.x[1], 1 - st.x[0]] : st.x;
+    return { x0: b.x + b.w * a, x1: b.x + b.w * c, y: b.y + b.h * st.y, kind: st.kind, base: b.base };
+  });
+}
+
+// La caja del cuerpo de Mito (sin antenas) con los pies en (x, y) y escala k: lo que tiene que verse.
+// Dibujo de 150: cuerpo de x 23 a 127 y de y 18 a 126; los pies, en y 131.
+export function mitoBody(L, x, y, k = scaleAt(L, y)){
+  const m = L.mito * k;
+  return { x: x - m * 52 / 150, y: y - m * 113 / 150, w: m * 104 / 150, h: m * 108 / 150 };
+}
+
+// Qué parte del cuerpo (el círculo de Mito, muestreado) queda detrás de alguna de las cajas `boxes` (de 0 a 1).
+// Las cajas se encogen un poco: los dibujos no llenan su caja (el pie de la lámpara, las patas del sillón…).
+export function coverage(body, boxes, shrink = .12){
+  if(!boxes.length) return 0;
+  const rs = boxes.map(b => ({ x: b.x + b.w * shrink, y: b.y + b.h * shrink, w: b.w * (1 - 2 * shrink), h: b.h * (1 - 2 * shrink) }));
+  const cx = body.x + body.w / 2, cy = body.y + body.h / 2, rx = body.w / 2, ry = body.h / 2, N = 9;
+  let inside = 0, hit = 0;
+  for(let i = 0; i < N; i++) for(let j = 0; j < N; j++){
+    const px = cx + rx * ((i + .5) / N * 2 - 1), py = cy + ry * ((j + .5) / N * 2 - 1);
+    if(((px - cx) / rx) ** 2 + ((py - cy) / ry) ** 2 > 1) continue;
+    inside++;
+    if(rs.some(r => px >= r.x && px <= r.x + r.w && py >= r.y && py <= r.y + r.h)) hit++;
+  }
+  return inside ? hit / inside : 0;
+}
+
+// Los muebles del piso que quedan delante de algo que apoya en y (su base más al frente).
+export const inFront = (L, list, y) => list.filter(e => e.item.zone === 'floor' && !e.item.flat).map(e => furnitureBox(L, e.item, e.p)).filter(b => b.base > y + .5);
+
+// Un lugar en el piso donde no lo tape nada (para "Traer a Mito"): el más cercano a x de una rejilla, y si en
+// ninguno se ve entero, el que menos lo tape. list: [{ item, p }] los muebles del cuarto. Devuelve { x, y } (sus pies).
+export function clearSpot(L, list, x = L.home.x){
+  const [b0, b1] = mitoBand(L);
+  let best = null;
+  for(const v of [.35, .55, .75, .95, .15]) for(let u = .1; u <= .901; u += .1){
+    const y = b0 + v * (b1 - b0), k = scaleAt(L, y), m = L.mito * k;
+    const px = Math.min(L.W - m * .4, Math.max(m * .4, u * L.W));
+    const cov = coverage(mitoBody(L, px, y, k), inFront(L, list, y));
+    const score = cov * 10 + Math.abs(px - x) / L.W;
+    if(!best || score < best.score) best = { x: px, y, score };
+  }
+  return { x: best.x, y: best.y };
+}

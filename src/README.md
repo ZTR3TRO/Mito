@@ -14,7 +14,7 @@ src/
     dom.js           $, $$, byId, el, clear, delegate, setText
     utils.js         funciones puras: shuffle, escapeHtml, isNumericSeries, fechas
     gesture.js       clasificador de gestos (picar, cosquillas, acariciar, agarrar); umbrales en GESTURE
-    physics.js       física de rebote dentro de una caja (gravedad, rebote, reposo)
+    physics.js       física de rebote dentro de una caja (gravedad, rebote, reposo, superficies de un solo sentido)
   content/         datos puros. No importan nada del proyecto, ni del DOM ni del store
     courses.js       registro COURSES (materias)
     atp.js           contenido de Bioquímica del ATP
@@ -54,11 +54,13 @@ src/
     shop/              tienda (con las secciones Comida y Muebles) y tienda de temporada: index, season
     house/             la Casa: index (cableado), layout (bloque aprobado escalado, piso y luz; puro),
                        room (dibuja cada cuarto: pared, piso, ventana y luz), nav (la cámara entre cuartos:
-                       flechas, indicadores, la orilla y el parallax), gestures (dedo y ratón), motion
-                       (arrastrar y lanzar), reactions (cara, frases y mascota), needs (cómo se notan sus
+                       flechas, indicadores, la orilla y el parallax), gestures (dedo y ratón),
+                       motion (dónde está Mito: arrastrarlo, lanzarlo y que se quede donde cae, en el piso
+                       o sobre un mueble; la mascota lo sigue), seek (su silueta si un mueble lo tapa y
+                       "Traer a Mito"), reactions (cara, frases y mascota), needs (cómo se notan sus
                        necesidades), sleep (dormir), bath (bañar), food (la charola y comer), decor (los
                        muebles y el modo Decorar), furniture-layout (dónde y de qué tamaño va cada mueble,
-                       límites y escala; puro)
+                       límites, escala, superficies y si tapan a Mito; puro)
     progress/          vista de progreso y copia de seguridad: view, backup
     mascot/            la mascota entera: avatar, auras, face, effects, speech
     pwa/update.js      service worker: registro y actualización segura (solo en producción)

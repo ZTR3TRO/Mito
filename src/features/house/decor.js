@@ -23,7 +23,7 @@ import { FURNITURE_ART, FURNITURE_DEFS } from '../../content/art/furniture.js';
 import { MITO_DECOR } from '../../content/house.js';
 import { emit } from '../../core/bus.js';
 import { roomLayout } from './room.js';
-import { furnitureBox, clampSpot, spotAt, freeSpot, depthOrder, snapScale, stepScale, resizeSpot, FURN } from './furniture-layout.js';
+import { furnitureBox, clampSpot, spotAt, freeSpot, depthOrder, snapScale, stepScale, resizeSpot, seatSurfaces, FURN } from './furniture-layout.js';
 
 const DRAG_START_PX = 6;          // cuánto hay que mover el dedo para que un toque se vuelva arrastre
 const STEP = .01, STEP_BIG = .05; // flechas (con Mayús, más)
@@ -45,15 +45,17 @@ const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 const inside = (e, el) => { const r = el.getBoundingClientRect(); return e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom; };
 
 // here(): el cuarto que se ve (nav.js). Decorar acomoda los muebles de ese cuarto; se dibujan los de todos.
-export function createDecor(room, reactions, { button, here = ()=> 'bedroom', canTalk = ()=> true, onChange = ()=>{} }){
+// mito(): { room, y } dónde apoya Mito (su línea de piso, o la base del mueble donde está; Infinity si está en la mano
+// o en el aire): los muebles del piso de su cuarto que quedan más al frente se dibujan delante de él.
+export function createDecor(room, reactions, { button, here = ()=> 'bedroom', mito = ()=> null, canTalk = ()=> true, onChange = ()=>{} }){
   if(!document.getElementById('furnDefs')) document.body.insertAdjacentHTML('afterbegin', FURNITURE_DEFS);
   const layer = cls => { const el = document.createElement('div'); el.className = cls; el.setAttribute('aria-hidden', 'true'); return el; };
   // capas de cada cuarto (en su panel, para que vayan con su parallax): alfombras (sobre el piso, bajo la luz de la
-  // ventana) · lo colgado en la pared (lejano, como la pared) · muebles del piso (bajo Mito)
+  // ventana) · lo colgado en la pared (lejano, como la pared) · muebles del piso detrás de Mito · delante de Mito
   const panes = {};
   room.querySelectorAll('.pane').forEach(p=>{
-    const l = { rugs: layer('room-rugs'), wall: layer('room-furn far'), furn: layer('room-furn') };
-    p.querySelector('.room-base').after(l.rugs, l.wall, l.furn);
+    const l = { rugs: layer('room-rugs'), wall: layer('room-furn far'), furn: layer('room-furn'), front: layer('room-furn front') };
+    p.querySelector('.room-base').after(l.rugs, l.wall, l.furn, l.front);
     panes[p.dataset.room] = l;
   });
   // del cuarto que se ve: zonas (al arrastrar) y la barrita del seleccionado
@@ -106,7 +108,11 @@ export function createDecor(room, reactions, { button, here = ()=> 'bedroom', ca
       const list = placedList(d, roomId), mine = active && roomId === here();
       l.rugs.innerHTML = list.filter(e => e.item.flat).map(e => piece(e, mine)).join('');
       l.wall.innerHTML = list.filter(e => e.item.zone === 'wall').map(e => piece(e, mine)).join('');
-      l.furn.innerHTML = depthOrder(list.filter(e => e.item.zone === 'floor' && !e.item.flat)).map(e => piece(e, mine)).join('');
+      const floor = depthOrder(list.filter(e => e.item.zone === 'floor' && !e.item.flat));
+      const m = mito(), cut = m && m.room === roomId ? m.y : Infinity;
+      const isFront = e => furnitureBox(L, e.item, e.p).base > cut + .5;
+      l.furn.innerHTML = floor.filter(e => !isFront(e)).map(e => piece(e, mine)).join('');
+      l.front.innerHTML = floor.filter(isFront).map(e => piece(e, mine)).join('');
       Object.values(l).forEach(el => mine ? el.removeAttribute('aria-hidden') : el.setAttribute('aria-hidden', 'true'));
     }
     const M = FURN.margin, [wall, floor] = zones.children;
@@ -476,6 +482,14 @@ export function createDecor(room, reactions, { button, here = ()=> 'bedroom', ca
   return {
     get active(){ return active; },
     render,
+    // Los muebles de un cuarto ([{ item, p }], con su colocación corregida) y sus superficies para Mito
+    // ([{ id, x0, x1, y, base }], furniture-layout.js), para la física y para saber si lo tapan.
+    placed(roomId){ L = roomLayout(room) || L; return L ? placedList(getDecor(), roomId) : []; },
+    surfaces(roomId){
+      L = roomLayout(room) || L;
+      if(!L) return [];
+      return placedList(getDecor(), roomId).flatMap(e => seatSurfaces(L, e.item, e.p).map(st => ({ ...st, id: e.item.id })));
+    },
     toggle(){ setActive(!active); },
     open(){ setActive(true); },
     // Al entrar a la Casa: pinta los muebles y entrega la alfombra de regalo (una vez), bajo los pies de Mito.

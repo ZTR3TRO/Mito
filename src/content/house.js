@@ -6,7 +6,7 @@ import { USER_NAME as Z } from './messages.js';
 
 // Lo que dice Mito según la interacción.
 //   poke: lo picaste · tickle: cosquillas · pet: caricia · grab: lo levantaste · throw: lo lanzaste
-//   land: cayó tras rebotar · drop: lo bajaste con cuidado · welcome: al entrar a la Casa
+//   land: cayó tras rebotar · drop: lo bajaste con cuidado (se queda donde lo dejas) · welcome: al entrar a la Casa
 export const MITO_HOUSE = {
   poke: ['¡Eh! 😳', '¡Boop! 👉', '¿Me llamabas? 👀', '¡Oye, aquí estoy!', '¡Ay! Eso hizo cosquillitas'],
   tickle: ['¡Jajaja, para, para! 🤭', '¡Jijiji, cosquillas no!', '¡Jajaja, me rindo! 😆', '¡Ahí no, jajaja!'],
@@ -14,7 +14,7 @@ export const MITO_HOUSE = {
   grab: ['¡Uy, me levantas! 😮', '¡Bájame con cuidado! 🙈', '¡Qué alto estoy!'],
   throw: ['¡Wiiiii! 🚀', '¡Allá voooy!', '¡Weee! ✨'],
   land: ['¡Boing! ¡Otra vez! 😄', '¡Qué divertido!', 'Uf, aterricé 😅', '¡Otra, otra! 🎉'],
-  drop: ['Gracias por bajarme 😊', 'De vuelta en mi sitio'],
+  drop: ['Gracias por bajarme 😊', '¡Aquí me quedo! 😊'],
   welcome: [`¡Bienvenida a mi casa! 🏠`, `¡Hola, ${Z}! Ponte cómoda 😊`, '¡Qué bueno que viniste! 💕'],
 };
 
