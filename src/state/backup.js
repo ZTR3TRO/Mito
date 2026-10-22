@@ -86,6 +86,7 @@ export function parseSave(json){
     ...(Number.isFinite(s.foodHint) ? { foodHint: Math.max(0, Math.floor(s.foodHint)) } : {}),
     // opcional: la comida de la charola, validada (sin el campo, o si queda vacía, la charola está vacía)
     ...(parsePantry(s.pantry) ? { pantry: parsePantry(s.pantry) } : {}),
+    ...(typeof s.shopTab === 'string' && s.shopTab ? { shopTab: s.shopTab.slice(0, 20) } : {}),
     ...(Number.isFinite(s.decorHint) ? { decorHint: Math.max(0, Math.floor(s.decorHint)) } : {}),
     // opcional: los muebles comprados y dónde están, validados (sin el campo, el cuarto no tiene muebles)
     ...(parseDecor(s.decor) ? { decor: parseDecor(s.decor) } : {}),
@@ -111,6 +112,7 @@ export function resetAll(){
   delete state.foodHint;
   delete state.decor;       // sin muebles (la alfombra de regalo vuelve al entrar a la Casa)
   delete state.decorHint;
+  delete state.shopTab;     // la Tienda vuelve a abrir en su pestaña de siempre
   state.theme = prevTheme;
   commit();
 }

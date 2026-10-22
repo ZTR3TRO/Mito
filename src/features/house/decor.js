@@ -399,7 +399,8 @@ export function createDecor(room, reactions, { button, here = ()=> 'bedroom', mi
   room.addEventListener('click', e=>{
     if(!active) return;
     if(e.target.closest('[data-decor-done]')) return setActive(false);
-    if(e.target.closest('[data-decor-shop]')) return emit('shop:focus', 'furniture');   // la navegación la hace data-nav
+    // la Tienda abre en Muebles, con el filtro del cuarto que estás decorando (la navegación la hace data-nav)
+    if(e.target.closest('[data-decor-shop]')) return emit('shop:focus', { tab: 'furn', room: here() });
     if(e.target.closest('[data-decor-flip]')) return sel && flip(sel);
     if(e.target.closest('[data-decor-store]')) return sel && putAway(sel);
     if(e.target.closest('[data-decor-smaller]')) return sel && resize(sel, stepScale(currentScale(sel), -1));

@@ -286,7 +286,7 @@
       <div class="page-head">
         <div>
           <h2 class="page-title">Tienda</h2>
-          <p class="page-sub">Descubre lo que aún no tienes. La ropa se equipa al comprarla y se guarda en tu armario; la comida va a la charola de la Casa. <span class="hint-pointer">Previsualiza los productos con el cursor o al enfocar su botón.</span><span class="hint-touch">Toca un objeto para probártelo.</span></p>
+          <p class="page-sub">Elige una sección. La ropa se equipa al comprarla; la comida va a la charola y los muebles se colocan en la Casa. <span class="hint-pointer">Pasa el cursor por un objeto para verlo arriba.</span><span class="hint-touch">Toca un objeto para probártelo.</span></p>
         </div>
         <div class="shop-head-actions">
           <div class="balance-chip big">
@@ -296,17 +296,19 @@
         </div>
       </div>
 
-      <div class="wardrobe-preview">
-        <div class="mascot face-happy" id="mascotPreview">
-          <svg class="mito" viewBox="0 0 150 150"></svg>
-        </div>
-        <div class="preview-labels">
-          <div class="pv-row">Color: <b id="pvColor">Menta</b></div>
-          <div class="pv-row">Ropa: <b id="pvRopa">Sin ropa</b></div>
-          <div class="pv-row">Accesorio: <b id="pvAccesorio">Ninguno</b></div>
-          <div class="pv-row">Sombrero: <b id="pvSombrero">Ninguno</b></div>
-          <div class="pv-row">Aura: <b id="pvAura">Sin aura</b></div>
-          <div class="pv-row">Compañera: <b id="pvPet">Ninguna</b></div>
+      <!-- Arriba y fija al bajar: las pestañas de la Tienda y, en escritorio, la vista previa compacta (Mito con el
+           objeto, el alimento o el mini cuarto del mueble). En móvil la vista previa es la barra flotante. -->
+      <div class="shop-top" id="shopTop">
+        <nav class="shop-tabs" id="shopTabs" role="tablist" aria-label="Secciones de la Tienda"></nav>
+        <div class="shop-preview" id="shopPreview" aria-live="polite">
+          <div class="sp-vis">
+            <div class="mascot face-happy" id="mascotPreview">
+              <svg class="mito" viewBox="0 0 150 150"></svg>
+            </div>
+            <div class="sp-art" aria-hidden="true"></div>
+          </div>
+          <div class="sp-text"><b id="spName"></b><span id="spSub"></span></div>
+          <button type="button" class="btn-mini sp-act" id="spAct" hidden></button>
         </div>
       </div>
 

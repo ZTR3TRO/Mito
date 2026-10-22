@@ -22,7 +22,7 @@ export {
 
 export {
   getTheme, setTheme, getCourse, setCourse, getHouseHintCount, markHouseHintShown, getFoodHintCount, markFoodHintShown,
-  getDecorHintCount, markDecorHintShown,
+  getDecorHintCount, markDecorHintShown, getShopTab, setShopTab,
 } from './preferences.js';
 
 export { NEEDS, topNeed, getNeeds, careMood, startSleep, wakeUp, addClean, getMito, setMito } from './house.js';

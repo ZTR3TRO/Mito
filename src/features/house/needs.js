@@ -54,8 +54,8 @@ export function createNeeds(room, mascot, reactions, { busy, here = ()=> null, o
     if(!need || !MITO_NEEDS[need]) return false;
     lastPhrase = now;
     const there = roomForNeed(need);
-    if(there && there.id !== here() && MITO_INVITE[need]) reactions.sayFrom(MITO_INVITE[need], 'invite-' + need);
-    else if(need === 'hungry' && !hasFood()) reactions.sayFrom(MITO_FOOD.hungryEmpty, 'need-hungry-empty');
+    if(need === 'hungry' && !hasFood()) reactions.sayFrom(MITO_FOOD.hungryEmpty, 'need-hungry-empty');
+    else if(there && there.id !== here() && MITO_INVITE[need]) reactions.sayFrom(MITO_INVITE[need], 'invite-' + need);
     else reactions.sayFrom(MITO_NEEDS[need], 'need-' + need);
     return true;
   }

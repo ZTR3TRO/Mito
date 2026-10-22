@@ -13,7 +13,7 @@
 
 import { byId } from '../../core/dom.js';
 import { on, emit } from '../../core/bus.js';
-import { getHouseHintCount, markHouseHintShown, getMito, setMito, getNeeds, NEEDS } from '../../state/store.js';
+import { getHouseHintCount, markHouseHintShown, getMito, setMito, getNeeds, getPantry, NEEDS } from '../../state/store.js';
 import { roomForNeed } from '../../content/rooms.js';
 import { buildPanes, layoutRoom, roomLayout } from './room.js';
 import { createNav, ROOM_ICONS } from './nav.js';
@@ -101,16 +101,25 @@ export function init(){
   goChip.hidden = true;
   room.querySelector('.house-bar:not(.decor-tray)')?.prepend(goChip);
   let goTo = null;
+  let goShop = false;
   function chip(need){
+    goShop = need === 'hungry' && !Object.keys(getPantry()).length && !away() && !sleep.asleep;
     const there = roomForNeed(need);
     goTo = there && there.id !== nav.room && !away() && !sleep.asleep ? there : null;
-    goChip.hidden = !goTo;
-    if(goTo){
+    goChip.hidden = !goTo && !goShop;
+    if(goShop){
+      goChip.innerHTML = '<span>Comprar comida →</span>';
+      goChip.setAttribute('aria-label', 'Ir a la Tienda: Comida para Mito');
+    } else if(goTo){
       goChip.innerHTML = `${ROOM_ICONS[goTo.id]}<span>${goTo.name}</span>`;
       goChip.setAttribute('aria-label', `Ir con Mito: ${goTo.name}`);
     }
   }
-  goChip.addEventListener('click', ()=>{ hideHint(); if(goTo) nav.go(goTo.id, 'dot'); });
+  goChip.addEventListener('click', ()=>{
+    hideHint();
+    if(goShop){ emit('shop:focus', 'food'); emit('nav:request', 'shop'); }
+    else if(goTo) nav.go(goTo.id, 'dot');
+  });
   needs = createNeeds(room, mascot, reactions, {
     busy: ()=> sleep.asleep || bath.bathing || food.eating || decor.active || away(),
     here: ()=> nav.room, onNeed: chip,

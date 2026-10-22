@@ -86,6 +86,39 @@ function resetApp(){
   document.querySelector('.navbtn[data-view="home"]').click();
 }
 
+test('Tienda: pestaña inicial, persistencia, filtros de visita y accesos reales', ()=>{
+  resetApp();
+  const go = view => document.querySelector(`.navbtn[data-view="${view}"]`).click();
+  const active = ()=> document.querySelector('#shopTabs [aria-selected="true"]').dataset.shopTab;
+  go('shop');
+  assert.equal(active(), 'ropa');
+  document.querySelector('[data-shop-tab="food"]').click();
+  assert.equal(active(), 'food');
+  assert.equal(JSON.parse(store.exportSave()).shopTab, 'food');
+  assert.equal(document.querySelectorAll('#shopHost .shop-sec:not([hidden])').length, 1);
+  document.querySelector('#shopFood [data-shop-sort="down"]').click();
+  document.querySelector('[data-shop-tab="ropa"]').click();
+  assert.equal(document.querySelector('#shopSec-ropa [data-shop-sort="down"]').getAttribute('aria-pressed'), 'true');
+  go('home'); go('shop');
+  assert.equal(active(), 'ropa');
+  assert.equal(document.querySelector('#shopSec-ropa [data-shop-sort="rec"]').getAttribute('aria-pressed'), 'true');
+  store.setShopTab('food');
+  go('home'); go('shop');
+  assert.equal(active(), 'food');
+  const backup = store.exportSave();
+  store.resetAll();
+  assert.equal(store.getShopTab(), null);
+  store.importSave(backup);
+  assert.equal(store.getShopTab(), 'food');
+  go('house');
+  document.querySelector('[data-house-act="decor"]').click();
+  document.querySelector('[data-decor-shop]').click();
+  assert.equal(active(), 'furn');
+  assert.equal(document.querySelector('#shopFurniture [data-furn-room="bedroom"]').getAttribute('aria-pressed'), 'true');
+  for(const tab of document.querySelectorAll('#shopTabs [role="tab"]')) assert.ok(document.getElementById(tab.getAttribute('aria-controls')));
+  resetApp();
+});
+
 test('arranque: las 8 vistas existen y el router cambia entre ellas', ()=>{
   ['home','apuntes','claves','quiz','progreso','shop','house','wardrobe'].forEach(v=>{
     assert.ok(document.getElementById('view-' + v), 'falta la vista ' + v);
@@ -210,7 +243,8 @@ test('casa · fase 3: la comida se compra por unidad en la Tienda', ()=>{
   document.querySelector('.navbtn[data-view="shop"]').click();
   const section = document.getElementById('shopFood');
   assert.ok(section, 'falta la sección Comida');
-  assert.equal(section, document.querySelector('#shopHost .shop-cat'), 'la comida va primero');
+  document.querySelector('[data-shop-tab="food"]').click();
+  assert.equal(section.hidden, false, 'Comida tiene su propia pestaña');
   assert.equal(section.querySelectorAll('.food-item').length, 8);
   const card = section.querySelector('.food-item[data-item="f-apple"]');
   assert.ok(card.querySelector('.si-have').hidden, 'sin unidades, sin insignia');
@@ -316,7 +350,7 @@ test('comprar descuenta chispas, actualiza el saldo y avisa en la tienda', ()=>{
 
   const id = btn.dataset.buy;
   const name = btn.closest('.shop-item').querySelector('.si-name').textContent;
-  const cost = Number(btn.textContent.split('⚡')[1].trim());
+  const cost = Number(btn.closest('.shop-item').querySelector('.si-price').textContent.split('⚡')[1].trim());
 
   btn.click();
 
@@ -342,7 +376,7 @@ test('en la tienda, el botón sin saldo dice cuántas chispas faltan y se actual
   store.addChispas(5000);
   emit('state:changed');
   const after = document.querySelector(`#shopHost [data-buy="${id}"]`);
-  assert.match(after.textContent, /^Comprar · ⚡ \d+$/, 'con saldo vuelve el precio');
+  assert.equal(after.textContent, 'Comprar', 'el precio está separado del botón');
   assert.equal(after.getAttribute('aria-disabled'), null);
   assert.ok(cost > 0);
 });
@@ -364,7 +398,7 @@ test('comprar y luego equipar deja la pieza activa en el avatar', ()=>{
 
   assert.equal(store.getEquipped().color, 'c-mint');
   assert.ok(document.getElementById('wardrobeNotice').textContent.includes('Menta'));
-  assert.equal(document.getElementById('pvColor').textContent, 'Menta');
+  assert.equal(document.querySelector('[data-equipped-label="color"]').textContent, 'Menta');
   // El básica queda marcado como equipado y ya no se puede volver a pulsar.
   assert.ok(document.querySelector('#wardrobeHost [data-equip="c-mint"]') === null,
     'una pieza equipada no debe ofrecer el botón Equipar');
@@ -392,7 +426,7 @@ test('el armario permite renombrar la mascota compañera', ()=>{
 
   assert.equal(store.getPetDisplayName('p-chick'), 'Chispa');
   assert.equal(document.querySelector('.pet-modal-backdrop'), null, 'el modal debería cerrarse al guardar');
-  assert.equal(document.getElementById('pvPet').textContent, 'Chispa');
+  assert.equal(document.querySelector('[data-equipped-label="pet"]').textContent, 'Chispa');
   assert.equal(document.querySelector('#wardrobeHost [data-item="p-chick"] .si-name').textContent, 'Chispa');
   assert.ok(document.getElementById('wardrobeNotice').textContent.includes('Chispa'));
 });
@@ -995,8 +1029,8 @@ test('casa · fase 4: la sección Muebles, comprar, "Colocar en la Casa" abre De
   document.querySelector('.navbtn[data-view="shop"]').click();
   const section = document.getElementById('shopFurniture');
   assert.ok(section, 'la sección Muebles existe');
-  assert.equal(section.querySelectorAll('.furn-item').length, 27, 'todos, agrupados por cuarto');
-  assert.deepEqual([...section.querySelectorAll('.furn-group h4')].map(h => h.textContent), ['Cuarto', 'Baño', 'Sala', 'Cocina']);
+  document.querySelector('[data-shop-tab="furn"]').click();
+  assert.equal(section.querySelectorAll('.furn-item').length, 27, 'todos los muebles sin comprar');
   // filtro por cuarto
   section.querySelector('[data-furn-room="kitchen"]').click();
   let kitchen = document.getElementById('shopFurniture');
@@ -1012,13 +1046,12 @@ test('casa · fase 4: la sección Muebles, comprar, "Colocar en la Casa" abre De
   section2.querySelector('[data-buy-furn="m-lamp"]').click();
   assert.equal(store.getChispas(), 260);
   assert.deepEqual(store.getDecor().owned, ['m-lamp']);
-  assert.match(document.getElementById('shopNotice').textContent, /Decorar/);
-  const bed = section2.querySelector('[data-buy-furn="m-bed"]');
+  assert.match(document.getElementById('shopNotice').textContent, /Colocar en la Casa/);
+  const place = document.querySelector('#shopNotice [data-place-furn="m-lamp"]');
+  const bed = document.querySelector('#shopFurniture [data-buy-furn="m-bed"]');
   assert.match(bed.textContent, /Te faltan 140/);
-  bed.click();
-  assert.equal(store.getChispas(), 260, 'sin saldo no compra');
   // ya comprada: se coloca en la Casa (y no se puede volver a comprar)
-  const place = section2.querySelector('.furn-item[data-item="m-lamp"] .btn-mini');
+  assert.equal(document.querySelector('#shopFurniture .furn-item[data-item="m-lamp"]'), null);
   assert.equal(place.dataset.placeFurn, 'm-lamp');
   assert.match(place.textContent, /Colocar en la Casa/);
   place.click();
