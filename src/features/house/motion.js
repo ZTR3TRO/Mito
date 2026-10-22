@@ -15,7 +15,7 @@
 // Con prefers-reduced-motion no hay vuelo ni rebote: al soltarlo se desvanece y aparece donde cae.
 
 import { advance, clampToRoom } from '../../core/physics.js';
-import { mitoBand, scaleAt } from './furniture-layout.js';
+import { mitoBand, scaleAt, petSurfaceX } from './furniture-layout.js';
 
 const FADE_MS = 180;        // desvanecido con movimiento reducido (cada mitad)
 const HOP_MS = 560;         // un salto a otro lugar ("Traer a Mito")
@@ -36,7 +36,7 @@ const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 // muebles: [{ id, x0, x1, y, base }] (furniture-layout.js, seatSurfaces). null si el cuarto no se ve.
 // onSettle(rest) cuando queda quieto: rest = { x, y, on, depth } (pies en px; on = id del mueble o null; depth = la
 // línea de piso que le toca: la suya o la base del mueble).
-export function createMotion(room, mascot, { geometry = ()=> null, onHit = ()=>{}, onSettle = ()=>{}, onPaint = ()=>{} } = {}){
+export function createMotion(room, mascot, { geometry = ()=> null, onHit = ()=>{}, onSettle = ()=>{}, onPaint = ()=>{}, asleep = ()=> false } = {}){
   let state = 'rest';        // rest | held | flying | fading | hop
   let rest = null;           // dónde está quieto: { x, y, on, depth } (px)
   let body = null;           // en la mano o en vuelo: { x, y, vx, vy } en altos de cuarto
@@ -86,6 +86,12 @@ export function createMotion(room, mascot, { geometry = ()=> null, onHit = ()=>{
     if(!g || !rest) return null;
     const { L } = g, home = homeOf(L), [, b1] = mitoBand(L);
     const k = scaleAt(L, rest.depth), m = L.mito;
+    // dormido en una cama: la mascota se sube y se acuesta a su lado, a su misma escala y sobre la superficie
+    const bed = asleep() && rest.on ? seats.find(st => st.id === rest.on && st.kind === 'lie' && rest.x >= st.x0 - 1 && rest.x <= st.x1 + 1) : null;
+    if(bed){
+      const x = petSurfaceX(bed, rest.x, m * .63 * k, m * .2 * k), y = bed.y + m * k * .02;
+      return { dx: x - (home.x - m * .63), dy: y - (home.y + m * .1), k, bed: true };
+    }
     // en el piso, a su lado y un poco al frente; sobre un mueble, frente al mueble
     const y = Math.min(b1, rest.depth + m * (rest.on ? .1 : .06));
     const kp = scaleAt(L, y);
@@ -95,7 +101,14 @@ export function createMotion(room, mascot, { geometry = ()=> null, onHit = ()=>{
     // posición por omisión de la mascota (a la izquierda de su lugar de siempre, style.css)
     return { dx: x - (home.x - m * .63), dy: y - (home.y + m * .1), k: kp };
   }
-  function petPaint(t){ set('--pet-x', pxv(t.dx)); set('--pet-y', pxv(t.dy)); set('--pet-k', t.k.toFixed(3)); petAt = t; }
+  // En la cama el platillo no flota alto: queda pegado a la superficie (--pet-lift) y sin rayo (clase del cuarto).
+  function petPaint(t){
+    set('--pet-x', pxv(t.dx)); set('--pet-y', pxv(t.dy)); set('--pet-k', t.k.toFixed(3));
+    const L = geometry()?.L;
+    set('--pet-lift', t.bed && L ? pxv(L.mito * t.k * .05) : '0px');
+    room.classList.toggle('pet-on-bed', !!t.bed);
+    petAt = t;
+  }
   function petFollow(instant = false){
     clearTimeout(petTimer); caf(petFrame);
     const to = petTarget();
@@ -313,7 +326,7 @@ export function createMotion(room, mascot, { geometry = ()=> null, onHit = ()=>{
     get state(){ return state; },
     get busy(){ return state !== 'rest'; },
     get rest(){ return rest; },
-    place, saved, grab, drag, drop, hop,
+    place, saved, grab, drag, drop, hop, petFollow,
     // Al salir de la vista o al cambiar de cuarto: se cancela lo que estuviera a medias y queda quieto donde estaba.
     reset(){
       caf(frame); frame = 0; clearTimeout(petTimer); caf(petFrame);

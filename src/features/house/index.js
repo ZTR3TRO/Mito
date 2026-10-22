@@ -60,7 +60,8 @@ export function init(){
   const act = name => room.querySelector(`[data-house-act="${name}"]`);
   let needs = null;
   const refresh = ()=> needs?.render();
-  const sleep = createSleep(room, mascot, reactions, { button: act('sleep'), onChange: refresh });
+  // al dormir o despertar, la mascota se sube a la cama con Mito o baja de ella (motion.js)
+  const sleep = createSleep(room, mascot, reactions, { button: act('sleep'), onChange: ()=>{ refresh(); motion?.petFollow(); } });
   const bath = createBath(room, mascot, reactions, { button: act('bath'), onChange: refresh });
   const food = createFood(room, mascot, reactions, { button: act('eat'), onChange: refresh });
   // La cámara. Con las flechas o los indicadores Mito te sigue, salvo si duerme; con la charola, el baño o Decorar
@@ -191,6 +192,7 @@ export function init(){
   motion = createMotion(room, mascot, {
     geometry: ()=>{ const L = roomLayout(room); return L ? { L, seats: decor.surfaces(nav.mitoRoom) } : null; },
     onPaint: reactions.place,
+    asleep: ()=> sleep.asleep,
     onHit: (kind, impact)=> reactions.hit(kind, impact),
     onSettle: (rest, bounced)=>{
       save(motion.saved(rest));
@@ -291,6 +293,7 @@ export function init(){
       requestFrame(relight);
       maybeShowHint();
       const asleep = sleep.enter();
+      if(asleep) motion.petFollow(true);   // ya dormido: la mascota está en la cama desde el principio
       needs.enter();
       decor.enter();
       const gifted = decor.gift(nav.room);

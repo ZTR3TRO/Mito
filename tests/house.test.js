@@ -1029,7 +1029,7 @@ test('tamaño con la base nueva (Fase 5): solo se convierte lo ajustado, al mín
 
 /* ---------------- Mito libre (Fase 5): superficies, física y profundidad ---------------- */
 
-import { seatSurfaces, mitoBody, coverage, inFront, clearSpot, floorBand, mitoBand, scaleAt, toolsSpot } from '../src/features/house/furniture-layout.js';
+import { seatSurfaces, mitoBody, coverage, inFront, clearSpot, floorBand, mitoBand, scaleAt, toolsSpot, petSurfaceX } from '../src/features/house/furniture-layout.js';
 
 const W1 = { width: 1.6, floor: .9, r: .1, h: .25 };
 const settleOn = (body, world) => { let b = body; for(let i = 0; i < 300 && !b.stopped; i++) b = advance(b, world, .05).body; return b; };
@@ -1153,4 +1153,28 @@ test('barrita del mueble: arriba si cabe, abajo si no, de lado si el mueble llen
   const tall = { x: 60, y: 10, w: 100, h: L.H - L.barSpace - 20 };
   const side = toolsSpot(L, tall, 150, 40);
   assert.ok(side.x >= tall.x + tall.w || side.x + 150 <= tall.x, 'a un lado');
+});
+
+test('mascota en la cama: queda entera sobre la superficie, a su lado, con la cama volteada y a 60 %, 100 % y 160 %', ()=>{
+  for(const L of ROOMS) for(const flip of [false, true]) for(const scale of [.6, 1, 1.6]){
+    const bed = F('m-bed'), p = clampSpot(L, bed, { u: .5, v: .5, scale, flip });
+    const [st] = seatSurfaces(L, bed, p).filter(q => q.kind === 'lie');
+    assert.ok(st, 'la cama tiene superficie para acostarse');
+    const k = scaleAt(L, st.base), gap = L.mito * k * .63, half = L.mito * k * .2;
+    for(const f of [0, .25, .5, .75, 1]){
+      const x = st.x0 + (st.x1 - st.x0) * f, px = petSurfaceX(st, x, gap, half);
+      if(st.x1 - st.x0 >= 2 * half){
+        assert.ok(px - half >= st.x0 - 1e-6 && px + half <= st.x1 + 1e-6, `${L.W}×${L.H} ×${scale} flip ${flip}: dentro de la superficie`);
+        if(st.x1 - st.x0 >= gap + 2 * half) assert.ok(Math.abs(px - x) >= Math.min(gap, st.x1 - st.x0 - 2 * half) - 1e-6 || px === st.x0 + half || px === st.x1 - half, 'a su lado');
+      }
+    }
+  }
+});
+
+test('mascota en la cama: a la izquierda si cabe, a la derecha si no, y en una superficie diminuta, al centro', ()=>{
+  const st = { x0: 100, x1: 400 };
+  assert.equal(petSurfaceX(st, 300, 60, 20), 240, 'izquierda');
+  assert.equal(petSurfaceX(st, 130, 60, 20), 190, 'derecha');
+  assert.equal(petSurfaceX({ x0: 100, x1: 130 }, 115, 60, 20), 115, 'no cabe: al centro');
+  assert.equal(petSurfaceX({ x0: 100, x1: 180 }, 150, 70, 20), 120, 'ninguno cabe: del lado con más espacio');
 });

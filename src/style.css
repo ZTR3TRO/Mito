@@ -1644,7 +1644,8 @@ body[data-view="house"] .app{ min-height:0; max-height:100vh; max-height:100dvh;
 .room .mascot > .house-blush{ transform-origin:50% 87%; }
 .room.is-held .mascot > svg.mito, .room.is-held .mascot > .aura, .room.is-held .mascot > .house-blush{ transition:none; }
 /* la mascota lo sigue y se queda en el piso, cerca de él (--pet-x/--pet-y desde su lugar de siempre, --pet-k su escala) */
-.room .mascot > svg.pet, .room .mascot > .pet-bubble{ translate:var(--pet-x, 0px) var(--pet-y, 0px); }
+.room .mascot > .pet-bubble{ translate:var(--pet-x, 0px) var(--pet-y, 0px); }
+.room .mascot > svg.pet{ translate:var(--pet-x, 0px) calc(var(--pet-y, 0px) - var(--pet-lift, 0px)); }
 .room .mascot > svg.pet{ scale:var(--pet-k, 1); }
 .room .mascot > svg.mito, .room .mascot > .aura{ opacity:var(--mito-fade, 1); }
 .room .mascot > svg.mito > ellipse{ display:none; }   /* su sombra de siempre volaría con él: en la Casa la sombra está en el piso (.contact-mito) */
@@ -2279,6 +2280,9 @@ body[data-view="house"] .app{ min-height:0; max-height:100vh; max-height:100dvh;
 .house-act.go-chip{ background:linear-gradient(135deg, #ffd23c, #ffb03c); color:#5a3a00; box-shadow:0 4px 0 0 #d99a10, 0 8px 18px -8px rgba(217,154,16,.6); }
 .house-act.go-chip:active{ box-shadow:0 2px 0 0 #d99a10; }
 .house-act.go-chip[hidden]{ display:none; }
+/* la mascota dormida en la cama: el platillo se queda pegado a la superficie, sin rayo ni vaivén */
+.room.pet-on-bed .mascot > svg.pet[data-k="ufo"] .oflt{ animation:none; }
+.room.pet-on-bed .mascot > svg.pet[data-k="ufo"] path[fill="url(#gBeam)"]{ display:none; }
 /* dormido en la cama: se acurruca un poco de lado */
 .room.is-asleep.on-lie .mascot > svg.mito{ rotate:-9deg; }
 @media (prefers-reduced-motion: reduce){ .room.is-asleep.on-lie .mascot > svg.mito{ rotate:none; } }

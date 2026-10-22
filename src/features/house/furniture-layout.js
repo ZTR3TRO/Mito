@@ -250,3 +250,15 @@ export function toolsSpot(L, box, w, h, gap = 12){
   }
   return { x: cx, y: Math.max(M, bottom - h - 4) };
 }
+
+// Dónde se acuesta la mascota en una superficie de cama (seat: { x0, x1 }) con Mito dormido en x: a su lado (a `gap`
+// px de él, a la izquierda si cabe, si no a la derecha), entera sobre la superficie (`half` = su medio ancho). Si
+// ninguno de los dos lados cabe, del lado con más espacio y lo más lejos que se pueda. Devuelve x en px del cuarto.
+export function petSurfaceX(seat, x, gap, half){
+  const lo = seat.x0 + half, hi = seat.x1 - half;
+  if(lo > hi) return (seat.x0 + seat.x1) / 2;
+  const left = x - gap, right = x + gap;
+  if(left >= lo) return Math.min(left, hi);
+  if(right <= hi) return Math.max(right, lo);
+  return x - lo >= hi - x ? lo : hi;
+}
